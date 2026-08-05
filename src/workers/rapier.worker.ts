@@ -1,6 +1,6 @@
 import RAPIER from "@dimforge/rapier3d-compat";
 import { SYNTHETIC_COLLISION_EXPECTED, SYNTHETIC_COLLISION_FIXTURE_NAME, SYNTHETIC_COLLISION_STEPS, SYNTHETIC_COLLISION_TIMESTEP_SECONDS } from "@/test-fixtures/synthetic-collision";
-import { WORKER_PROTOCOL_VERSION, type PhysicsWorkerRequest, type PhysicsWorkerResponse } from "@/physics/worker-contract";
+import { WORKER_PROTOCOL_VERSION, isPhysicsWorkerRequest, type PhysicsWorkerRequest, type PhysicsWorkerResponse } from "@/physics/worker-contract";
 
 let rapierReady: Promise<typeof RAPIER> | undefined;
 const ensureRapier = async () => { rapierReady ??= RAPIER.init().then(() => RAPIER); return rapierReady; };
@@ -33,4 +33,18 @@ async function handleMessage(message: PhysicsWorkerRequest): Promise<PhysicsWork
   } catch (error) { return { id: requestId, type: "error", ok: false, message: error instanceof Error ? error.message : "Unknown worker error" }; }
 }
 
-self.addEventListener("message", (event: MessageEvent<PhysicsWorkerRequest>) => { void handleMessage(event.data).then((response) => self.postMessage(response)); });
+const invalidRequestResponse = (value: unknown): PhysicsWorkerResponse => {
+  const idValue = typeof value === "object" && value !== null ? (value as Record<string, unknown>).id : undefined;
+  const id = typeof idValue === "string" && idValue.length > 0 ? idValue : "invalid-request";
+  return { id, type: "error", ok: false, message: "Invalid physics worker request" };
+};
+
+if (typeof self !== "undefined") {
+  self.addEventListener("message", (event: MessageEvent<unknown>) => {
+    if (!isPhysicsWorkerRequest(event.data)) {
+      self.postMessage(invalidRequestResponse(event.data));
+      return;
+    }
+    void handleMessage(event.data).then((response) => self.postMessage(response));
+  });
+}
