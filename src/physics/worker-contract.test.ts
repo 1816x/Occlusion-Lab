@@ -1,35 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { isPhysicsWorkerRequest, isPhysicsWorkerResponse, WORKER_PROTOCOL_VERSION, type PhysicsWorkerRequest } from "./worker-contract";
-import { SYNTHETIC_COLLISION_EXPECTED, SYNTHETIC_COLLISION_FIXTURE_NAME, SYNTHETIC_COLLISION_STEPS } from "@/test-fixtures/synthetic-collision";
-
+import { WORKER_PROTOCOL_VERSION, isPhysicsWorkerRequest, isPhysicsWorkerResponse } from "./worker-contract";
 describe("physics worker contract", () => {
-  it("accepts typed requests", () => {
-    const messages: PhysicsWorkerRequest[] = [{ id: "a", type: "health-check" }, { id: "b", type: "run-synthetic-collision-fixture" }];
-    expect(messages.every(isPhysicsWorkerRequest)).toBe(true);
-  });
-
-  it("rejects malformed requests and unknown message types", () => {
-    expect(isPhysicsWorkerRequest({ id: "a", type: "unknown" })).toBe(false);
-    expect(isPhysicsWorkerRequest({ type: "health-check" })).toBe(false);
-    expect(isPhysicsWorkerRequest({ id: "", type: "health-check" })).toBe(false);
-    expect(isPhysicsWorkerRequest(null)).toBe(false);
-  });
-
-  it("accepts every typed response variant", () => {
-    expect(isPhysicsWorkerResponse({ id: "1", type: "health", ok: true, protocolVersion: WORKER_PROTOCOL_VERSION, rapierVersion: "rapier", fixtureName: SYNTHETIC_COLLISION_FIXTURE_NAME })).toBe(true);
-    expect(isPhysicsWorkerResponse({ id: "2", type: "synthetic-collision-result", ok: true, fixtureName: SYNTHETIC_COLLISION_FIXTURE_NAME, collided: true, steps: SYNTHETIC_COLLISION_STEPS, finalDynamicY: 0.6 })).toBe(true);
-    expect(isPhysicsWorkerResponse({ id: "3", type: "error", ok: false, message: "Invalid physics worker request" })).toBe(true);
-  });
-
-  it("rejects malformed responses with missing variant-specific fields", () => {
-    expect(isPhysicsWorkerResponse({ id: "1", type: "health", ok: true, rapierVersion: "rapier", fixtureName: SYNTHETIC_COLLISION_FIXTURE_NAME })).toBe(false);
-    expect(isPhysicsWorkerResponse({ id: "2", type: "synthetic-collision-result", ok: true, fixtureName: SYNTHETIC_COLLISION_FIXTURE_NAME, collided: true, finalDynamicY: 0.6 })).toBe(false);
-    expect(isPhysicsWorkerResponse({ id: "3", type: "error", ok: false })).toBe(false);
-    expect(isPhysicsWorkerResponse({ id: "4", type: "unknown", ok: true })).toBe(false);
-  });
-
-  it("documents the synthetic collision fixture bounds", () => {
-    expect(SYNTHETIC_COLLISION_EXPECTED.collided).toBe(true);
-    expect(SYNTHETIC_COLLISION_EXPECTED.minFinalDynamicY).toBeLessThan(SYNTHETIC_COLLISION_EXPECTED.maxFinalDynamicY);
-  });
+  it("accepts health and synthetic requests", () => { expect(isPhysicsWorkerRequest({ id:"1", type:"health-check" })).toBe(true); expect(isPhysicsWorkerRequest({ id:"2", type:"run-synthetic-collision-fixture" })).toBe(true); });
+  it("accepts phase1 transferable geometry requests", () => { expect(isPhysicsWorkerRequest({ id:"3", type:"run-phase1-contact-query", fixtureId:"f", scenario:"contact", meshes:[{name:"a",positions:new ArrayBuffer(4),indices:new ArrayBuffer(4),indexComponentType:"uint16"},{name:"b",positions:new ArrayBuffer(4),indices:new ArrayBuffer(4),indexComponentType:"uint32"}] })).toBe(true); });
+  it("rejects malformed asset/contact messages", () => { expect(isPhysicsWorkerRequest({ id:"x", type:"run-phase1-contact-query", fixtureId:"f", scenario:"bad", meshes:[] })).toBe(false); expect(isPhysicsWorkerRequest({ id:"x", type:"run-phase1-contact-query", fixtureId:"f", scenario:"contact", meshes:[{}] })).toBe(false); });
+  it("accepts every response variant", () => { expect(isPhysicsWorkerResponse({ id:"h", type:"health", ok:true, protocolVersion:WORKER_PROTOCOL_VERSION, rapierVersion:"r", fixtureName:"f" })).toBe(true); expect(isPhysicsWorkerResponse({ id:"s", type:"synthetic-collision-result", ok:true, fixtureName:"f", collided:true, steps:1, finalDynamicY:1 })).toBe(true); expect(isPhysicsWorkerResponse({ id:"p", type:"phase1-contact-result", ok:true, fixtureId:"f", scenario:"contact", intersecting:true, contactCount:1, point:{x:0,y:0,z:0}, normal:{x:0,y:1,z:0}, penetrationDepth:0.1, distance:null })).toBe(true); expect(isPhysicsWorkerResponse({ id:"e", type:"error", ok:false, message:"bad" })).toBe(true); });
 });

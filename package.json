@@ -4,12 +4,18 @@
   "private": true,
   "description": "Educational occlusion simulation research sandbox (work in progress).",
   "scripts": {
+    "predev": "npm run assets:generate",
     "dev": "next dev",
+    "prebuild": "npm run assets:generate",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "pretest": "npm run assets:generate",
+    "test": "vitest run && npm run check:rapier-thread",
+    "assets:generate": "node scripts/generate-phase1-fixture.mjs",
+    "assets:verify": "npm run assets:generate && node scripts/verify-phase1-fixture.mjs",
+    "check:rapier-thread": "node scripts/checks/no-main-thread-rapier.mjs"
   },
   "dependencies": {
     "@dimforge/rapier3d-compat": "^0.17.3",
@@ -28,6 +34,7 @@
     "esbuild": "^0.25.12",
     "eslint": "^9.32.0",
     "eslint-config-next": "^16.3.0",
+    "gltf-pipeline": "^4.3.1",
     "jsdom": "^26.1.0",
     "typescript": "^5.8.3",
     "vitest": "^3.2.4"

@@ -1,0 +1,18 @@
+{
+  "id": "phase1-opposing-occlusal-surfaces",
+  "file": "public/generated/opposing-occlusal-surfaces.glb",
+  "sha256": "7aec40961d35b4d4dd022c0e5292ab15ba4c855113fc1df83621f457c596c9fa",
+  "license": "MIT; original project-owned synthetic geometry",
+  "generator": "scripts/generate-phase1-fixture.mjs",
+  "generatorVersion": "1.0.0",
+  "pipeline": "gltf-pipeline 4.3.1 with Draco compression level 7",
+  "provenance": "Hand-authored deterministic low-poly opposing surfaces; no patient data, clinical scan, downloaded dental model, or texture.",
+  "coordinateSystem": "glTF right-handed; +Y up; +Z forward by glTF convention",
+  "units": "meters",
+  "collisionMeshes": [
+    "OL_COLLISION_UPPER",
+    "OL_COLLISION_LOWER"
+  ],
+  "draco": "KHR_draco_mesh_compression enabled by gltf-pipeline; the generated GLB is an ignored build artifact",
+  "ktx2": "Not used; fixture has no textures. KTX2 is a future pipeline step only when real texture assets exist."
+}

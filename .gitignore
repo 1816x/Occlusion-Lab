@@ -6,3 +6,6 @@ coverage
 .env*
 !.env.example
 .DS_Store
+
+# Deterministic Phase 1 binary build artifacts (regenerate with npm scripts).
+public/generated/

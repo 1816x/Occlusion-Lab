@@ -14,3 +14,12 @@ p { color:var(--muted); line-height:1.65; max-width:820px; }
 dl { display:grid; grid-template-columns:auto 1fr; gap:10px 14px; }
 dt { color:var(--muted); } dd { margin:0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
 @media (max-width: 850px) { main{padding:18px}.grid{grid-template-columns:1fr}.scene{min-height:360px} }
+.phase1 { height:100%; display:grid; grid-template-rows:1fr auto; }
+.sceneHost { min-height:320px; }
+.controls { border-top:1px solid #223855; padding:12px 16px; display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+.controls p { margin:0; flex-basis:100%; }
+button { border:1px solid #35506f; border-radius:999px; background:#0d1a2b; color:var(--text); padding:8px 12px; font-weight:700; cursor:pointer; }
+button:disabled { opacity:.5; cursor:not-allowed; }
+pre { width:100%; overflow:auto; border-radius:14px; padding:12px; margin:0; border:1px solid #35506f; }
+pre.contact { background:#3b121a; border-color:#f97373; }
+pre.clear { background:#102a1c; border-color:#34d399; }
