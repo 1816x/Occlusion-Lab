@@ -29,3 +29,13 @@ The LLM is not part of the scientific calculation path. Future LLM features, if 
 The result contract uses `classification` (`separated`, `touching`, or `penetrating`), `clearanceMeters`, and `penetrationDepthMeters`. Every scalar and vector component is runtime-validated with `Number.isFinite`; measurements must be non-negative and mutually consistent with classification. Invalid requests, including non-finite transforms, remain typed worker error responses.
 
 Rapier's worker-side trimesh contact manifold provides contact count, first local point, and normal when available. Because that manifold query does not reliably provide witness-point distance for separated trimeshes, the same worker independently computes the signed vertical gap from the transferred vertices after applying the requested upper Y translation. It subtracts the highest lower vertex from the lowest transformed upper vertex. Positive gap is clearance, a gap within `1e-6 m` is touching, and negative gap is converted to positive penetration depth. Results are rounded to `1e-6 m`. No scientific calculation moves onto the UI thread.
+
+## Phase 2 persistent session and UI boundary
+
+Protocol v3 splits initialization from evaluation. `initialize-occlusion-fixture` transfers both position/index buffer pairs once and replaces any prior worker-owned world. The worker creates a fixed maxillary body and zero-gravity, directly positioned dynamic mandibular body. `evaluate-mandibular-pose` carries only the fixture ID, request ID, integer sequence, and three numeric pose fields; the retained world is stepped rather than rebuilt.
+
+The authoritative worker transform is `(lateral, 0.16 − opening, protrusion)` meters with an identity unit quaternion. Axes follow the fixture's right-handed coordinates: +Y up, +Z anterior for this synthetic lesson, and −X/+X left/right. Three.js never recalculates this transform. It applies the returned translation/quaternion to the lower mesh.
+
+Each incoming UI event is `MessageEvent<unknown>` and must pass `isPhysicsWorkerResponse`. A pending-ID set rejects uncorrelated results, while a monotonically increasing pose sequence rejects stale results. Invalid data produces a visible educational application error and cannot reach result state. Slider bursts are coalesced through `requestAnimationFrame`.
+
+For contacts, Rapier supplies local manifold points, normals, signed contact distance, and collision state. The worker transforms both local witness points to world space and reports their midpoint, validates finite components, deduplicates, sorts, and bounds samples. One reusable `THREE.Points` geometry is updated or assigned an empty draw range when contacts disappear; no per-contact scene-object growth occurs.
