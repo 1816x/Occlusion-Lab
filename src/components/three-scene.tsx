@@ -1,41 +1,15 @@
 "use client";
-
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
-
-export function ThreeScene() {
-  const hostRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const host = hostRef.current;
-    if (!host) return;
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
-    if (!renderer.capabilities.isWebGL2) {
-      host.textContent = "WebGL2 is required for Occlusion Lab.";
-      return;
-    }
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    host.appendChild(renderer.domElement);
-
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
-    camera.position.set(3, 2.2, 4.8);
-    camera.lookAt(0, 0, 0);
-    scene.add(new THREE.HemisphereLight(0xffffff, 0x203040, 2.2));
-    const light = new THREE.DirectionalLight(0x7dd3fc, 2.5); light.position.set(4, 6, 3); scene.add(light);
-    const upper = new THREE.Mesh(new THREE.BoxGeometry(2.8, .35, 1.1), new THREE.MeshStandardMaterial({ color: 0x9bd5ff, roughness: .45 }));
-    upper.position.y = .42;
-    const lower = new THREE.Mesh(new THREE.BoxGeometry(2.8, .35, 1.1), new THREE.MeshStandardMaterial({ color: 0xffd6a5, roughness: .5 }));
-    lower.position.y = -.42;
-    scene.add(upper, lower, new THREE.GridHelper(5, 10, 0x36506f, 0x20354f));
-
-    const resize = () => { const { clientWidth, clientHeight } = host; renderer.setSize(clientWidth, clientHeight, false); camera.aspect = clientWidth / Math.max(clientHeight, 1); camera.updateProjectionMatrix(); };
-    const observer = new ResizeObserver(resize); observer.observe(host); resize();
-    let frame = 0; let raf = 0;
-    const animate = () => { frame += 0.01; upper.rotation.y = frame; lower.rotation.y = -frame * .8; renderer.render(scene, camera); raf = requestAnimationFrame(animate); };
-    animate();
-    return () => { cancelAnimationFrame(raf); observer.disconnect(); renderer.dispose(); upper.geometry.dispose(); lower.geometry.dispose(); host.replaceChildren(); };
-  }, []);
-
-  return <div ref={hostRef} style={{ width: "100%", height: "100%" }} />;
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
+import type { CollisionMeshPayload, Phase1ContactResult, Phase1Scenario, PhysicsWorkerResponse } from "@/physics/worker-contract";
+const FIXTURE_ID = "phase1-opposing-occlusal-surfaces";
+type State = "loading" | "ready" | "error";
+function cloneBuffer(view: ArrayBufferView): ArrayBuffer { const copy = new Uint8Array(view.byteLength); copy.set(new Uint8Array(view.buffer, view.byteOffset, view.byteLength)); return copy.buffer; }
+function payload(mesh: THREE.Mesh): CollisionMeshPayload { const g = mesh.geometry; const p = g.getAttribute("position"); const idx = g.index; if (!p || !idx) throw new Error(`Missing collision buffers for ${mesh.name}`); return { name: mesh.name, positions: cloneBuffer(p.array), indices: cloneBuffer(idx.array), indexComponentType: idx.array instanceof Uint32Array ? "uint32" : "uint16" }; }
+export function ThreeScene() { const hostRef = useRef<HTMLDivElement>(null); const meshesRef = useRef<[THREE.Mesh, THREE.Mesh] | null>(null); const workerRef = useRef<Worker | null>(null); const [state,setState]=useState<State>("loading"); const [workerReady,setWorkerReady]=useState(false); const [result,setResult]=useState<Phase1ContactResult|null>(null);
+  useEffect(()=>{ const host=hostRef.current; if(!host) return; const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true}); if(!renderer.capabilities.isWebGL2){host.textContent="WebGL2 is required for Occlusion Lab."; return;} renderer.setPixelRatio(Math.min(window.devicePixelRatio,2)); host.appendChild(renderer.domElement); const scene=new THREE.Scene(); const camera=new THREE.PerspectiveCamera(45,1,.1,100); camera.position.set(3,2.2,4.8); camera.lookAt(0,0,0); scene.add(new THREE.HemisphereLight(0xffffff,0x203040,2.2)); const light=new THREE.DirectionalLight(0x7dd3fc,2.5); light.position.set(4,6,3); scene.add(light); scene.add(new THREE.GridHelper(5,10,0x36506f,0x20354f)); const draco=new DRACOLoader(); draco.setDecoderPath('/draco/'); draco.setDecoderConfig({type:'js'}); const loader=new GLTFLoader(); loader.setDRACOLoader(draco); loader.load('/generated/opposing-occlusal-surfaces.glb',(gltf)=>{ const found: THREE.Mesh[]=[]; gltf.scene.traverse((o)=>{ if(o instanceof THREE.Mesh && (o.name==='OL_COLLISION_UPPER'||o.name==='OL_COLLISION_LOWER')){ o.material=new THREE.MeshStandardMaterial({color:o.name.includes('UPPER')?0x9bd5ff:0xffd6a5,roughness:.48,transparent:true,opacity:.9}); found.push(o); }}); if(found.length!==2){setState('error');return;} scene.add(gltf.scene); meshesRef.current=[found.find(m=>m.name.includes('UPPER'))!,found.find(m=>m.name.includes('LOWER'))!]; setState('ready'); },undefined,()=>setState('error')); const resize=()=>{const {clientWidth,clientHeight}=host; renderer.setSize(clientWidth,clientHeight,false); camera.aspect=clientWidth/Math.max(clientHeight,1); camera.updateProjectionMatrix();}; const observer=new ResizeObserver(resize); observer.observe(host); resize(); let raf=0; const animate=()=>{ renderer.render(scene,camera); raf=requestAnimationFrame(animate);}; animate(); const worker=new Worker(new URL('../workers/rapier.worker.ts', import.meta.url),{type:'module'}); workerRef.current=worker; worker.onmessage=(event:MessageEvent<PhysicsWorkerResponse>)=>{ if(event.data.type==='health') setWorkerReady(true); if(event.data.type==='phase1-contact-result') { setResult(event.data); const upper=meshesRef.current?.[0]; if(upper) upper.position.y=event.data.scenario==='contact'?-0.16:.25; }}; worker.postMessage({id:'health',type:'health-check'}); return()=>{worker.terminate(); cancelAnimationFrame(raf); observer.disconnect(); draco.dispose(); renderer.dispose(); host.replaceChildren();}; },[]);
+  const run=(scenario:Phase1Scenario)=>{ const worker=workerRef.current, meshes=meshesRef.current; if(!worker||!meshes) return; const msg={id:`phase1-${scenario}`,type:'run-phase1-contact-query' as const,fixtureId:FIXTURE_ID,scenario,meshes:[payload(meshes[0]),payload(meshes[1])] as [CollisionMeshPayload,CollisionMeshPayload]}; worker.postMessage(msg, msg.meshes.flatMap(m=>[m.positions,m.indices])); };
+  return <div className="phase1"><div ref={hostRef} className="sceneHost"/><div className="controls"><p>Asset: {state}. Worker: {workerReady?'ready':'loading'}.</p><button disabled={state!=='ready'||!workerReady} onClick={()=>run('separated')}>Run separated</button><button disabled={state!=='ready'||!workerReady} onClick={()=>run('contact')}>Run contact</button>{result&&<pre className={result.intersecting?'contact':'clear'}>{JSON.stringify(result,null,2)}</pre>}</div></div>;
 }
