@@ -75,7 +75,23 @@ export async function initializeOcclusionFixture(request: Extract<PhysicsWorkerR
   const mandible = world.createCollider(colliderDesc(rapier,request.meshes[1]),mandibleBody);
   session = {fixtureId:request.fixtureId,world,maxilla,mandible,mandibleBody};
 }
-const worldPoint = (local:{x:number;y:number;z:number}, translation:{x:number;y:number;z:number}) => ({x:round(local.x+translation.x),y:round(local.y+translation.y),z:round(local.z+translation.z)});
+export const worldPoint = (
+  local: { x: number; y: number; z: number },
+  translation: { x: number; y: number; z: number },
+  rotation = { x: 0, y: 0, z: 0, w: 1 },
+) => {
+  // q * v * q^-1. Rapier manifold points are collider-local, so translation
+  // alone would be wrong as soon as the moving body has a non-identity pose.
+  const ix = rotation.w * local.x + rotation.y * local.z - rotation.z * local.y;
+  const iy = rotation.w * local.y + rotation.z * local.x - rotation.x * local.z;
+  const iz = rotation.w * local.z + rotation.x * local.y - rotation.y * local.x;
+  const iw = -rotation.x * local.x - rotation.y * local.y - rotation.z * local.z;
+  return {
+    x: round(ix * rotation.w + iw * -rotation.x + iy * -rotation.z - iz * -rotation.y + translation.x),
+    y: round(iy * rotation.w + iw * -rotation.y + iz * -rotation.x - ix * -rotation.z + translation.y),
+    z: round(iz * rotation.w + iw * -rotation.z + ix * -rotation.y - iy * -rotation.x + translation.z),
+  };
+};
 const keyFor = (point:{x:number;y:number;z:number}) => [point.x,point.y,point.z].map(n=>Math.round(n/CONTACT_DEDUPLICATION_TOLERANCE_METERS)).join(":");
 export async function evaluateMandibularPose(request: Extract<PhysicsWorkerRequest,{type:"evaluate-mandibular-pose"}>): Promise<PoseResult> {
   if (!session) throw new Error("not-initialized");
@@ -91,7 +107,8 @@ export async function evaluateMandibularPose(request: Extract<PhysicsWorkerReque
     const normal=manifold.localNormal1();
     for(let i=0;i<manifold.numContacts() && contacts.length<MAX_CONTACT_SAMPLES;i++){
       const a=manifold.localContactPoint1(i), b=manifold.localContactPoint2(i); if(!a||!b) continue;
-      const upperWorld=worldPoint(a,{x:0,y:0,z:0}); const lowerWorld=worldPoint(b,transform.translationMeters);
+      const upperWorld=worldPoint(a,{x:0,y:0,z:0});
+      const lowerWorld=worldPoint(b,transform.translationMeters,transform.rotationQuaternion);
       const point={x:round((upperWorld.x+lowerWorld.x)/2),y:round((upperWorld.y+lowerWorld.y)/2),z:round((upperWorld.z+lowerWorld.z)/2)};
       const key=keyFor(point); if(seen.has(key)) continue; seen.add(key);
       const signed=round(manifold.contactDist(i)); const n={x:round(flipped?-normal.x:normal.x),y:round(flipped?-normal.y:normal.y),z:round(flipped?-normal.z:normal.z)};
@@ -100,9 +117,13 @@ export async function evaluateMandibularPose(request: Extract<PhysicsWorkerReque
     }
   });
   contacts.sort((a,b)=>a.pointWorldMeters.x-b.pointWorldMeters.x||a.pointWorldMeters.y-b.pointWorldMeters.y||a.pointWorldMeters.z-b.pointWorldMeters.z||a.id.localeCompare(b.id));
-  const penetration=round(Math.max(0,...contacts.map(c=>c.penetrationDepthMeters)));
-  const classification=contacts.length===0?"separated":penetration>CONTACT_TOLERANCE_METERS?"penetrating":"touching";
-  return {fixtureId:request.fixtureId,sequence:request.sequence,requestedPose:request.pose,appliedTransform:transform,classification,measurementStatus:classification==="separated"?"unavailable-separated":"rapier-contact",clearanceMeters:classification==="separated"?null:0,penetrationDepthMeters:penetration,contactCount:contacts.length,contactSamples:contacts};
+  const maximumContactPenetration=round(Math.max(0,...contacts.map(c=>c.penetrationDepthMeters)));
+  const classification=contacts.length===0?"separated":maximumContactPenetration>CONTACT_TOLERANCE_METERS?"penetrating":"touching";
+  // Touching is tolerance-normalized to zero so classification and the typed
+  // measurement contract cannot disagree at the 1e-6 m boundary.
+  const penetrationDepthMeters=classification==="penetrating"?maximumContactPenetration:0;
+  if(classification==="touching") contacts.forEach((contact)=>{contact.penetrationDepthMeters=0;});
+  return {fixtureId:request.fixtureId,sequence:request.sequence,requestedPose:request.pose,appliedTransform:transform,classification,measurementStatus:classification==="separated"?"unavailable-separated":"rapier-contact",clearanceMeters:classification==="separated"?null:0,penetrationDepthMeters,contactCount:contacts.length,contactSamples:contacts};
 }
 
 export async function handleMessage(message: PhysicsWorkerRequest): Promise<PhysicsWorkerResponse> { const requestId = message.id; try { if (message.type === "health-check") { await ensureRapier(); return { id: requestId, type: "health", ok: true, protocolVersion: WORKER_PROTOCOL_VERSION, rapierVersion: "@dimforge/rapier3d-compat", fixtureName: SYNTHETIC_COLLISION_FIXTURE_NAME }; } if (message.type === "run-synthetic-collision-fixture") return { id: requestId, type: "synthetic-collision-result", ok: true, ...(await runSyntheticCollisionFixture()) }; if (message.type === "run-phase1-contact-query") return { id: requestId, type: "phase1-contact-result", ok: true, ...(await runPhase1ContactQuery(message)) }; if(message.type==="initialize-occlusion-fixture"){await initializeOcclusionFixture(message);return{id:requestId,type:"fixture-ready",ok:true,fixtureId:message.fixtureId,protocolVersion:WORKER_PROTOCOL_VERSION};} if(message.type==="evaluate-mandibular-pose") return{id:requestId,type:"mandibular-pose-result",ok:true,...await evaluateMandibularPose(message)}; const exhaustive: never = message; return { id: requestId, type: "error", ok: false, code:"invalid-request", message: `Unsupported physics worker request: ${JSON.stringify(exhaustive)}` }; } catch (error) { const message=error instanceof Error?error.message:"Unknown worker error"; const code=message==="not-initialized"||message==="fixture-mismatch"?message:"worker-error"; return { id: requestId, type: "error", ok: false, code, message: code==="not-initialized"?"Initialize the synthetic fixture before evaluating a pose.":code==="fixture-mismatch"?"The pose fixture does not match the initialized fixture.":message }; } }
