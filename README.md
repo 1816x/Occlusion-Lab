@@ -40,3 +40,13 @@ All fixture coordinates and reported measurements are in **meters**. The worker 
 For this deliberately planar educational fixture, clearance is calculated in the worker from the transformed collision vertices: the lowest transformed upper Y coordinate minus the highest lower Y coordinate. Thus the separated scenario is `(0.08 m + 0.25 m) - (-0.08 m) = 0.41 m`, while the `-0.16 m` translation is coplanar touching with zero penetration. A hard-coded result would silently become false whenever fixture coordinates or the transform changed. Rapier supplies contact count and, when present, the first contact point and normal; it does not supply the separated trimesh witness distance used here.
 
 These metrics describe only synthetic planar geometry. They have no clinical or diagnostic validity.
+
+## Phase 2 interaction
+
+Phase 2 keeps a Rapier world alive in one Web Worker. The GLB collision buffers are transferred once during fixture initialization; subsequent version-3 messages contain only a finite, range-validated pose and sequence number. The maxilla is fixed and the directly controlled dynamic mandible receives the worker-authoritative transform. Three.js renders that returned transform and a bounded `THREE.Points` contact map.
+
+The simplified pose uses meters internally: opening `0–0.25 m` (neutral `0.25 m`), protrusion `0–0.05 m` on +Z, and lateral `−0.05–0.05 m` on X. The UI displays millimeters. Rotation is the identity quaternion in Phase 2. These deliberately exaggerated controls teach geometric cause and effect; they do not reproduce anatomy or temporomandibular-joint biomechanics.
+
+The guided “move from separation to first contact” checkpoint advances only after validated worker results show separation, then touching with contacts, then contacts after at least 5 mm of lateral or protrusive movement. Progress lasts only in React state for the current browser session.
+
+Interactive contact points and normals come from Rapier manifolds and are converted from collider-local to world coordinates, sorted, deduplicated at `1e-5 m`, and capped at 32. Marker color means touching or geometric penetration only. It is not force, pressure, stress, severity, diagnosis, or treatment advice. Rapier's selected trimesh API does not provide a reliable arbitrary separated-mesh distance, so interactive clearance is explicitly unavailable rather than displayed as zero. The aligned planar Phase 1.1 `0.41 m` regression remains separate and valid only for that fixture/query.
