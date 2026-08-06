@@ -7,7 +7,7 @@ Occlusion Lab is a **work in progress** educational browser sandbox for syntheti
 - Loads an original project-owned compressed GLB fixture of low-poly opposing occlusal surfaces with Three.js `GLTFLoader` and `DRACOLoader`.
 - Extracts only named collision mesh position/index buffers and transfers those `ArrayBuffer`s to the Rapier Web Worker.
 - Keeps Rapier initialized exclusively in `src/workers/rapier.worker.ts`.
-- Runs deterministic separated and controlled-contact scenarios off the main thread and displays structured results in the browser.
+- Runs deterministic separated and touching scenarios off the main thread and displays structured results in the browser.
 - Preserves the Phase 0 worker health check and synthetic collision fixture.
 
 ## Development
@@ -32,3 +32,11 @@ Run `npm run assets:verify` to regenerate the fixture, calculate its SHA-256, an
 ## Licensing and assets
 
 The code is MIT licensed. The generated Phase 1 GLB is original synthetic geometry and is safe to redistribute under the repository license, but the binary itself is a build artifact rather than tracked source. No dental model assets, patient data, clinical scans, or fake textures are bundled. KTX2 texture compression is documented as a future pipeline step only when a genuine textured fixture exists.
+
+## Phase 1.1 metric contract
+
+All fixture coordinates and reported measurements are in **meters**. The worker classifies a result as `separated` when clearance is positive, `touching` when the signed vertical gap is within the `1e-6 m` tolerance, and `penetrating` when overlap depth is positive. Accordingly, `clearanceMeters` and `penetrationDepthMeters` are always finite, non-negative numbers; the inapplicable measurement is zero rather than an ambiguous `null`.
+
+For this deliberately planar educational fixture, clearance is calculated in the worker from the transformed collision vertices: the lowest transformed upper Y coordinate minus the highest lower Y coordinate. Thus the separated scenario is `(0.08 m + 0.25 m) - (-0.08 m) = 0.41 m`, while the `-0.16 m` translation is coplanar touching with zero penetration. A hard-coded result would silently become false whenever fixture coordinates or the transform changed. Rapier supplies contact count and, when present, the first contact point and normal; it does not supply the separated trimesh witness distance used here.
+
+These metrics describe only synthetic planar geometry. They have no clinical or diagnostic validity.

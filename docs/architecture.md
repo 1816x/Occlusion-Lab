@@ -23,3 +23,9 @@ Scientific calculations must never run on the browser main thread. The main thre
 ## LLM boundary
 
 The LLM is not part of the scientific calculation path. Future LLM features, if any, may only explain UI state or documentation and must not create, modify, approve, or replace numerical collision results.
+
+## Phase 1.1 measurement path
+
+The result contract uses `classification` (`separated`, `touching`, or `penetrating`), `clearanceMeters`, and `penetrationDepthMeters`. Every scalar and vector component is runtime-validated with `Number.isFinite`; measurements must be non-negative and mutually consistent with classification. Invalid requests, including non-finite transforms, remain typed worker error responses.
+
+Rapier's worker-side trimesh contact manifold provides contact count, first local point, and normal when available. Because that manifold query does not reliably provide witness-point distance for separated trimeshes, the same worker independently computes the signed vertical gap from the transferred vertices after applying the requested upper Y translation. It subtracts the highest lower vertex from the lowest transformed upper vertex. Positive gap is clearance, a gap within `1e-6 m` is touching, and negative gap is converted to positive penetration depth. Results are rounded to `1e-6 m`. No scientific calculation moves onto the UI thread.

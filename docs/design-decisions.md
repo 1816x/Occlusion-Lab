@@ -7,10 +7,18 @@
 - **KTX2:** No KTX2 texture pipeline is included because the fixture has no genuine textures. Adding fake textures only to exercise KTX2 would reduce provenance clarity.
 - **Collider choice:** The worker creates Rapier trimesh colliders from transferred mesh positions and indices. This preserves the authored collision surface for the vertical slice without introducing dynamic simulation or product-scale contact mapping.
 - **Units and coordinates:** The fixture uses meters and glTF's right-handed coordinate system with +Y up. The two surfaces are named `OL_COLLISION_UPPER` and `OL_COLLISION_LOWER`.
-- **Contact API:** Phase 1 uses Rapier `World.contactPair` / contact manifolds after a worker-side `world.step()`. The response reports intersection/contact state, contact count, first local contact point, first manifold normal, and penetration depth derived from negative contact distance when Rapier reports one; coplanar triangle contacts in this fixture deterministically report zero manifold distance. For separated surfaces Rapier does not provide witness points through this chosen manifold API, so the response reports a deterministic configured clearance distance.
+- **Contact API:** Phase 1 uses Rapier `World.contactPair` / contact manifolds after a worker-side `world.step()`. The response reports contact count, first local contact point, and first manifold normal. Rapier does not provide separated witness points through this chosen manifold API; Phase 1.1 therefore derives the aligned fixture measurements from transformed vertices as documented below.
 - **Tolerances:** Numeric outputs are rounded to 1e-6 in worker responses. Tests use close-to assertions for penetration depth and normal direction.
 - **Limitations:** The scenarios are deterministic educational fixtures, not clinical occlusion analysis. No mandibular movement, heatmap, patient model, diagnosis, or treatment-planning behavior is implemented.
 
 ## Documentation source check
 
 On 2026-08-05, official documentation reviewed included Three.js `GLTFLoader` and `DRACOLoader`, MDN Worker `postMessage` and transferable objects, and Rapier JavaScript/Rust contact-query documentation. The private specification was not repeatedly fetched; the task prompt is authoritative for Phase 1.
+
+## Phase 1.1 scientific correction
+
+- **Explicit states:** `separated` means positive clearance and no contacts; `touching` means clearance within the `1e-6 m` tolerance and zero penetration (contacts are allowed); `penetrating` means positive penetration depth and zero clearance. Inapplicable measurements are numeric zero, never an unexplained nullable distance.
+- **Geometry-derived measurement:** The worker derives the signed vertical gap from transformed mesh vertices instead of embedding an expected answer. Hard-coding `0.17` was scientifically invalid and did not match either the fixture geometry or its transform; it also could not respond to fixture or scenario changes.
+- **Sources:** Rapier contact manifolds remain the source of contact count, point, and normal. The deterministic vertex-extrema calculation is the source of clearance, classification, and penetration depth. Units are meters throughout.
+- **Tolerance:** Absolute signed gaps at or below `1e-6 m` are classified as touching, and serialized values are rounded to six decimal places. All numeric fields must be finite and non-negative where applicable.
+- **Trimesh limitation:** Rapier's selected trimesh manifold API does not reliably return separated witness points. The extrema calculation is intentionally limited to this educational fixture's aligned, opposing, planar surfaces; it is not a general Euclidean mesh-distance algorithm and has no clinical or diagnostic validity.
