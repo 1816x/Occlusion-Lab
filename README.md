@@ -49,4 +49,10 @@ The simplified pose uses meters internally: opening `0–0.25 m` (neutral `0.25 
 
 The guided “move from separation to first contact” checkpoint advances only after validated worker results show separation, then touching with contacts, then contacts after at least 5 mm of lateral or protrusive movement. Progress lasts only in React state for the current browser session.
 
+### Phase 2.1 synchronization
+
+Every control change immediately receives a monotonically increasing **desired revision**. A single animation-frame callback coalesces a burst and dispatches only its newest immutable pose snapshot, so dispatched sequences may contain gaps. As soon as revision N+1 is desired, a result for N is stale even if N+1 has not been posted yet. While waiting, the UI clears the prior result and contacts, reports that evaluation is pending, and pauses lesson advancement.
+
+Accepted results are correlated by request ID, revision, fixture, generation, and the dispatched pose snapshot. The returned `requestedPose`—not mutable control state—is used for lesson progression, while the returned transform remains the sole authority for Three.js. Reset/retry increments a lesson generation and silently ignores its invalidated in-flight responses. Older revisions are also ignored; malformed payloads, unsolicited current-generation responses, Worker errors, and message-deserialization errors remain visible boundary failures. These rules do not change the synthetic, educational, non-clinical scope.
+
 Interactive contact points and normals come from Rapier manifolds and are converted from collider-local to world coordinates, sorted, deduplicated at `1e-5 m`, and capped at 32. Marker color means touching or geometric penetration only. It is not force, pressure, stress, severity, diagnosis, or treatment advice. Rapier's selected trimesh API does not provide a reliable arbitrary separated-mesh distance, so interactive clearance is explicitly unavailable rather than displayed as zero. The aligned planar Phase 1.1 `0.41 m` regression remains separate and valid only for that fixture/query.
