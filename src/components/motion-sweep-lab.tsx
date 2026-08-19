@@ -12,6 +12,7 @@ import {
   formatSweepProgress,
   selectCachedFrame,
 } from "./sweep-frame-presentation";
+import { sweepFrameForNavigationKey } from "./sweep-frame-keyboard-navigation";
 
 type MotionSweepLabProps = {
   workerReady: boolean;
@@ -48,6 +49,14 @@ export function MotionSweepLab({
     if (!canExport || !sweep) return;
     onExport(format, sweep);
     setExportStatus({ sweep, format });
+  };
+
+  const navigateTimeline = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!sweep) return;
+    const nextFrame = sweepFrameForNavigationKey(event.key, inspectedFrameIndex, sweep.frameCount);
+    if (nextFrame === null) return;
+    event.preventDefault();
+    if (nextFrame !== inspectedFrameIndex) onInspectFrame(nextFrame);
   };
 
   return (
@@ -98,13 +107,19 @@ export function MotionSweepLab({
             Timeline: frame {inspectedFrameIndex + 1} of {sweep.frameCount}
             <input
               aria-label="Sweep timeline"
+              aria-describedby="sweep-timeline-instructions"
+              aria-valuetext={`Frame ${inspectedFrameIndex + 1} of ${sweep.frameCount}, contact classification: ${inspected.classification}`}
               type="range"
               min="0"
               max={sweep.frameCount - 1}
               value={inspectedFrameIndex}
               onChange={(event) => onInspectFrame(Number(event.target.value))}
+              onKeyDown={navigateTimeline}
             />
           </label>
+          <p id="sweep-timeline-instructions" className="timelineInstructions">
+            Use arrow keys for adjacent frames, Home or End for the first or last frame, and Page Up or Page Down for larger jumps.
+          </p>
           <div className="timelineTicks" role="list" aria-label="Frame contact classifications">
             {sweep.frames.map((frame) => {
               const presentation = classificationPresentation(frame.classification);
