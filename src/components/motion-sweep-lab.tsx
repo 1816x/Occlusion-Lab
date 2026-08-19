@@ -120,15 +120,22 @@ export function MotionSweepLab({
           <p id="sweep-timeline-instructions" className="timelineInstructions">
             Use arrow keys for adjacent frames, Home or End for the first or last frame, and Page Up or Page Down for larger jumps.
           </p>
+          <div className="timelineLegend" aria-label="Timeline classification legend">
+            <span><i className="separated" aria-hidden="true" />Separated</span>
+            <span><i className="touching" aria-hidden="true" />Touching</span>
+            <span><i className="penetrating" aria-hidden="true" />Penetrating</span>
+          </div>
           <div className="timelineTicks" role="list" aria-label="Frame contact classifications">
             {sweep.frames.map((frame) => {
               const presentation = classificationPresentation(frame.classification);
+              const isInspected = frame.frameIndex === inspected.frameIndex;
               return (
               <span
                 role="listitem"
                 title={`Frame ${frame.frameIndex + 1}: ${frame.classification}`}
                 aria-label={`Frame ${frame.frameIndex + 1}: ${frame.classification}`}
-                className={presentation.cssClass}
+                aria-current={isInspected ? "step" : undefined}
+                className={`${presentation.cssClass}${isInspected ? " inspectedFrame" : ""}`}
                 key={frame.frameIndex}
               />
               );

@@ -51,6 +51,26 @@ describe("Motion Sweep Lab exports", () => {
 });
 
 describe("Motion Sweep Lab timeline accessibility", () => {
+  it("marks exactly the inspected tick as the current step and updates the marker", () => {
+    const { rerender } = render(<MotionSweepLab workerReady preset="closing" frameCount={2} sweep={sweep} pending={false} inspectedFrameIndex={0} onPresetChange={vi.fn()} onFrameCountChange={vi.fn()} onRunSweep={vi.fn()} onInspectFrame={vi.fn()} onExport={vi.fn()} />);
+    const ticks = screen.getAllByRole("listitem");
+    expect(ticks.filter((tick) => tick.getAttribute("aria-current") === "step")).toEqual([ticks[0]]);
+    expect(ticks[0]!.classList.contains("inspectedFrame")).toBe(true);
+
+    rerender(<MotionSweepLab workerReady preset="closing" frameCount={2} sweep={sweep} pending={false} inspectedFrameIndex={1} onPresetChange={vi.fn()} onFrameCountChange={vi.fn()} onRunSweep={vi.fn()} onInspectFrame={vi.fn()} onExport={vi.fn()} />);
+    expect(ticks.filter((tick) => tick.getAttribute("aria-current") === "step")).toEqual([ticks[1]]);
+    expect(ticks[0]!.classList.contains("inspectedFrame")).toBe(false);
+    expect(ticks[1]!.classList.contains("inspectedFrame")).toBe(true);
+  });
+
+  it("shows labels for every timeline classification", () => {
+    renderLab(sweep);
+    const legend = screen.getByLabelText("Timeline classification legend");
+    expect(legend.textContent).toContain("Separated");
+    expect(legend.textContent).toContain("Touching");
+    expect(legend.textContent).toContain("Penetrating");
+  });
+
   it("describes the current value with frame position and contact classification", () => {
     renderLab(sweep);
     const timeline = screen.getByRole("slider", { name: "Sweep timeline" });
