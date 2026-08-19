@@ -8,7 +8,6 @@ import {
   NEUTRAL_POSE,
   POSE_LIMITS,
   metersToMillimeters,
-  SWEEP_PRESETS,
   type AppliedTransform,
   type CollisionMeshPayload,
   type MandibularPose,
@@ -18,6 +17,10 @@ import {
 } from "@/physics/worker-contract";
 import { PoseResponseCoordinator, workerBoundaryError } from "@/physics/ui-response-gate";
 import { advanceLesson, type LessonStage } from "@/physics/lesson";
+import { MotionSweepLab } from "@/components/motion-sweep-lab";
+import { selectCachedFrame } from "@/components/sweep-frame-presentation";
+import { downloadSweepExport, type SweepDownloadFormat } from "@/components/sweep-download";
+import { createSweepCsvExport, createSweepJsonExport } from "@/physics/sweep-export";
 
 const FIXTURE_ID = "phase1-opposing-occlusal-surfaces";
 const SEPARATED = NEUTRAL_POSE;
@@ -347,13 +350,18 @@ export function ThreeScene() {
   };
   const inspectFrame = (index: number) => {
     if(!sweep) return;
-    const frame=sweep.frames[Math.max(0,Math.min(index,sweep.frames.length-1))]!;
+    const frame=selectCachedFrame(sweep,index);
+    if (!frame) return;
     setSweepFrame(frame.frameIndex);
     applyTransform(mandibleRef.current,frame.appliedTransform);
     renderContactsRef.current(frame.contactSamples);
   };
-  const inspected=sweep?.frames[sweepFrame];
-
+  const exportSweep = (format: SweepDownloadFormat, completedSweep: SweepResult) => {
+    const content = format === "json"
+      ? createSweepJsonExport(completedSweep)
+      : createSweepCsvExport(completedSweep);
+    downloadSweepExport(content, completedSweep.preset, completedSweep.frameCount, format);
+  };
   return (
     <div className="phase2">
       <div ref={hostRef} className="sceneHost" aria-label="Synthetic Three.js contact scene" />
@@ -414,24 +422,7 @@ export function ThreeScene() {
           diagnosis, or treatment planning.
         </p>
       </section>
-      <section className="sweepLab" aria-labelledby="sweep-heading">
-        <h2 id="sweep-heading">Motion Sweep Lab</h2>
-        <p>Inspect a bounded synthetic geometric sequence. These paths are not anatomically accurate.</p>
-        <div className="sweepSetup">
-          <label>Preset<select value={sweepPreset} onChange={e=>setSweepPreset(e.target.value as SweepPreset)}>{SWEEP_PRESETS.map(p=><option key={p} value={p}>{p}</option>)}</select></label>
-          <label>Frames<select value={sweepFrameCount} onChange={e=>setSweepFrameCount(Number(e.target.value))}>{[11,21,31,61].map(n=><option key={n}>{n}</option>)}</select></label>
-          <button disabled={workerState!=="ready"||sweepPending} onClick={runSweep}>{sweepPending?"Evaluating…":"Run sweep"}</button>
-        </div>
-        {sweep && inspected && <>
-          <label className="timeline">Timeline: frame {sweepFrame+1} of {sweep.frameCount}
-            <input aria-label="Sweep timeline" type="range" min="0" max={sweep.frameCount-1} value={sweepFrame} onChange={e=>inspectFrame(Number(e.target.value))}/>
-          </label>
-          <div className="timelineTicks" role="list" aria-label="Frame contact classifications">{sweep.frames.map(f=><span role="listitem" title={`Frame ${f.frameIndex+1}: ${f.classification}`} aria-label={`Frame ${f.frameIndex+1}: ${f.classification}`} className={f.classification} key={f.frameIndex}/>)}</div>
-          <div className="buttons"><button disabled={sweepFrame===0} onClick={()=>inspectFrame(sweepFrame-1)}>Previous frame</button><button disabled={sweepFrame===sweep.frameCount-1} onClick={()=>inspectFrame(sweepFrame+1)}>Next frame</button></div>
-          <p>Progress {(inspected.progress*100).toFixed(1)}% · pose {metersToMillimeters(inspected.requestedPose.openingMeters).toFixed(1)} mm opening, {metersToMillimeters(inspected.requestedPose.protrusionMeters).toFixed(1)} mm Z, {metersToMillimeters(inspected.requestedPose.lateralMeters).toFixed(1)} mm X · <b>{inspected.classification}</b> · {inspected.contactCount} contacts · {metersToMillimeters(inspected.penetrationDepthMeters).toFixed(3)} mm geometric penetration.</p>
-          <p>Summary: {sweep.summary.contactFrameCount}/{sweep.summary.totalFrameCount} frames contain contact; first {sweep.summary.firstContactFrame===null?"none":sweep.summary.firstContactFrame+1}; last {sweep.summary.lastContactFrame===null?"none":sweep.summary.lastContactFrame+1}; maximum geometric penetration {metersToMillimeters(sweep.summary.maximumPenetrationMeters).toFixed(3)} mm at frame {sweep.summary.maximumPenetrationFrame+1}; persists through final frame: {sweep.summary.contactPersistsThroughFinalFrame?"yes":"no"}.</p>
-        </>}
-      </section>
+      <MotionSweepLab workerReady={workerState === "ready"} preset={sweepPreset} frameCount={sweepFrameCount} sweep={sweep} pending={sweepPending} inspectedFrameIndex={sweepFrame} onPresetChange={setSweepPreset} onFrameCountChange={setSweepFrameCount} onRunSweep={runSweep} onInspectFrame={inspectFrame} onExport={exportSweep} />
     </div>
   );
 }
