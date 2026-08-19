@@ -64,3 +64,26 @@ The Motion Sweep Lab requests one of four synthetic presets (`closing`, `protrus
 Live pose and sweep generations are isolated: beginning either mode invalidates older in-flight work, late invalidated responses are ignored, and uncorrelated current responses are errors. Scrubbing applies cached, validated Worker transforms and samples without issuing physics work. Only the latest sweep is retained.
 
 All geometry and motion ranges are synthetic educational fixtures. They are not anatomically accurate and do not represent patient data, diagnosis, treatment planning, force, pressure, stress, or bite quality.
+
+## Phase 3.1 — deterministic sweep exports
+
+After the latest sweep has completed validation, the Motion Sweep Lab can download either a complete JSON document or a compact CSV table. Export controls remain disabled before completion and while a newer sweep is pending. JSON preserves the Worker summary, final pose, every frame, applied transforms, measurements, and bounded contact samples. CSV deliberately provides only one summary row per frame and excludes contact samples.
+
+JSON schema version 1 has this fixed top-level order:
+
+```text
+schemaVersion, workerProtocolVersion, fixtureId, preset, frameCount,
+summary, finalPose, frames
+```
+
+Each `frames[]` entry contains, in order, `frameIndex`, `progress`, `requestedPose`, `appliedTransform`, `classification`, `measurementStatus`, `clearanceMeters`, `contactCount`, `penetrationDepthMeters`, and `contactSamples`. `requestedPose` contains `openingMeters`, `protrusionMeters`, and `lateralMeters`; `appliedTransform` contains `translationMeters` (`x`, `y`, `z`) and `rotationQuaternion` (`x`, `y`, `z`, `w`). Each bounded sample contains the protocol-v4 fields `id`, `pointWorldMeters`, `normalWorld`, `signedDistanceMeters`, `penetrationDepthMeters`, `surfaces`, and `units`. `summary` and `finalPose` are the validated Worker-returned values documented by protocol v4.
+
+CSV uses this exact fixed header:
+
+```csv
+frame_index,progress,opening_meters,protrusion_meters,lateral_meters,translation_x_meters,translation_y_meters,translation_z_meters,classification,contact_count,penetration_depth_meters
+```
+
+Both serializers omit timestamps, random IDs, and request sequence IDs; serialize numbers without locale formatting; use LF line endings and a final newline; and produce byte-identical output for identical validated results. JSON uses two-space indentation and stable property order. CSV uses RFC-compatible field escaping and intentionally does not flatten contact samples. Filenames are `occlusion-lab-{preset}-{frameCount}-frames.json` and `.csv`.
+
+Exports contain synthetic geometric Worker results only. Penetration is geometric overlap—not force, pressure, stress, clinical severity, or bite quality. These files contain no patient data and are not clinical reports, diagnoses, or treatment guidance.
