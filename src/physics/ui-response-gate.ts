@@ -56,6 +56,16 @@ export class PoseResponseCoordinator {
     this.pendingRequests.set(id, { kind: "other", generation: this.generation });
   }
 
+  /** Invalidates in-flight work without scheduling a replacement request. */
+  invalidatePending() {
+    this.generation += 1;
+    for (const id of this.pendingRequests.keys()) this.invalidatedIds.add(id);
+    this.pendingRequests.clear();
+    if (this.scheduledFrame !== undefined) this.options.scheduler.cancel(this.scheduledFrame);
+    this.scheduledFrame = undefined;
+    this.desired = undefined;
+  }
+
   desire(pose: MandibularPose) {
     const snapshot = copyPose(pose);
     this.desiredRevision += 1;
@@ -69,12 +79,7 @@ export class PoseResponseCoordinator {
   }
 
   reset(pose: MandibularPose) {
-    this.generation += 1;
-    for (const id of this.pendingRequests.keys()) this.invalidatedIds.add(id);
-    this.pendingRequests.clear();
-    if (this.scheduledFrame !== undefined) this.options.scheduler.cancel(this.scheduledFrame);
-    this.scheduledFrame = undefined;
-    this.desired = undefined;
+    this.invalidatePending();
     return this.desire(pose);
   }
 

@@ -8,10 +8,13 @@ import {
   NEUTRAL_POSE,
   POSE_LIMITS,
   metersToMillimeters,
+  SWEEP_PRESETS,
   type AppliedTransform,
   type CollisionMeshPayload,
   type MandibularPose,
   type PoseResult,
+  type SweepPreset,
+  type SweepResult,
 } from "@/physics/worker-contract";
 import { PoseResponseCoordinator, workerBoundaryError } from "@/physics/ui-response-gate";
 import { advanceLesson, type LessonStage } from "@/physics/lesson";
@@ -61,6 +64,7 @@ export function ThreeScene() {
   const workerRef = useRef<Worker | null>(null);
   const mandibleRef = useRef<THREE.Mesh | null>(null);
   const clearContactsRef = useRef<() => void>(() => undefined);
+  const renderContactsRef = useRef<(samples: PoseResult["contactSamples"]) => void>(() => undefined);
   const separatedTransformRef = useRef<AppliedTransform | null>(null);
 
   const [asset, setAsset] = useState("loading");
@@ -70,6 +74,14 @@ export function ThreeScene() {
   const [result, setResult] = useState<PoseResult | null>(null);
   const [pending, setPending] = useState(true);
   const [lesson, setLesson] = useState<LessonStage>("start");
+  const [sweepPreset, setSweepPreset] = useState<SweepPreset>("closing");
+  const [sweepFrameCount, setSweepFrameCount] = useState(31);
+  const [sweep, setSweep] = useState<SweepResult | null>(null);
+  const [sweepPending, setSweepPending] = useState(false);
+  const [sweepFrame, setSweepFrame] = useState(0);
+  const sweepSequenceRef = useRef(0);
+  const sweepRequestRef = useRef<string | null>(null);
+  const sweepExpectedRef = useRef<{sequence:number;preset:SweepPreset;frameCount:number}|null>(null);
 
   const [coordinator] = useState(
     () =>
@@ -91,6 +103,10 @@ export function ThreeScene() {
 
   const sendPose = useCallback(
     (next: MandibularPose) => {
+      coordinator.invalidatePending();
+      sweepRequestRef.current = null;
+      setSweepPending(false);
+      setSweep(null);
       coordinator.desire(next);
     },
     [coordinator],
@@ -104,6 +120,9 @@ export function ThreeScene() {
     const separatedTransform = separatedTransformRef.current;
     if (separatedTransform) applyTransform(mandibleRef.current, separatedTransform);
     coordinator.reset(SEPARATED);
+    sweepRequestRef.current = null;
+    setSweep(null);
+    setSweepPending(false);
   };
 
   useEffect(() => {
@@ -143,6 +162,11 @@ export function ThreeScene() {
       markerGeometry.deleteAttribute("color");
     };
     scene.add(markers);
+    renderContactsRef.current = (samples) => {
+      markerGeometry.setAttribute("position", new THREE.BufferAttribute(new Float32Array(samples.flatMap(c=>[c.pointWorldMeters.x,c.pointWorldMeters.y,c.pointWorldMeters.z])),3));
+      markerGeometry.setAttribute("color", new THREE.BufferAttribute(new Float32Array(samples.flatMap(c=>c.penetrationDepthMeters>0?[1,.25,.2]:[.2,1,.7])),3));
+      markerGeometry.setDrawRange(0,samples.length);
+    };
 
     const draco = new DRACOLoader();
     draco.setDecoderPath("/draco/");
@@ -182,6 +206,21 @@ export function ThreeScene() {
         coordinator.desire(NEUTRAL_POSE);
         return;
       }
+      if (response.type === "mandibular-sweep-result") {
+        const expected=sweepExpectedRef.current;
+        if (response.id !== sweepRequestRef.current) return;
+        if (!expected || response.fixtureId!==FIXTURE_ID || response.sequence!==expected.sequence || response.preset!==expected.preset || response.frameCount!==expected.frameCount) {
+          failWorkerBoundary("The physics worker returned an uncorrelated response. No result was applied."); return;
+        }
+        sweepRequestRef.current = null;
+        sweepExpectedRef.current = null;
+        setSweep(response);
+        setSweepPending(false);
+        setSweepFrame(0);
+        applyTransform(mandibleRef.current,response.frames[0]!.appliedTransform);
+        renderContactsRef.current(response.frames[0]!.contactSamples);
+        return;
+      }
       if (response.type !== "mandibular-pose-result") return;
 
       setPose(response.requestedPose);
@@ -197,21 +236,7 @@ export function ThreeScene() {
         separatedTransformRef.current = response.appliedTransform;
       }
 
-      const positions = new Float32Array(
-        response.contactSamples.flatMap((contact) => [
-          contact.pointWorldMeters.x,
-          contact.pointWorldMeters.y,
-          contact.pointWorldMeters.z,
-        ]),
-      );
-      const colors = new Float32Array(
-        response.contactSamples.flatMap((contact) =>
-          contact.penetrationDepthMeters > 0 ? [1, 0.25, 0.2] : [0.2, 1, 0.7],
-        ),
-      );
-      markerGeometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-      markerGeometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
-      markerGeometry.setDrawRange(0, response.contactSamples.length);
+      renderContactsRef.current(response.contactSamples);
     };
 
     loader.load(
@@ -308,6 +333,27 @@ export function ThreeScene() {
     </label>
   );
 
+  const runSweep = () => {
+    coordinator.invalidatePending();
+    const sequence=++sweepSequenceRef.current;
+    const id=`sweep-g${coordinator.currentGeneration}-s${sequence}`;
+    sweepRequestRef.current=id;
+    sweepExpectedRef.current={sequence,preset:sweepPreset,frameCount:sweepFrameCount};
+    setSweep(null);
+    setSweepPending(true);
+    clearContactsRef.current();
+    coordinator.registerRequest(id);
+    workerRef.current?.postMessage({id,type:"evaluate-mandibular-sweep",fixtureId:FIXTURE_ID,sequence,preset:sweepPreset,frameCount:sweepFrameCount});
+  };
+  const inspectFrame = (index: number) => {
+    if(!sweep) return;
+    const frame=sweep.frames[Math.max(0,Math.min(index,sweep.frames.length-1))]!;
+    setSweepFrame(frame.frameIndex);
+    applyTransform(mandibleRef.current,frame.appliedTransform);
+    renderContactsRef.current(frame.contactSamples);
+  };
+  const inspected=sweep?.frames[sweepFrame];
+
   return (
     <div className="phase2">
       <div ref={hostRef} className="sceneHost" aria-label="Synthetic Three.js contact scene" />
@@ -367,6 +413,24 @@ export function ThreeScene() {
           Results describe deterministic synthetic geometry only—not anatomy, biomechanics,
           diagnosis, or treatment planning.
         </p>
+      </section>
+      <section className="sweepLab" aria-labelledby="sweep-heading">
+        <h2 id="sweep-heading">Motion Sweep Lab</h2>
+        <p>Inspect a bounded synthetic geometric sequence. These paths are not anatomically accurate.</p>
+        <div className="sweepSetup">
+          <label>Preset<select value={sweepPreset} onChange={e=>setSweepPreset(e.target.value as SweepPreset)}>{SWEEP_PRESETS.map(p=><option key={p} value={p}>{p}</option>)}</select></label>
+          <label>Frames<select value={sweepFrameCount} onChange={e=>setSweepFrameCount(Number(e.target.value))}>{[11,21,31,61].map(n=><option key={n}>{n}</option>)}</select></label>
+          <button disabled={workerState!=="ready"||sweepPending} onClick={runSweep}>{sweepPending?"Evaluating…":"Run sweep"}</button>
+        </div>
+        {sweep && inspected && <>
+          <label className="timeline">Timeline: frame {sweepFrame+1} of {sweep.frameCount}
+            <input aria-label="Sweep timeline" type="range" min="0" max={sweep.frameCount-1} value={sweepFrame} onChange={e=>inspectFrame(Number(e.target.value))}/>
+          </label>
+          <div className="timelineTicks" role="list" aria-label="Frame contact classifications">{sweep.frames.map(f=><span role="listitem" title={`Frame ${f.frameIndex+1}: ${f.classification}`} aria-label={`Frame ${f.frameIndex+1}: ${f.classification}`} className={f.classification} key={f.frameIndex}/>)}</div>
+          <div className="buttons"><button disabled={sweepFrame===0} onClick={()=>inspectFrame(sweepFrame-1)}>Previous frame</button><button disabled={sweepFrame===sweep.frameCount-1} onClick={()=>inspectFrame(sweepFrame+1)}>Next frame</button></div>
+          <p>Progress {(inspected.progress*100).toFixed(1)}% · pose {metersToMillimeters(inspected.requestedPose.openingMeters).toFixed(1)} mm opening, {metersToMillimeters(inspected.requestedPose.protrusionMeters).toFixed(1)} mm Z, {metersToMillimeters(inspected.requestedPose.lateralMeters).toFixed(1)} mm X · <b>{inspected.classification}</b> · {inspected.contactCount} contacts · {metersToMillimeters(inspected.penetrationDepthMeters).toFixed(3)} mm geometric penetration.</p>
+          <p>Summary: {sweep.summary.contactFrameCount}/{sweep.summary.totalFrameCount} frames contain contact; first {sweep.summary.firstContactFrame===null?"none":sweep.summary.firstContactFrame+1}; last {sweep.summary.lastContactFrame===null?"none":sweep.summary.lastContactFrame+1}; maximum geometric penetration {metersToMillimeters(sweep.summary.maximumPenetrationMeters).toFixed(3)} mm at frame {sweep.summary.maximumPenetrationFrame+1}; persists through final frame: {sweep.summary.contactPersistsThroughFinalFrame?"yes":"no"}.</p>
+        </>}
       </section>
     </div>
   );
