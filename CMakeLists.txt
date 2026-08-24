@@ -1,0 +1,58 @@
+cmake_minimum_required(VERSION 3.25)
+
+project(OcclusionLab VERSION 0.4.0 LANGUAGES CXX)
+
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+option(OCCLUSION_BUILD_TESTS "Build native tests" ON)
+option(OCCLUSION_FETCH_DEPENDENCIES "Fetch pinned lightweight dependencies" ON)
+
+if(OCCLUSION_BUILD_TESTS)
+  include(CTest)
+endif()
+
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+include(ProjectWarnings)
+
+if(OCCLUSION_FETCH_DEPENDENCIES)
+  include(FetchContent)
+  set(EIGEN_BUILD_DOC OFF CACHE BOOL "" FORCE)
+  set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
+  FetchContent_Declare(
+    Eigen3
+    URL https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.gz
+    URL_HASH SHA256=8586084f71f9bde545ee7fa6d00288b264a2b7ac3607b974e54d13e7162c1c72
+    SYSTEM EXCLUDE_FROM_ALL)
+  FetchContent_MakeAvailable(Eigen3)
+  if(OCCLUSION_BUILD_TESTS)
+    set(BUILD_TESTING ON CACHE BOOL "" FORCE)
+  endif()
+else()
+  find_package(Eigen3 3.4 CONFIG REQUIRED)
+endif()
+
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/native/libs/occlusion-core/CMakeLists.txt")
+  add_subdirectory(native/libs/occlusion-core)
+endif()
+
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/native/apps/occlusion-cli/CMakeLists.txt")
+  add_subdirectory(native/apps/occlusion-cli)
+endif()
+
+if(OCCLUSION_BUILD_TESTS AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/native/tests/core/CMakeLists.txt")
+  if(OCCLUSION_FETCH_DEPENDENCIES)
+    FetchContent_Declare(
+      googletest
+      URL https://github.com/google/googletest/archive/refs/tags/v1.15.2.tar.gz
+      URL_HASH SHA256=7b42b4d6ed48810c5362c265a17faebe90dc2373c885e5216439d37927f02926
+      SYSTEM EXCLUDE_FROM_ALL)
+    set(INSTALL_GTEST OFF CACHE BOOL "" FORCE)
+    FetchContent_MakeAvailable(googletest)
+  else()
+    find_package(GTest CONFIG REQUIRED)
+  endif()
+  add_subdirectory(native/tests/core)
+endif()

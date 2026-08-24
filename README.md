@@ -2,6 +2,26 @@
 
 Occlusion Lab is a **work in progress** educational browser sandbox for synthetic dental-occlusion visualization experiments. It is not a medical device, not clinical decision-support software, and not suitable for diagnosis or treatment planning.
 
+## C++ migration (Phase 4)
+
+The project is migrating toward a C++20, desktop-first scientific architecture. The existing Next.js/React/Three.js application remains intact as the temporary behavioral reference; no C++ parity or clinical validation is claimed. The current native scope is deliberately limited to `occlusion-core`, a deterministic CLI, and tests. CGAL/FCL geometry and collision modules plus Qt 6/VTK presentation are planned, not implemented.
+
+[`PLAN.md`](PLAN.md) is the concise source of truth for migration status, verification results, risks, and the single next task. The architectural rationale is recorded in [ADR-0001](docs/adr/0001-cpp-desktop-architecture.md).
+
+### Native configure, build, and test
+
+The default presets fetch pinned Eigen and GoogleTest sources. They require CMake 3.25+, Ninja, a C++20 compiler, and network access on the first configure. A vcpkg manifest with a pinned baseline is also available for package-managed builds.
+
+```bash
+cmake --preset native-debug
+cmake --build --preset native-debug --parallel
+ctest --preset native-debug --output-on-failure
+cmake --preset native-release
+cmake --build --preset native-release --parallel
+```
+
+Scientific lengths inside the native domain use `double` meters. Millimeter values are a distinct type and conversion is explicit. Phase 4 does not import files, calculate collisions or biomechanics, render with VTK, or provide a Qt interface. The next migration stage is the first versioned golden fixture comparing TypeScript reference behavior with native contracts.
+
 ## Phase 1 scope
 
 - Loads an original project-owned compressed GLB fixture of low-poly opposing occlusal surfaces with Three.js `GLTFLoader` and `DRACOLoader`.
