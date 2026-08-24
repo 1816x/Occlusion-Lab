@@ -1,6 +1,14 @@
 # Architecture
 
-## Runtime structure
+## Target architecture and migration boundary
+
+The target is a desktop-first C++20 system whose scientific engine is independent of presentation. Phase 4 currently provides the `occlusion-core` static library (typed units, domain contracts, and validation), `occlusion-cli` (version and self-check), GoogleTest/CTest coverage, CMake presets, and native CI. Internal scientific lengths are `double` meters; millimeter conversion is explicit.
+
+CGAL mesh processing, FCL collision/distance queries, motion analysis, VTK rendering, and the Qt 6 desktop UI are planned modules only. None is linked into `occlusion-core`. This dependency boundary keeps the core reusable by CLI, tests, and the future desktop application without UI, filesystem, networking, or rendering concerns.
+
+The browser runtime documented below remains the legacy behavioral reference during incremental migration. Its Worker physics, exports, tolerances, and UI are not replaced in Phase 4. Removal requires golden-result parity and a replacement desktop interface. Current status and verification are maintained in [`PLAN.md`](../PLAN.md), with rationale in [ADR-0001](adr/0001-cpp-desktop-architecture.md). All current data and behavior remain synthetic and educational, without clinical validation.
+
+## Legacy web runtime structure
 
 Occlusion Lab is a client-rendered Next.js application with three separated layers:
 
