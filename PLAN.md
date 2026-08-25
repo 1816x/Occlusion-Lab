@@ -6,14 +6,14 @@ Occlusion Lab pretende convertirse en una aplicación científica de escritorio 
 
 ## 2. Estado actual
 
-- **Fase actual:** Phase 4: C++ Engine Migration Foundation
-- **Estado:** Blocked
-- **Rama y commit iniciales:** `main` en `b35bf53cdc5df735d09e65e3cf75a71be69b209c`
-- **Rama activa:** `codex/phase-4-cpp-migration-foundation`
-- **Pull request:** Pending
-- **Última actualización significativa:** 2026-08-24 — verificación local completada; publicación bloqueada por ausencia de credenciales GitHub.
+- **Fase actual:** Phase 4.1: Golden Pose Fixtures and C++ Contract Parity
+- **Estado:** In progress
+- **Rama y commit iniciales:** `main` en `11ca272b18467ef0a44140b14e075a311dbb6139`
+- **Rama activa:** `codex/phase-4.1-pose-golden-parity`
+- **Pull request de Phase 4.1:** no abierto; publicación bloqueada (véase §7)
+- **Última actualización significativa:** 2026-08-25 — implementación y verificación local de Phase 4.1 completadas; PR todavía sin abrir, por lo que la fase permanece `In progress`.
 
-La aplicación web heredada continúa disponible y funcional como referencia. La fundación nativa configura y compila en Debug/Release, `occlusion-core` ofrece unidades fuertes y validación, la CLI ejecuta su autocomprobación determinista y las 17 pruebas CTest pasan. Existe CI multiplataforma, pero no se pudo publicar la rama ni abrir el draft PR porque el entorno no tiene credenciales GitHub.
+La aplicación web heredada continúa disponible y funcional como referencia. La fundación nativa configura y compila en Debug/Release, `occlusion-core` ofrece unidades fuertes y validación, la CLI ejecuta su autocomprobación determinista y las 17 pruebas CTest pasan. Phase 4 se completó mediante el PR [#10](https://github.com/1816x/Occlusion-Lab/pull/10), mergeado como `11ca272b18467ef0a44140b14e075a311dbb6139`. La verificación local registró 17/17 CTest y 62/62 Vitest. El CI web remoto fue exitoso; el workflow nativo remoto falló y no se presenta como verificado.
 
 ## 3. Estado de arquitectura
 
@@ -49,7 +49,7 @@ La aplicación web heredada continúa disponible y funcional como referencia. La
 - [x] Ejecutar `npm ci`, lint, typecheck, test, verificaciones de assets/Rapier, build y audit.
 - [x] Verificar ausencia de artefactos, rutas locales, binarios nuevos y dependencias prohibidas en core.
 - [x] Preservar sin cambios funcionales la aplicación web, Worker, schemas y tolerancias.
-- [ ] Abrir el draft PR requerido con resultados reales y siete commits.
+- [x] Abrir y fusionar el PR de Phase 4: https://github.com/1816x/Occlusion-Lab/pull/10.
 
 ## 5. Matriz de verificación
 
@@ -71,7 +71,16 @@ La aplicación web heredada continúa disponible y funcional como referencia. La
 | `find native -type f \\( -name '*.cpp' -o -name '*.hpp' \\) -print0 \| xargs -0 clang-format --dry-run --Werror` | PASS | 2026-08-24 | Formato nativo verificado. |
 | `git ls-files 'build/**' 'public/generated/**'` | PASS | 2026-08-24 | Sin artefactos de build rastreados. |
 | `git grep -nE 'Qt|VTK|CGAL|FCL|React|Three' -- native/libs/occlusion-core` | PASS | 2026-08-24 | Sin dependencias prohibidas en core. |
-| `git push -u origin codex/phase-4-cpp-migration-foundation` | BLOCKED | 2026-08-24 | Error exacto: `fatal: could not read Username for 'https://github.com': No such device or address`; `gh auth status` confirma que no existe sesión. |
+
+### Verificación local de Phase 4.1 (2026-08-25)
+
+- Native Debug configure/build y CTest: PASS, 22/22.
+- Native Release configure/build: PASS.
+- Vitest: PASS, 13 archivos y 66/66 pruebas.
+- `npm ci`, `parity:verify`, lint, typecheck, assets, Rapier-thread, build y audit: PASS (0 vulnerabilidades).
+- Formato nativo: PASS.
+- Fixture dorado: 16 casos (10 válidos, 6 inválidos), tolerancia `1e-12` metros.
+- Rama: `codex/phase-4.1-pose-golden-parity`; inicio: `11ca272b18467ef0a44140b14e075a311dbb6139`.
 
 ## 6. Decisiones
 
@@ -83,16 +92,16 @@ La aplicación web heredada continúa disponible y funcional como referencia. La
 
 ## 7. Bloqueos y riesgos
 
-- Bloqueo activo: el entorno no tiene credenciales GitHub; `git push -u origin codex/phase-4-cpp-migration-foundation` falla con `fatal: could not read Username for 'https://github.com': No such device or address`, por lo que el draft PR no puede abrirse desde esta sesión.
-- Riesgo: todavía no existen fixtures dorados que permitan afirmar paridad entre TypeScript y C++.
-- Riesgo: Qt, VTK, CGAL y FCL se han seleccionado pero no se validan ni integran funcionalmente en esta fase.
+- Bloqueo de publicación actual (2026-08-25): `git push -u origin codex/phase-4.1-pose-golden-parity` falla exactamente con `fatal: could not read Username for 'https://github.com': No such device or address`; `gh auth status` indica que no hay sesión. Por ello no existe todavía URL real de PR ni resultados CI de Phase 4.1. Esto no restaura el blocker obsoleto de Phase 4, que quedó resuelto mediante PR #10; describe una limitación real de esta sesión nueva.
+- Riesgo: la paridad cubre únicamente el contrato de pose descrito; no permite afirmar paridad de colisión, contacto, barrido ni clínica.
+- Riesgo: Qt, VTK, CGAL y FCL permanecen diferidos.
 
 ## 8. Próxima tarea recomendada
 
-Crear el primer fixture dorado versionado de conversión/validación de una pose mandibular desde la implementación TypeScript y ejecutarlo contra `occlusion-core` como inicio de las pruebas de paridad.
+Phase 4.2: port deterministic motion-sweep endpoint and interpolation generation to C++ using new versioned golden fixtures.
 
 ## 9. Hitos completados
 
 | Fase | Resultado | Commit o PR | Estado de verificación |
 |---|---|---|---|
-| Phase 4 | Fundación C++20, core, CLI, pruebas y CI | Draft PR blocked | Verificación local completa; publicación y CI remota bloqueadas. |
+| Phase 4 | Fundación C++20, core, CLI, pruebas y CI | [PR #10](https://github.com/1816x/Occlusion-Lab/pull/10), merge `11ca272b18467ef0a44140b14e075a311dbb6139` | Completada; 17/17 CTest y 62/62 Vitest locales; CI web remoto exitoso, workflow nativo remoto fallido. |

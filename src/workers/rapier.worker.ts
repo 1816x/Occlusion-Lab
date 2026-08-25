@@ -1,10 +1,11 @@
 import RAPIER from "@dimforge/rapier3d-compat";
 import { SYNTHETIC_COLLISION_EXPECTED, SYNTHETIC_COLLISION_FIXTURE_NAME, SYNTHETIC_COLLISION_STEPS, SYNTHETIC_COLLISION_TIMESTEP_SECONDS } from "@/test-fixtures/synthetic-collision";
 import { sweepPoses, summarizeSweep } from "./sweep-science";
+import { mandibularTransform } from "@/physics/mandibular-pose-reference";
+export { MANDIBLE_CLOSED_TRANSLATION_Y_METERS, mandibularTransform } from "@/physics/mandibular-pose-reference";
 import { CONTACT_DEDUPLICATION_TOLERANCE_METERS, MAX_CONTACT_SAMPLES, WORKER_PROTOCOL_VERSION, isPhysicsWorkerRequest, type CollisionMeshPayload, type ContactSample, type MandibularPose, type Phase1ContactResult, type PhysicsWorkerRequest, type PhysicsWorkerResponse, type PoseResult, type SweepResult } from "@/physics/worker-contract";
 
 export const CONTACT_TOLERANCE_METERS = 1e-6;
-export const MANDIBLE_CLOSED_TRANSLATION_Y_METERS = 0.16;
 let rapierReady: Promise<typeof RAPIER> | undefined;
 const ensureRapier = async () => { rapierReady ??= RAPIER.init().then(() => RAPIER); return rapierReady; };
 const round = (n: number) => Number(n.toFixed(6));
@@ -66,7 +67,6 @@ export async function runPhase1ContactQuery(request: Extract<PhysicsWorkerReques
 type Session = { fixtureId: string; world: RAPIER.World; maxilla: RAPIER.Collider; mandible: RAPIER.Collider; mandibleBody: RAPIER.RigidBody };
 let session: Session | undefined;
 export const resetInteractiveSessionForTests = () => { session = undefined; };
-export function mandibularTransform(pose: MandibularPose) { return { translationMeters: { x: pose.lateralMeters, y: MANDIBLE_CLOSED_TRANSLATION_Y_METERS - pose.openingMeters, z: pose.protrusionMeters }, rotationQuaternion: { x: 0, y: 0, z: 0, w: 1 } }; }
 export async function initializeOcclusionFixture(request: Extract<PhysicsWorkerRequest,{type:"initialize-occlusion-fixture"}>) {
   const rapier = await ensureRapier();
   const world = new rapier.World({x:0,y:0,z:0});

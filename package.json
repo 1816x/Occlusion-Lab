@@ -15,7 +15,9 @@
     "test": "vitest run && npm run check:rapier-thread",
     "assets:generate": "node scripts/generate-phase1-fixture.mjs",
     "assets:verify": "npm run assets:generate && node scripts/verify-phase1-fixture.mjs",
-    "check:rapier-thread": "node scripts/checks/no-main-thread-rapier.mjs"
+    "check:rapier-thread": "node scripts/checks/no-main-thread-rapier.mjs",
+    "parity:generate": "node scripts/parity/cli.mjs generate",
+    "parity:verify": "node scripts/parity/cli.mjs verify"
   },
   "dependencies": {
     "@dimforge/rapier3d-compat": "^0.17.3",

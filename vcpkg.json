@@ -5,16 +5,39 @@
   "builtin-baseline": "f3457518c19c4efdb3b9307a8bb4e27d4b989933",
   "dependencies": [
     "eigen3",
-    { "name": "gtest", "host": true }
+    {
+      "name": "gtest",
+      "host": true
+    },
+    {
+      "name": "nlohmann-json",
+      "host": true
+    }
   ],
   "features": {
-    "geometry": { "description": "Future robust mesh processing", "dependencies": ["cgal"] },
-    "collision": { "description": "Future collision and distance queries", "dependencies": ["fcl"] },
+    "geometry": {
+      "description": "Future robust mesh processing",
+      "dependencies": [
+        "cgal"
+      ]
+    },
+    "collision": {
+      "description": "Future collision and distance queries",
+      "dependencies": [
+        "fcl"
+      ]
+    },
     "desktop": {
       "description": "Future Qt 6 and VTK presentation stack",
       "dependencies": [
-        { "name": "qtbase", "default-features": false },
-        { "name": "vtk", "default-features": false }
+        {
+          "name": "qtbase",
+          "default-features": false
+        },
+        {
+          "name": "vtk",
+          "default-features": false
+        }
       ]
     }
   }

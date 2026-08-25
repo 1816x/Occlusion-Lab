@@ -6,6 +6,7 @@ on:
       - ".github/workflows/native.yml"
       - "cmake/**"
       - "native/**"
+      - "fixtures/parity/**"
       - ".clang-format"
       - "CMakeLists.txt"
       - "CMakePresets.json"
