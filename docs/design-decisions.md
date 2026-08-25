@@ -66,3 +66,11 @@ Sweep inspection cannot advance the guided live lesson, and live results cannot 
 - **Determinism:** JSON uses stable property order, two spaces, LF endings, and a final newline. CSV uses fixed English headers, RFC-compatible escaping, LF endings, and a final newline. Both use locale-independent numeric conversion and omit timestamps, random identifiers, and request sequence IDs. Deterministic preset/frame-count filenames contain no run-specific value.
 - **Provenance:** Export values come only from the latest completed `SweepResult` after protocol-v4 runtime validation. Serializers copy values; they do not recalculate transforms, interpolate poses, classify contact, or derive summaries. Downloads occur only after an explicit accessible button action and do not invoke physics.
 - **Limitations:** Exports contain synthetic fixture geometry results, never patient data or downloaded dental assets. Exported penetration depth is geometric overlap, not force, pressure, stress, tissue response, severity, or bite quality. Exports are not clinical reports and are unsuitable for diagnosis or treatment planning.
+
+## Versioned golden pose contract (Phase 4.1)
+
+- The extracted, dependency-free legacy TypeScript mapping is the temporary behavioral reference because it represents the preserved production Worker behavior. It is not a claim that the legacy collision engine is the future native design.
+- Golden JSON has stable ordering, two-space indentation, LF endings, a final newline, no runtime metadata, and a pinned Phase 4 baseline SHA. `npm run parity:verify` compares bytes without writing; `npm run parity:generate` is an explicit rebaseline action requiring review.
+- The explicit numeric tolerance is `1e-12` meters. Pose limits and the closed-mandible Y constant are fixture metadata and native API constants.
+- nlohmann-json 3.11.3 is pinned by version and archive SHA-256 and linked only to native tests. JSON, fixture, filesystem, UI, rendering, and networking concerns are excluded from `occlusion-core`.
+- This decision establishes no collision, contact, sweep, or clinical parity. The legacy web application remains intact and cannot be removed until later parity boundaries and a replacement UI exist.

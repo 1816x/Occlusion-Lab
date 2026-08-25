@@ -107,3 +107,11 @@ frame_index,progress,opening_meters,protrusion_meters,lateral_meters,translation
 Both serializers omit timestamps, random IDs, and request sequence IDs; serialize numbers without locale formatting; use LF line endings and a final newline; and produce byte-identical output for identical validated results. JSON uses two-space indentation and stable property order. CSV uses RFC-compatible field escaping and intentionally does not flatten contact samples. Filenames are `occlusion-lab-{preset}-{frameCount}-frames.json` and `.csv`.
 
 Exports contain synthetic geometric Worker results only. Penetration is geometric overlap—not force, pressure, stress, clinical severity, or bite quality. These files contain no patient data and are not clinical reports, diagnoses, or treatment guidance.
+
+## Phase 4.1 pose golden parity
+
+`fixtures/parity/mandibular-pose-v1.json` is a **golden fixture**: canonical, reviewed bytes that both the legacy TypeScript behavior and native tests execute. The dependency-free TypeScript pose mapping is temporarily authoritative because it is the behavior shipped by the preserved Worker application. The fixture covers only meter/millimeter representation, inclusive pose limits, finite pose acceptance/rejection, structured range fields, translation mapping, and identity rotation. Its comparison tolerance is `1e-12` meters.
+
+Run `npm run parity:generate` only for an intentional rebaseline, then review the fixture and its pinned source baseline. Run `npm run parity:verify` for a read-only byte comparison. Rebaselining is never automatic because an apparently small golden change is a contract change. Native tests parse JSON with pinned nlohmann-json 3.11.3 as a test-only dependency; neither `occlusion-core` nor the CLI links it.
+
+This phase adds no collision, contact, clearance, penetration, sweep, rendering, patient, or clinical functionality. Rapier remains Worker-only, and the legacy web application remains the behavioral reference and cannot yet be removed.

@@ -27,10 +27,28 @@ void append_errors(const std::vector<ValidationError>& source,
 } // namespace
 ValidationResult<MandibularPose> validate(MandibularPose pose) {
   std::vector<ValidationError> errors;
-  require_finite(pose.opening.value(), "opening", errors);
-  require_finite(pose.protrusion.value(), "protrusion", errors);
-  require_finite(pose.lateral_displacement.value(), "lateral_displacement", errors);
+  require_finite(pose.opening.value(), "openingMeters", errors);
+  require_finite(pose.protrusion.value(), "protrusionMeters", errors);
+  require_finite(pose.lateral_displacement.value(), "lateralMeters", errors);
+  const auto require_range = [&errors](Meters value, PoseLimits limits, const char* field) {
+    if (std::isfinite(value.value()) &&
+        (value.value() < limits.minimum.value() || value.value() > limits.maximum.value()))
+      errors.push_back(
+          {ValidationCode::invalid_range, field, "value is outside the inclusive pose limits"});
+  };
+  require_range(pose.opening, opening_limits, "openingMeters");
+  require_range(pose.protrusion, protrusion_limits, "protrusionMeters");
+  require_range(pose.lateral_displacement, lateral_displacement_limits, "lateralMeters");
   return finish(std::move(pose), std::move(errors));
+}
+ValidationResult<RigidTransform> mandibular_pose_to_transform(MandibularPose pose) {
+  const auto validated = validate(pose);
+  if (!validated)
+    return ValidationResult<RigidTransform>::failure(validated.errors());
+  return ValidationResult<RigidTransform>::success(
+      {{pose.lateral_displacement.value(),
+        closed_mandible_translation_y.value() - pose.opening.value(), pose.protrusion.value()},
+       {1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0}});
 }
 ValidationResult<RigidTransform> validate(RigidTransform transform) {
   std::vector<ValidationError> errors;

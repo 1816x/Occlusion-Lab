@@ -15,6 +15,14 @@ struct MandibularPose final {
   Meters protrusion;
   Meters lateral_displacement;
 };
+struct PoseLimits final {
+  Meters minimum;
+  Meters maximum;
+};
+inline constexpr PoseLimits opening_limits{Meters{0.0}, Meters{0.25}};
+inline constexpr PoseLimits protrusion_limits{Meters{0.0}, Meters{0.05}};
+inline constexpr PoseLimits lateral_displacement_limits{Meters{-0.05}, Meters{0.05}};
+inline constexpr Meters closed_mandible_translation_y{0.16};
 struct RigidTransform final {
   Vector3 translation_meters;
   std::array<double, 9> rotation;
@@ -45,6 +53,7 @@ struct SweepSummary final {
   std::size_t contact_frame_count;
 };
 [[nodiscard]] ValidationResult<MandibularPose> validate(MandibularPose pose);
+[[nodiscard]] ValidationResult<RigidTransform> mandibular_pose_to_transform(MandibularPose pose);
 [[nodiscard]] ValidationResult<RigidTransform> validate(RigidTransform transform);
 [[nodiscard]] ValidationResult<ContactSample> validate(ContactSample sample);
 [[nodiscard]] ValidationResult<EvaluationResult> validate(EvaluationResult result);

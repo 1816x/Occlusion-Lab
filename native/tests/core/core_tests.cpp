@@ -45,6 +45,34 @@ TEST(PoseValidation, RejectsPositiveInfinity) {
 TEST(PoseValidation, RejectsNegativeInfinity) {
   EXPECT_FALSE(validate(pose(-std::numeric_limits<double>::infinity())));
 }
+TEST(PoseValidation, AcceptsInclusiveBoundaries) {
+  EXPECT_TRUE(validate(MandibularPose{opening_limits.minimum, protrusion_limits.minimum,
+                                      lateral_displacement_limits.minimum}));
+  EXPECT_TRUE(validate(MandibularPose{opening_limits.maximum, protrusion_limits.maximum,
+                                      lateral_displacement_limits.maximum}));
+}
+TEST(PoseValidation, RejectsEachOutOfRangeFieldWithoutClamping) {
+  const auto opening = validate(MandibularPose{Meters{-0.001}, Meters{0.0}, Meters{0.0}});
+  ASSERT_FALSE(opening);
+  EXPECT_EQ(opening.errors().front().code, ValidationCode::invalid_range);
+  EXPECT_EQ(opening.errors().front().field, "openingMeters");
+  const auto protrusion = validate(MandibularPose{Meters{0.0}, Meters{0.051}, Meters{0.0}});
+  ASSERT_FALSE(protrusion);
+  EXPECT_EQ(protrusion.errors().front().field, "protrusionMeters");
+  const auto lateral = validate(MandibularPose{Meters{0.0}, Meters{0.0}, Meters{-0.051}});
+  ASSERT_FALSE(lateral);
+  EXPECT_EQ(lateral.errors().front().field, "lateralMeters");
+}
+TEST(PoseTransform, MapsLegacyTranslationAndIdentityRotation) {
+  const auto result = mandibular_pose_to_transform({Meters{0.123}, Meters{0.034}, Meters{-0.012}});
+  ASSERT_TRUE(result);
+  EXPECT_DOUBLE_EQ(result.value().translation_meters.x, -0.012);
+  EXPECT_DOUBLE_EQ(result.value().translation_meters.y, 0.16 - 0.123);
+  EXPECT_DOUBLE_EQ(result.value().translation_meters.z, 0.034);
+  EXPECT_EQ(result.value().rotation,
+            (std::array<double, 9>{1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0}));
+  EXPECT_FALSE(mandibular_pose_to_transform({Meters{0.251}, Meters{0.0}, Meters{0.0}}));
+}
 TEST(TransformValidation, AcceptsRigidTransform) {
   const RigidTransform transform{{0.0, 0.0, 0.0}, {1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0}};
   EXPECT_TRUE(validate(transform));

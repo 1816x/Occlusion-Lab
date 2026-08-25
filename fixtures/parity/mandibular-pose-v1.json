@@ -1,0 +1,294 @@
+{
+  "schemaVersion": 1,
+  "legacyBehaviorVersion": "mandibular-pose-v1",
+  "workerProtocolVersion": 4,
+  "sourceImplementation": "src/physics/mandibular-pose-reference.ts",
+  "sourceBaselineCommit": "11ca272b18467ef0a44140b14e075a311dbb6139",
+  "internalUnit": "meters",
+  "poseLimits": {
+    "openingMeters": {
+      "min": 0,
+      "max": 0.25
+    },
+    "protrusionMeters": {
+      "min": 0,
+      "max": 0.05
+    },
+    "lateralMeters": {
+      "min": -0.05,
+      "max": 0.05
+    }
+  },
+  "closedMandibleTranslationYMeters": 0.16,
+  "numericComparisonTolerance": 1e-12,
+  "validCases": [
+    {
+      "id": "neutral-open-pose",
+      "inputPose": {
+        "openingMeters": 0.25,
+        "protrusionMeters": 0,
+        "lateralMeters": 0
+      },
+      "expectedAcceptance": true,
+      "expectedTranslationMeters": {
+        "x": 0,
+        "y": -0.09,
+        "z": 0
+      },
+      "expectedRotationQuaternion": {
+        "x": 0,
+        "y": 0,
+        "z": 0,
+        "w": 1
+      }
+    },
+    {
+      "id": "fully-closed-pose",
+      "inputPose": {
+        "openingMeters": 0,
+        "protrusionMeters": 0,
+        "lateralMeters": 0
+      },
+      "expectedAcceptance": true,
+      "expectedTranslationMeters": {
+        "x": 0,
+        "y": 0.16,
+        "z": 0
+      },
+      "expectedRotationQuaternion": {
+        "x": 0,
+        "y": 0,
+        "z": 0,
+        "w": 1
+      }
+    },
+    {
+      "id": "maximum-opening-boundary",
+      "inputPose": {
+        "openingMeters": 0.25,
+        "protrusionMeters": 0.025,
+        "lateralMeters": 0
+      },
+      "expectedAcceptance": true,
+      "expectedTranslationMeters": {
+        "x": 0,
+        "y": -0.09,
+        "z": 0.025
+      },
+      "expectedRotationQuaternion": {
+        "x": 0,
+        "y": 0,
+        "z": 0,
+        "w": 1
+      }
+    },
+    {
+      "id": "maximum-protrusion-boundary",
+      "inputPose": {
+        "openingMeters": 0.1,
+        "protrusionMeters": 0.05,
+        "lateralMeters": 0
+      },
+      "expectedAcceptance": true,
+      "expectedTranslationMeters": {
+        "x": 0,
+        "y": 0.06,
+        "z": 0.05
+      },
+      "expectedRotationQuaternion": {
+        "x": 0,
+        "y": 0,
+        "z": 0,
+        "w": 1
+      }
+    },
+    {
+      "id": "minimum-left-lateral-boundary",
+      "inputPose": {
+        "openingMeters": 0.1,
+        "protrusionMeters": 0.01,
+        "lateralMeters": -0.05
+      },
+      "expectedAcceptance": true,
+      "expectedTranslationMeters": {
+        "x": -0.05,
+        "y": 0.06,
+        "z": 0.01
+      },
+      "expectedRotationQuaternion": {
+        "x": 0,
+        "y": 0,
+        "z": 0,
+        "w": 1
+      }
+    },
+    {
+      "id": "maximum-right-lateral-boundary",
+      "inputPose": {
+        "openingMeters": 0.1,
+        "protrusionMeters": 0.01,
+        "lateralMeters": 0.05
+      },
+      "expectedAcceptance": true,
+      "expectedTranslationMeters": {
+        "x": 0.05,
+        "y": 0.06,
+        "z": 0.01
+      },
+      "expectedRotationQuaternion": {
+        "x": 0,
+        "y": 0,
+        "z": 0,
+        "w": 1
+      }
+    },
+    {
+      "id": "combined-valid-interior",
+      "inputPose": {
+        "openingMeters": 0.123,
+        "protrusionMeters": 0.034,
+        "lateralMeters": -0.012
+      },
+      "expectedAcceptance": true,
+      "expectedTranslationMeters": {
+        "x": -0.012,
+        "y": 0.037000000000000005,
+        "z": 0.034
+      },
+      "expectedRotationQuaternion": {
+        "x": 0,
+        "y": 0,
+        "z": 0,
+        "w": 1
+      }
+    },
+    {
+      "id": "opening-lower-boundary",
+      "inputPose": {
+        "openingMeters": 0,
+        "protrusionMeters": 0.025,
+        "lateralMeters": 0.01
+      },
+      "expectedAcceptance": true,
+      "expectedTranslationMeters": {
+        "x": 0.01,
+        "y": 0.16,
+        "z": 0.025
+      },
+      "expectedRotationQuaternion": {
+        "x": 0,
+        "y": 0,
+        "z": 0,
+        "w": 1
+      }
+    },
+    {
+      "id": "protrusion-lower-boundary",
+      "inputPose": {
+        "openingMeters": 0.1,
+        "protrusionMeters": 0,
+        "lateralMeters": 0.01
+      },
+      "expectedAcceptance": true,
+      "expectedTranslationMeters": {
+        "x": 0.01,
+        "y": 0.06,
+        "z": 0
+      },
+      "expectedRotationQuaternion": {
+        "x": 0,
+        "y": 0,
+        "z": 0,
+        "w": 1
+      }
+    },
+    {
+      "id": "lateral-lower-with-axis-upper-boundaries",
+      "inputPose": {
+        "openingMeters": 0.25,
+        "protrusionMeters": 0.05,
+        "lateralMeters": -0.05
+      },
+      "expectedAcceptance": true,
+      "expectedTranslationMeters": {
+        "x": -0.05,
+        "y": -0.09,
+        "z": 0.05
+      },
+      "expectedRotationQuaternion": {
+        "x": 0,
+        "y": 0,
+        "z": 0,
+        "w": 1
+      }
+    }
+  ],
+  "invalidCases": [
+    {
+      "id": "opening-below-minimum",
+      "inputPose": {
+        "openingMeters": -0.001,
+        "protrusionMeters": 0,
+        "lateralMeters": 0
+      },
+      "expectedAcceptance": false,
+      "expectedValidationField": "openingMeters",
+      "expectedErrorCategory": "invalid_range"
+    },
+    {
+      "id": "opening-above-maximum",
+      "inputPose": {
+        "openingMeters": 0.251,
+        "protrusionMeters": 0,
+        "lateralMeters": 0
+      },
+      "expectedAcceptance": false,
+      "expectedValidationField": "openingMeters",
+      "expectedErrorCategory": "invalid_range"
+    },
+    {
+      "id": "protrusion-below-minimum",
+      "inputPose": {
+        "openingMeters": 0.1,
+        "protrusionMeters": -0.001,
+        "lateralMeters": 0
+      },
+      "expectedAcceptance": false,
+      "expectedValidationField": "protrusionMeters",
+      "expectedErrorCategory": "invalid_range"
+    },
+    {
+      "id": "protrusion-above-maximum",
+      "inputPose": {
+        "openingMeters": 0.1,
+        "protrusionMeters": 0.051,
+        "lateralMeters": 0
+      },
+      "expectedAcceptance": false,
+      "expectedValidationField": "protrusionMeters",
+      "expectedErrorCategory": "invalid_range"
+    },
+    {
+      "id": "lateral-below-minimum",
+      "inputPose": {
+        "openingMeters": 0.1,
+        "protrusionMeters": 0,
+        "lateralMeters": -0.051
+      },
+      "expectedAcceptance": false,
+      "expectedValidationField": "lateralMeters",
+      "expectedErrorCategory": "invalid_range"
+    },
+    {
+      "id": "lateral-above-maximum",
+      "inputPose": {
+        "openingMeters": 0.1,
+        "protrusionMeters": 0,
+        "lateralMeters": 0.051
+      },
+      "expectedAcceptance": false,
+      "expectedValidationField": "lateralMeters",
+      "expectedErrorCategory": "invalid_range"
+    }
+  ]
+}
