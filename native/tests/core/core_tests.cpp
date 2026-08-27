@@ -100,10 +100,42 @@ TEST(SweepFrameValidation, AcceptsValidAndRejectsOutOfRangeProgress) {
   EXPECT_FALSE(validate(frame(0, 1.01)));
 }
 TEST(SweepSummaryValidation, AcceptsConsistentSummary) {
-  EXPECT_TRUE(validate(SweepSummary{SweepPreset::opening, 2, {frame(0, 0.0), frame(1, 1.0)}, 0}));
+  EXPECT_TRUE(validate(SweepSummary{SweepPreset::closing, 2, {frame(0, 0.0), frame(1, 1.0)}, 0}));
 }
 TEST(SweepSummaryValidation, RejectsInconsistentCountsAndIndices) {
-  EXPECT_FALSE(validate(SweepSummary{SweepPreset::opening, 2, {frame(1, 0.0)}, 2}));
+  EXPECT_FALSE(validate(SweepSummary{SweepPreset::closing, 2, {frame(1, 0.0)}, 2}));
+}
+TEST(SweepGeneration, UsesProductionPresetNamesAndFrameLimits) {
+  const auto closing = sweep_endpoints(SweepPreset::closing);
+  EXPECT_DOUBLE_EQ(closing.start.opening.value(), opening_limits.maximum.value());
+  EXPECT_DOUBLE_EQ(closing.end.opening.value(), 0.0);
+  EXPECT_LT(sweep_endpoints(SweepPreset::left_lateral).end.lateral_displacement.value(), 0.0);
+  EXPECT_GT(sweep_endpoints(SweepPreset::right_lateral).end.lateral_displacement.value(), 0.0);
+  EXPECT_EQ(minimum_sweep_frame_count, 2U);
+  EXPECT_EQ(maximum_sweep_frame_count, 61U);
+  EXPECT_EQ(default_sweep_frame_count, 31U);
+}
+TEST(SweepGeneration, RejectsCountsOutsideInclusiveLimits) {
+  const auto below =
+      generate_sweep_pose_frames(SweepPreset::closing, minimum_sweep_frame_count - 1);
+  const auto above =
+      generate_sweep_pose_frames(SweepPreset::closing, maximum_sweep_frame_count + 1);
+  ASSERT_FALSE(below);
+  ASSERT_FALSE(above);
+  EXPECT_EQ(below.errors().front().field, "frame_count");
+  EXPECT_EQ(above.errors().front().code, ValidationCode::invalid_range);
+}
+TEST(SweepGeneration, ProducesExactEndpointsAndUnroundedProgress) {
+  const auto generated = generate_sweep_pose_frames(SweepPreset::protrusive, 61);
+  ASSERT_TRUE(generated);
+  ASSERT_EQ(generated.value().size(), 61U);
+  EXPECT_EQ(generated.value().front().index, 0U);
+  EXPECT_DOUBLE_EQ(generated.value().front().normalized_progress, 0.0);
+  EXPECT_DOUBLE_EQ(generated.value()[1].normalized_progress, 1.0 / 60.0);
+  EXPECT_DOUBLE_EQ(generated.value()[1].pose.protrusion.value(), 0.000833);
+  EXPECT_DOUBLE_EQ(generated.value().back().normalized_progress, 1.0);
+  EXPECT_EQ(generated.value().back().index, 60U);
+  EXPECT_DOUBLE_EQ(generated.value().back().pose.protrusion.value(), 0.05);
 }
 
 } // namespace

@@ -6,12 +6,12 @@ Occlusion Lab pretende convertirse en una aplicación científica de escritorio 
 
 ## 2. Estado actual
 
-- **Fase actual:** Phase 4.1: Golden Pose Fixtures and C++ Contract Parity
+- **Fase actual:** Phase 4.2: Deterministic Motion Sweep Generation Parity
 - **Estado:** In progress
-- **Rama y commit iniciales:** `main` en `11ca272b18467ef0a44140b14e075a311dbb6139`
-- **Rama activa:** `codex/phase-4.1-pose-golden-parity`
-- **Pull request de Phase 4.1:** no abierto; publicación bloqueada (véase §7)
-- **Última actualización significativa:** 2026-08-25 — implementación y verificación local de Phase 4.1 completadas; PR todavía sin abrir, por lo que la fase permanece `In progress`.
+- **Rama y commit iniciales:** `main` en `39e206e48599333d2fa76947352e09be04c39dee`
+- **Rama activa:** `codex/phase-4.2-sweep-generation-parity`
+- **Pull request de Phase 4.2:** Pending; no se pudo publicar desde este entorno.
+- **Última actualización significativa:** 2026-08-27 — Phase 4.1 completada mediante el PR [#11](https://github.com/1816x/Occlusion-Lab/pull/11), mergeado como `39e206e48599333d2fa76947352e09be04c39dee`; Phase 4.2 iniciada.
 
 La aplicación web heredada continúa disponible y funcional como referencia. La fundación nativa configura y compila en Debug/Release, `occlusion-core` ofrece unidades fuertes y validación, la CLI ejecuta su autocomprobación determinista y las 17 pruebas CTest pasan. Phase 4 se completó mediante el PR [#10](https://github.com/1816x/Occlusion-Lab/pull/10), mergeado como `11ca272b18467ef0a44140b14e075a311dbb6139`. La verificación local registró 17/17 CTest y 62/62 Vitest. El CI web remoto fue exitoso; el workflow nativo remoto falló y no se presenta como verificado.
 
@@ -92,16 +92,26 @@ La aplicación web heredada continúa disponible y funcional como referencia. La
 
 ## 7. Bloqueos y riesgos
 
-- Bloqueo de publicación actual (2026-08-25): `git push -u origin codex/phase-4.1-pose-golden-parity` falla exactamente con `fatal: could not read Username for 'https://github.com': No such device or address`; `gh auth status` indica que no hay sesión. Por ello no existe todavía URL real de PR ni resultados CI de Phase 4.1. Esto no restaura el blocker obsoleto de Phase 4, que quedó resuelto mediante PR #10; describe una limitación real de esta sesión nueva.
-- Riesgo: la paridad cubre únicamente el contrato de pose descrito; no permite afirmar paridad de colisión, contacto, barrido ni clínica.
+- Bloqueo de publicación (2026-08-27): `git push -u origin codex/phase-4.2-sweep-generation-parity` falló con `fatal: could not read Username for 'https://github.com': No such device or address`; `gh auth status` confirmó que no existe sesión. Por ello el PR y la CI remota de Phase 4.2 permanecen pendientes y no verificados.
+- La primera ejecución del formato nativo detectó archivos sin formatear; se aplicó `clang-format` y la repetición pasó antes del commit final.
+- Riesgo: la paridad cubre únicamente poses, transformaciones y generación determinista de barridos; no permite afirmar paridad de colisión, contacto, barrido ni clínica.
 - Riesgo: Qt, VTK, CGAL y FCL permanecen diferidos.
 
 ## 8. Próxima tarea recomendada
 
-Phase 4.2: port deterministic motion-sweep endpoint and interpolation generation to C++ using new versioned golden fixtures.
+Phase 4.3: introduce an isolated FCL collision and distance library and establish single-pose synthetic contact parity before porting complete evaluated motion sweeps.
 
 ## 9. Hitos completados
 
 | Fase | Resultado | Commit o PR | Estado de verificación |
 |---|---|---|---|
 | Phase 4 | Fundación C++20, core, CLI, pruebas y CI | [PR #10](https://github.com/1816x/Occlusion-Lab/pull/10), merge `11ca272b18467ef0a44140b14e075a311dbb6139` | Completada; 17/17 CTest y 62/62 Vitest locales; CI web remoto exitoso, workflow nativo remoto fallido. |
+| Phase 4.1 | Fixtures dorados de pose y paridad del contrato C++ | [PR #11](https://github.com/1816x/Occlusion-Lab/pull/11), merge `39e206e48599333d2fa76947352e09be04c39dee` | Completada; 22/22 CTest y 66/66 Vitest locales; GitHub CI del head completado correctamente. |
+
+### Verificación local de Phase 4.2 (2026-08-27)
+
+- Fixture de barrido: 20 casos y 432 frames; baseline fijo `39e206e48599333d2fa76947352e09be04c39dee`.
+- Vitest: PASS, 15 archivos y 85/85 pruebas.
+- CTest Debug: PASS, 27/27 pruebas; configure/build Debug y configure/build Release: PASS.
+- `npm ci`, `parity:verify`, lint (0 errores, una advertencia heredada), typecheck, assets, Rapier-thread, build y audit: PASS; 0 vulnerabilidades.
+- CI web y nativa (Ubuntu/Windows/macOS): no ejecutadas, porque el bloqueo de autenticación impidió publicar la rama y abrir el PR.

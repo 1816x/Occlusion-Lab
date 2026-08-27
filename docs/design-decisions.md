@@ -74,3 +74,12 @@ Sweep inspection cannot advance the guided live lesson, and live results cannot 
 - The explicit numeric tolerance is `1e-12` meters. Pose limits and the closed-mandible Y constant are fixture metadata and native API constants.
 - nlohmann-json 3.11.3 is pinned by version and archive SHA-256 and linked only to native tests. JSON, fixture, filesystem, UI, rendering, and networking concerns are excluded from `occlusion-core`.
 - This decision establishes no collision, contact, sweep, or clinical parity. The legacy web application remains intact and cannot be removed until later parity boundaries and a replacement UI exist.
+
+## Deterministic sweep-generation contract (Phase 4.2)
+
+- **Narrow parity boundary:** only preset endpoints, inclusive frame-count validation, progress, linear pose interpolation, six-decimal quantization, and existing pose-to-transform mapping are portable behavior. Collision evaluation and `summarizeSweep()` remain Worker-only.
+- **Preset direction:** `closing` is neutral-to-contact; `protrusive` is contact-to-maximum protrusion; left/right lateral use the minimum/maximum signed lateral limits. Native naming deliberately replaces the mismatched `opening` enumerator with `closing`.
+- **Generated frame type:** `SweepPoseFrame` has no `EvaluationResult`. This prevents deterministic generation from fabricating contacts merely to reuse the future evaluated-sweep contract.
+- **Limits and numerics:** the native API defines 2, 61, and 31 once as minimum, maximum, and default. Progress remains an unrounded `double`; pose components are quantized to six decimals, and both endpoints are exact.
+- **Fixture policy:** the 20 cases cover every preset at 2, 3, 11, 31, and 61 frames (432 frames total). Canonical JSON has stable ordering/formatting and a fixed Phase 4.1 merge baseline. Generation is an explicit reviewed rebaseline; verification is read-only drift detection.
+- **Separation and limitations:** JSON stays test-only, Rapier stays in the Worker, and the legacy web application remains the production behavioral reference. No collision, distance, contact, penetration, rendering, or clinical parity is established.
