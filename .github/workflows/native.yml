@@ -7,6 +7,11 @@ on:
       - "cmake/**"
       - "native/**"
       - "fixtures/parity/**"
+      - "scripts/parity/**"
+      - "src/physics/mandibular-sweep-reference.ts"
+      - "src/physics/worker-contract.ts"
+      - "package.json"
+      - "package-lock.json"
       - ".clang-format"
       - "CMakeLists.txt"
       - "CMakePresets.json"
@@ -63,7 +68,7 @@ jobs:
       - name: Build
         run: cmake --build --preset native-debug --parallel
 
-      - name: Test
+      - name: Test native pose and sweep parity
         run: ctest --preset native-debug --output-on-failure
 
       - name: Verify formatting

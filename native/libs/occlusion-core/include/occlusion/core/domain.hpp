@@ -39,7 +39,19 @@ struct EvaluationResult final {
   std::vector<ContactSample> contacts;
   bool valid;
 };
-enum class SweepPreset { opening, protrusive, left_lateral, right_lateral };
+enum class SweepPreset { closing, protrusive, left_lateral, right_lateral };
+inline constexpr std::size_t minimum_sweep_frame_count = 2;
+inline constexpr std::size_t maximum_sweep_frame_count = 61;
+inline constexpr std::size_t default_sweep_frame_count = 31;
+struct SweepEndpoints final {
+  MandibularPose start;
+  MandibularPose end;
+};
+struct SweepPoseFrame final {
+  std::size_t index;
+  double normalized_progress;
+  MandibularPose pose;
+};
 struct SweepFrame final {
   std::size_t index;
   double normalized_progress;
@@ -53,6 +65,9 @@ struct SweepSummary final {
   std::size_t contact_frame_count;
 };
 [[nodiscard]] ValidationResult<MandibularPose> validate(MandibularPose pose);
+[[nodiscard]] SweepEndpoints sweep_endpoints(SweepPreset preset);
+[[nodiscard]] ValidationResult<std::vector<SweepPoseFrame>>
+generate_sweep_pose_frames(SweepPreset preset, std::size_t frame_count);
 [[nodiscard]] ValidationResult<RigidTransform> mandibular_pose_to_transform(MandibularPose pose);
 [[nodiscard]] ValidationResult<RigidTransform> validate(RigidTransform transform);
 [[nodiscard]] ValidationResult<ContactSample> validate(ContactSample sample);

@@ -24,6 +24,9 @@ void append_errors(const std::vector<ValidationError>& source,
                    std::vector<ValidationError>& destination) {
   destination.insert(destination.end(), source.begin(), source.end());
 }
+double quantize_pose_component(double value) {
+  return std::round(value * 1'000'000.0) / 1'000'000.0;
+}
 } // namespace
 ValidationResult<MandibularPose> validate(MandibularPose pose) {
   std::vector<ValidationError> errors;
@@ -40,6 +43,49 @@ ValidationResult<MandibularPose> validate(MandibularPose pose) {
   require_range(pose.protrusion, protrusion_limits, "protrusionMeters");
   require_range(pose.lateral_displacement, lateral_displacement_limits, "lateralMeters");
   return finish(std::move(pose), std::move(errors));
+}
+SweepEndpoints sweep_endpoints(SweepPreset preset) {
+  constexpr MandibularPose contact{Meters{0.0}, Meters{0.0}, Meters{0.0}};
+  switch (preset) {
+  case SweepPreset::closing:
+    return {{opening_limits.maximum, Meters{0.0}, Meters{0.0}}, contact};
+  case SweepPreset::protrusive:
+    return {contact, {Meters{0.0}, protrusion_limits.maximum, Meters{0.0}}};
+  case SweepPreset::left_lateral:
+    return {contact, {Meters{0.0}, Meters{0.0}, lateral_displacement_limits.minimum}};
+  case SweepPreset::right_lateral:
+    return {contact, {Meters{0.0}, Meters{0.0}, lateral_displacement_limits.maximum}};
+  }
+  return {contact, contact};
+}
+ValidationResult<std::vector<SweepPoseFrame>> generate_sweep_pose_frames(SweepPreset preset,
+                                                                         std::size_t frame_count) {
+  if (frame_count < minimum_sweep_frame_count || frame_count > maximum_sweep_frame_count)
+    return ValidationResult<std::vector<SweepPoseFrame>>::failure(
+        {{ValidationCode::invalid_range, "frame_count", "frame count must be in [2, 61]"}});
+  const auto endpoints = sweep_endpoints(preset);
+  std::vector<SweepPoseFrame> frames;
+  frames.reserve(frame_count);
+  for (std::size_t index = 0; index < frame_count; ++index) {
+    const double progress = static_cast<double>(index) / static_cast<double>(frame_count - 1);
+    const auto interpolate = [progress](Meters start, Meters end) {
+      return Meters{
+          quantize_pose_component(start.value() + (end.value() - start.value()) * progress)};
+    };
+    MandibularPose pose{
+        interpolate(endpoints.start.opening, endpoints.end.opening),
+        interpolate(endpoints.start.protrusion, endpoints.end.protrusion),
+        interpolate(endpoints.start.lateral_displacement, endpoints.end.lateral_displacement)};
+    if (index == 0)
+      pose = endpoints.start;
+    else if (index + 1 == frame_count)
+      pose = endpoints.end;
+    const auto validated = validate(pose);
+    if (!validated)
+      return ValidationResult<std::vector<SweepPoseFrame>>::failure(validated.errors());
+    frames.push_back({index, progress, pose});
+  }
+  return ValidationResult<std::vector<SweepPoseFrame>>::success(std::move(frames));
 }
 ValidationResult<RigidTransform> mandibular_pose_to_transform(MandibularPose pose) {
   const auto validated = validate(pose);

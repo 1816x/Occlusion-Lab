@@ -4,7 +4,7 @@ Occlusion Lab is a **work in progress** educational browser sandbox for syntheti
 
 ## C++ migration (Phase 4)
 
-The project is migrating toward a C++20, desktop-first scientific architecture. The existing Next.js/React/Three.js application remains intact as the temporary behavioral reference; no C++ parity or clinical validation is claimed. The current native scope is deliberately limited to `occlusion-core`, a deterministic CLI, and tests. CGAL/FCL geometry and collision modules plus Qt 6/VTK presentation are planned, not implemented.
+The project is migrating toward a C++20, desktop-first scientific architecture. The existing Next.js/React/Three.js application remains intact as the production behavioral reference. Phase 4.1 completed pose validation/transform parity; Phase 4.2 adds only deterministic sweep endpoint, frame-count, and pose-interpolation parity. No collision or clinical parity is claimed. CGAL/FCL geometry and collision modules plus Qt 6/VTK presentation are planned, not implemented.
 
 [`PLAN.md`](PLAN.md) is the concise source of truth for migration status, verification results, risks, and the single next task. The architectural rationale is recorded in [ADR-0001](docs/adr/0001-cpp-desktop-architecture.md).
 
@@ -20,7 +20,7 @@ cmake --preset native-release
 cmake --build --preset native-release --parallel
 ```
 
-Scientific lengths inside the native domain use `double` meters. Millimeter values are a distinct type and conversion is explicit. Phase 4 does not import files, calculate collisions or biomechanics, render with VTK, or provide a Qt interface. The next migration stage is the first versioned golden fixture comparing TypeScript reference behavior with native contracts.
+Scientific lengths inside the native domain use `double` meters. Millimeter values are a distinct type and conversion is explicit. Phase 4.2 does not import files, calculate collisions or biomechanics, render with VTK, or provide a Qt interface.
 
 ## Phase 1 scope
 
@@ -115,3 +115,11 @@ Exports contain synthetic geometric Worker results only. Penetration is geometri
 Run `npm run parity:generate` only for an intentional rebaseline, then review the fixture and its pinned source baseline. Run `npm run parity:verify` for a read-only byte comparison. Rebaselining is never automatic because an apparently small golden change is a contract change. Native tests parse JSON with pinned nlohmann-json 3.11.3 as a test-only dependency; neither `occlusion-core` nor the CLI links it.
 
 This phase adds no collision, contact, clearance, penetration, sweep, rendering, patient, or clinical functionality. Rapier remains Worker-only, and the legacy web application remains the behavioral reference and cannot yet be removed.
+
+## Phase 4.2 deterministic sweep-generation parity
+
+The dependency-free TypeScript reference and `occlusion-core` now agree on four preset paths: `closing` moves neutral to contact, `protrusive` moves contact toward maximum protrusion, and `left-lateral`/`right-lateral` move contact toward minimum/maximum signed lateral displacement. Frame counts are accepted only in `[2, 61]` (default 31). Progress is the unrounded `frameIndex / (frameCount - 1)`; each pose component uses `start + (end - start) * progress`, quantized to six decimal places, with exact first and last endpoints.
+
+`fixtures/parity/mandibular-sweep-generation-v1.json` contains 20 cases (all presets at 2, 3, 11, 31, and 61 frames). `npm run parity:verify` read-only verifies both pose and sweep fixtures; `npm run parity:generate` intentionally rewrites both. Focused sweep commands are `npm run parity:verify:sweep` and `npm run parity:generate:sweep`. Generation is never an automatic rebaseline: review canonical byte changes and the pinned source baseline before committing them.
+
+This boundary generates poses and transforms only. Collision evaluation, contacts, penetration, summaries, Rapier-to-native parity, rendering, and clinical behavior remain explicitly excluded. The preserved legacy Worker application remains the production behavioral reference.

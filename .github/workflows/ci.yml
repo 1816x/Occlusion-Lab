@@ -13,7 +13,8 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
-      - run: npm run parity:verify
+      - name: Verify all versioned parity fixtures
+        run: npm run parity:verify
       - run: npm run lint
       - run: npm run typecheck
       - run: npm run test

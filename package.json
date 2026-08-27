@@ -17,7 +17,9 @@
     "assets:verify": "npm run assets:generate && node scripts/verify-phase1-fixture.mjs",
     "check:rapier-thread": "node scripts/checks/no-main-thread-rapier.mjs",
     "parity:generate": "node scripts/parity/cli.mjs generate",
-    "parity:verify": "node scripts/parity/cli.mjs verify"
+    "parity:verify": "node scripts/parity/cli.mjs verify",
+    "parity:generate:sweep": "node scripts/parity/cli.mjs generate sweep",
+    "parity:verify:sweep": "node scripts/parity/cli.mjs verify sweep"
   },
   "dependencies": {
     "@dimforge/rapier3d-compat": "^0.17.3",
