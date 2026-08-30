@@ -83,3 +83,7 @@ The pure TypeScript sweep reference is dependency-free and remains shared by the
 The native `SweepPoseFrame` contract is deliberately separate from the older evaluated `SweepFrame`: generation cannot manufacture collision results. `occlusion-core` owns typed meter endpoints, constants, validation, and pure generation, but no JSON or filesystem code. Native tests alone load the configured copy of the 20-case sweep fixture and compare all 432 poses, progress values, translations, and identity rotations at the fixture tolerance.
 
 `npm run parity:verify` checks canonical bytes for both tracked fixtures without rewriting. `npm run parity:generate` is an intentional rebaseline operation whose stable diff and pinned baseline must be reviewed. Phase 4.2 adds no collision, contact, distance, penetration, summary, Rapier, rendering, or clinical parity; protocol version 4 and the legacy production Worker remain unchanged.
+
+## Phase 4.3 collision boundary
+
+`TriangleMesh → validate/compile once → immutable CollisionModel → repeated transform queries` is the required lifecycle. The optional `occlusion-collision` library privately owns FCL BVHs and depends inward on `occlusion-core`; neither core nor collision public headers expose FCL. Per-query objects are lightweight and compiled geometry is reused across all frames. Closed synthetic boxes define semantic classification parity at `1e-6 m`; manifold points, normals, ordering, and counts are deliberately excluded. See [ADR-0002](adr/0002-isolated-fcl-collision-boundary.md).

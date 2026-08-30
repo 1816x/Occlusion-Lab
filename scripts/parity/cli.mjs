@@ -5,11 +5,12 @@ import { dirname, resolve } from "node:path";
 const command = process.argv[2];
 const focus = process.argv[3] ?? "all";
 if (command !== "generate" && command !== "verify") throw new Error("Expected generate or verify");
-if (focus !== "all" && focus !== "pose" && focus !== "sweep") throw new Error("Expected all, pose, or sweep");
+if (focus !== "all" && focus !== "pose" && focus !== "sweep" && focus !== "collision") throw new Error("Expected all, pose, sweep, or collision");
 
 const definitions = [
   { focus: "pose", entry: "scripts/parity/mandibular-pose-fixture.ts", pathExport: "FIXTURE_PATH", serialize: "serializeMandibularPoseFixture", verify: "verifyMandibularPoseFixture" },
   { focus: "sweep", entry: "scripts/parity/mandibular-sweep-fixture.ts", pathExport: "SWEEP_FIXTURE_PATH", serialize: "serializeMandibularSweepFixture", verify: "verifyMandibularSweepFixture" },
+  { focus: "collision", entry: "scripts/parity/single-pose-collision-fixture.ts", pathExport: "COLLISION_FIXTURE_PATH", serialize: "serializeSinglePoseCollisionFixture", verify: "verifySinglePoseCollisionFixture" },
 ];
 
 for (const definition of definitions.filter((item) => focus === "all" || item.focus === focus)) {

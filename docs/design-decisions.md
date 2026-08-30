@@ -83,3 +83,9 @@ Sweep inspection cannot advance the guided live lesson, and live results cannot 
 - **Limits and numerics:** the native API defines 2, 61, and 31 once as minimum, maximum, and default. Progress remains an unrounded `double`; pose components are quantized to six decimals, and both endpoints are exact.
 - **Fixture policy:** the 20 cases cover every preset at 2, 3, 11, 31, and 61 frames (432 frames total). Canonical JSON has stable ordering/formatting and a fixed Phase 4.1 merge baseline. Generation is an explicit reviewed rebaseline; verification is read-only drift detection.
 - **Separation and limitations:** JSON stays test-only, Rapier stays in the Worker, and the legacy web application remains the production behavioral reference. No collision, distance, contact, penetration, rendering, or clinical parity is established.
+
+## Phase 4.3: optimized collision foundation
+
+- FCL is a private implementation detail of the optional `occlusion-collision` target; core-only configurations do not find or link it.
+- Mesh validation and BVH construction occur exactly once in `compile`. Immutable, shared compiled models support deterministic repeated and concurrent queries without global caches.
+- Single-pose parity uses closed synthetic boxes and compares only normalized separation/touching/penetration measurements at the existing `1e-6 m` tolerance. Manifold details and evaluated sweeps remain deferred.

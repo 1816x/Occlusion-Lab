@@ -9,6 +9,12 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 option(OCCLUSION_BUILD_TESTS "Build native tests" ON)
 option(OCCLUSION_FETCH_DEPENDENCIES "Fetch pinned lightweight dependencies" ON)
+option(OCCLUSION_ENABLE_COLLISION "Build the FCL collision library" OFF)
+option(OCCLUSION_ENABLE_SANITIZERS "Enable AddressSanitizer and UndefinedBehaviorSanitizer" OFF)
+if(OCCLUSION_ENABLE_SANITIZERS AND NOT MSVC)
+  add_compile_options(-fsanitize=address,undefined -fno-omit-frame-pointer)
+  add_link_options(-fsanitize=address,undefined)
+endif()
 
 if(OCCLUSION_BUILD_TESTS)
   include(CTest)
@@ -38,6 +44,10 @@ if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/native/libs/occlusion-core/CMakeLists.txt
   add_subdirectory(native/libs/occlusion-core)
 endif()
 
+if(OCCLUSION_ENABLE_COLLISION)
+  add_subdirectory(native/libs/occlusion-collision)
+endif()
+
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/native/apps/occlusion-cli/CMakeLists.txt")
   add_subdirectory(native/apps/occlusion-cli)
 endif()
@@ -62,4 +72,7 @@ if(OCCLUSION_BUILD_TESTS AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/native/tests/co
     find_package(nlohmann_json 3.11.3 CONFIG REQUIRED)
   endif()
   add_subdirectory(native/tests/core)
+  if(OCCLUSION_ENABLE_COLLISION)
+    add_subdirectory(native/tests/collision)
+  endif()
 endif()

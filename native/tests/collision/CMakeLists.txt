@@ -1,0 +1,7 @@
+configure_file("${PROJECT_SOURCE_DIR}/fixtures/parity/single-pose-collision-v1.json" "${CMAKE_CURRENT_BINARY_DIR}/single-pose-collision-v1.json" COPYONLY)
+add_executable(occlusion-collision-tests collision_tests.cpp public_headers.cpp)
+target_link_libraries(occlusion-collision-tests PRIVATE occlusion::collision GTest::gtest_main nlohmann_json::nlohmann_json occlusion_project_warnings)
+target_compile_definitions(occlusion-collision-tests PRIVATE OCCLUSION_COLLISION_FIXTURE_PATH="${CMAKE_CURRENT_BINARY_DIR}/single-pose-collision-v1.json")
+target_compile_features(occlusion-collision-tests PRIVATE cxx_std_20)
+include(GoogleTest)
+gtest_discover_tests(occlusion-collision-tests DISCOVERY_MODE PRE_TEST)

@@ -2,10 +2,10 @@ import RAPIER from "@dimforge/rapier3d-compat";
 import { SYNTHETIC_COLLISION_EXPECTED, SYNTHETIC_COLLISION_FIXTURE_NAME, SYNTHETIC_COLLISION_STEPS, SYNTHETIC_COLLISION_TIMESTEP_SECONDS } from "@/test-fixtures/synthetic-collision";
 import { sweepPoses, summarizeSweep } from "./sweep-science";
 import { mandibularTransform } from "@/physics/mandibular-pose-reference";
+import { CONTACT_TOLERANCE_METERS, syntheticGapMeasurements, verticalSurfaceGap } from "@/physics/synthetic-contact-reference";
 export { MANDIBLE_CLOSED_TRANSLATION_Y_METERS, mandibularTransform } from "@/physics/mandibular-pose-reference";
-import { CONTACT_DEDUPLICATION_TOLERANCE_METERS, MAX_CONTACT_SAMPLES, WORKER_PROTOCOL_VERSION, isPhysicsWorkerRequest, type CollisionMeshPayload, type ContactSample, type MandibularPose, type Phase1ContactResult, type PhysicsWorkerRequest, type PhysicsWorkerResponse, type PoseResult, type SweepResult } from "@/physics/worker-contract";
+import { CONTACT_DEDUPLICATION_TOLERANCE_METERS, MAX_CONTACT_SAMPLES, WORKER_PROTOCOL_VERSION, isPhysicsWorkerRequest, type CollisionMeshPayload, type ContactSample, type Phase1ContactResult, type PhysicsWorkerRequest, type PhysicsWorkerResponse, type PoseResult, type SweepResult } from "@/physics/worker-contract";
 
-export const CONTACT_TOLERANCE_METERS = 1e-6;
 let rapierReady: Promise<typeof RAPIER> | undefined;
 const ensureRapier = async () => { rapierReady ??= RAPIER.init().then(() => RAPIER); return rapierReady; };
 const round = (n: number) => Number(n.toFixed(6));
@@ -20,16 +20,6 @@ function meshArrays(mesh: CollisionMeshPayload) {
   return { positions, indices };
 }
 function colliderDesc(rapier: typeof RAPIER, mesh: CollisionMeshPayload) { const { positions, indices } = meshArrays(mesh); return rapier.ColliderDesc.trimesh(positions, Uint32Array.from(indices)); }
-function verticalSurfaceGap(upper: CollisionMeshPayload, lower: CollisionMeshPayload, upperTranslationY: number) {
-  const upperPositions = meshArrays(upper).positions;
-  const lowerPositions = meshArrays(lower).positions;
-  let lowestUpper = Infinity;
-  let highestLower = -Infinity;
-  for (let i = 1; i < upperPositions.length; i += 3) lowestUpper = Math.min(lowestUpper, upperPositions[i]! + upperTranslationY);
-  for (let i = 1; i < lowerPositions.length; i += 3) highestLower = Math.max(highestLower, lowerPositions[i]!);
-  return lowestUpper - highestLower;
-}
-
 export async function runPhase1ContactQuery(request: Extract<PhysicsWorkerRequest, { type: "run-phase1-contact-query" }>): Promise<Phase1ContactResult> {
   const rapier = await ensureRapier();
   const world = new rapier.World({ x: 0, y: 0, z: 0 });
@@ -50,14 +40,14 @@ export async function runPhase1ContactQuery(request: Extract<PhysicsWorkerReques
       normal = { x: round(n.x), y: round(n.y), z: round(n.z) };
     }
   });
-  const gap = verticalSurfaceGap(request.meshes[0], request.meshes[1], request.upperTranslationYMeters);
-  const classification = gap > CONTACT_TOLERANCE_METERS ? "separated" : gap < -CONTACT_TOLERANCE_METERS ? "penetrating" : "touching";
+  const gap = verticalSurfaceGap(meshArrays(request.meshes[0]), meshArrays(request.meshes[1]), request.upperTranslationYMeters);
+  const { classification, clearanceMeters, penetrationDepthMeters } = syntheticGapMeasurements(gap);
   return {
     fixtureId: request.fixtureId,
     scenario: request.scenario,
     classification,
-    clearanceMeters: classification === "separated" ? round(gap) : 0,
-    penetrationDepthMeters: classification === "penetrating" ? round(-gap) : 0,
+    clearanceMeters: round(clearanceMeters),
+    penetrationDepthMeters: round(penetrationDepthMeters),
     contactCount,
     point,
     normal,

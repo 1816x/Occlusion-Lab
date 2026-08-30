@@ -27,7 +27,7 @@ struct RigidTransform final {
   Vector3 translation_meters;
   std::array<double, 9> rotation;
 };
-enum class ContactClassification { none, near_contact, contact, penetration };
+enum class ContactClassification { separated, touching, penetrating };
 struct ContactSample final {
   Vector3 position_meters;
   Vector3 normal;

@@ -123,3 +123,9 @@ The dependency-free TypeScript reference and `occlusion-core` now agree on four 
 `fixtures/parity/mandibular-sweep-generation-v1.json` contains 20 cases (all presets at 2, 3, 11, 31, and 61 frames). `npm run parity:verify` read-only verifies both pose and sweep fixtures; `npm run parity:generate` intentionally rewrites both. Focused sweep commands are `npm run parity:verify:sweep` and `npm run parity:generate:sweep`. Generation is never an automatic rebaseline: review canonical byte changes and the pinned source baseline before committing them.
 
 This boundary generates poses and transforms only. Collision evaluation, contacts, penetration, summaries, Rapier-to-native parity, rendering, and clinical behavior remain explicitly excluded. The preserved legacy Worker application remains the production behavioral reference.
+
+## Phase 4.3 optional native collision foundation
+
+`occlusion-collision` provides a project-owned two-stage API: validate and compile a closed `TriangleMesh` once, then reuse the immutable, shared `CollisionModel` for repeated `RigidTransform` queries. FCL is linked privately and is absent from both `occlusion-core` and public collision headers. Configure `collision-debug`, `collision-release`, or `collision-sanitizers`; default native presets remain FCL-free.
+
+The closed-box fixture `fixtures/parity/single-pose-collision-v1.json` covers seven deterministic gaps around the existing `1e-6 m` tolerance. `npm run parity:verify` verifies pose, sweep-generation, and collision fixtures; focused collision commands append `:collision`. Parity includes only classification, clearance, and penetration depth. Manifold points, normals, ordering/count, evaluated sweeps, UI changes, and clinical interpretation are excluded.

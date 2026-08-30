@@ -19,7 +19,9 @@
     "parity:generate": "node scripts/parity/cli.mjs generate",
     "parity:verify": "node scripts/parity/cli.mjs verify",
     "parity:generate:sweep": "node scripts/parity/cli.mjs generate sweep",
-    "parity:verify:sweep": "node scripts/parity/cli.mjs verify sweep"
+    "parity:verify:sweep": "node scripts/parity/cli.mjs verify sweep",
+    "parity:generate:collision": "node scripts/parity/cli.mjs generate collision",
+    "parity:verify:collision": "node scripts/parity/cli.mjs verify collision"
   },
   "dependencies": {
     "@dimforge/rapier3d-compat": "^0.17.3",
