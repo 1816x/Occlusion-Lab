@@ -90,10 +90,10 @@ TEST(TransformValidation, RejectsNonFiniteTranslation) {
 }
 TEST(ContactContract, PreservesClassification) {
   const ContactSample sample{
-      {0.0, 0.0, 0.0}, {0.0, 0.0, 1.0}, Meters{-0.0001}, ContactClassification::penetration};
+      {0.0, 0.0, 0.0}, {0.0, 0.0, 1.0}, Meters{-0.0001}, ContactClassification::penetrating};
   const auto result = validate(sample);
   ASSERT_TRUE(result);
-  EXPECT_EQ(result.value().classification, ContactClassification::penetration);
+  EXPECT_EQ(result.value().classification, ContactClassification::penetrating);
 }
 TEST(SweepFrameValidation, AcceptsValidAndRejectsOutOfRangeProgress) {
   EXPECT_TRUE(validate(frame(0, 0.5)));

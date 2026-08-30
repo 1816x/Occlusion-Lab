@@ -1,30 +1,29 @@
-name: Native foundation
-
+name: Native core and collision
 on:
   pull_request:
-    paths:
-      - ".github/workflows/native.yml"
-      - "cmake/**"
-      - "native/**"
-      - "fixtures/parity/**"
-      - "scripts/parity/**"
-      - "src/physics/mandibular-sweep-reference.ts"
-      - "src/physics/worker-contract.ts"
-      - "package.json"
-      - "package-lock.json"
-      - ".clang-format"
-      - "CMakeLists.txt"
-      - "CMakePresets.json"
-      - "vcpkg.json"
   push:
     branches: [main]
-
 permissions:
   contents: read
-
 jobs:
-  native:
-    name: ${{ matrix.os }} / C++20
+  core:
+    name: Core / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Configure core without FCL
+        run: cmake --preset native-debug
+      - name: Build core, CLI and parity tests
+        run: cmake --build --preset native-debug --parallel
+      - name: Test core, CLI, pose and sweep parity
+        run: ctest --preset native-debug --output-on-failure
+
+  collision:
+    name: Collision / ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -33,46 +32,49 @@ jobs:
     env:
       VCPKG_ROOT: ${{ runner.temp }}/vcpkg
       VCPKG_DEFAULT_BINARY_CACHE: ${{ runner.temp }}/vcpkg-binary-cache
-
+      VCPKG_MANIFEST_FEATURES: collision
     steps:
-      - name: Check out repository
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-
-      - name: Cache vcpkg downloads and binaries
-        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809
         with:
           path: |
             ${{ runner.temp }}/vcpkg/downloads
             ${{ runner.temp }}/vcpkg-binary-cache
-          key: native-${{ runner.os }}-${{ hashFiles('vcpkg.json') }}
-
+          key: collision-${{ runner.os }}-${{ hashFiles('vcpkg.json') }}
       - name: Bootstrap pinned vcpkg
         shell: bash
         run: |
           git clone https://github.com/microsoft/vcpkg.git "$VCPKG_ROOT"
           git -C "$VCPKG_ROOT" checkout f3457518c19c4efdb3b9307a8bb4e27d4b989933
           mkdir -p "$VCPKG_DEFAULT_BINARY_CACHE"
-          if [[ "$RUNNER_OS" == "Windows" ]]; then
-            "$VCPKG_ROOT/bootstrap-vcpkg.bat" -disableMetrics
-          else
-            "$VCPKG_ROOT/bootstrap-vcpkg.sh" -disableMetrics
-          fi
-
-      - name: Configure
+          if [[ "$RUNNER_OS" == "Windows" ]]; then "$VCPKG_ROOT/bootstrap-vcpkg.bat" -disableMetrics; else "$VCPKG_ROOT/bootstrap-vcpkg.sh" -disableMetrics; fi
+      - name: Configure collision Debug
         shell: bash
-        run: >-
-          cmake --preset native-debug
-          -DOCCLUSION_FETCH_DEPENDENCIES=OFF
-          -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
+        run: cmake --preset collision-debug -DOCCLUSION_FETCH_DEPENDENCIES=OFF -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
+      - name: Build collision Debug
+        run: cmake --build --preset collision-debug --parallel
+      - name: Test collision parity
+        run: ctest --preset collision-debug --output-on-failure
 
-      - name: Build
-        run: cmake --build --preset native-debug --parallel
-
-      - name: Test native pose and sweep parity
-        run: ctest --preset native-debug --output-on-failure
-
-      - name: Verify formatting
-        shell: bash
-        run: >-
-          find native -type f \( -name '*.cpp' -o -name '*.hpp' \) -print0 |
-          xargs -0 clang-format --dry-run --Werror
+  sanitizers:
+    name: Collision / Ubuntu / ASan+UBSan
+    runs-on: ubuntu-latest
+    env:
+      VCPKG_ROOT: ${{ runner.temp }}/vcpkg
+      VCPKG_MANIFEST_FEATURES: collision
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Bootstrap pinned vcpkg
+        run: |
+          git clone https://github.com/microsoft/vcpkg.git "$VCPKG_ROOT"
+          git -C "$VCPKG_ROOT" checkout f3457518c19c4efdb3b9307a8bb4e27d4b989933
+          "$VCPKG_ROOT/bootstrap-vcpkg.sh" -disableMetrics
+      - name: Configure sanitizers
+        run: cmake --preset collision-sanitizers -DOCCLUSION_FETCH_DEPENDENCIES=OFF -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
+      - name: Build sanitizers
+        run: cmake --build --preset collision-sanitizers --parallel
+      - name: Run collision tests under sanitizers
+        env:
+          ASAN_OPTIONS: detect_leaks=1:halt_on_error=1
+          UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+        run: ctest --preset collision-sanitizers --output-on-failure

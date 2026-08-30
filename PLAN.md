@@ -6,12 +6,12 @@ Occlusion Lab pretende convertirse en una aplicación científica de escritorio 
 
 ## 2. Estado actual
 
-- **Fase actual:** Phase 4.2: Deterministic Motion Sweep Generation Parity
+- **Fase actual:** Phase 4.3: Production-Grade FCL Collision Foundation
 - **Estado:** In progress
-- **Rama y commit iniciales:** `main` en `39e206e48599333d2fa76947352e09be04c39dee`
-- **Rama activa:** `codex/phase-4.2-sweep-generation-parity`
-- **Pull request de Phase 4.2:** Pending; no se pudo publicar desde este entorno.
-- **Última actualización significativa:** 2026-08-27 — Phase 4.1 completada mediante el PR [#11](https://github.com/1816x/Occlusion-Lab/pull/11), mergeado como `39e206e48599333d2fa76947352e09be04c39dee`; Phase 4.2 iniciada.
+- **Rama y commit iniciales:** `main` en `5607b26f856481f4aacb36139ec9837f125e80c5`
+- **Rama activa:** `codex/phase-4.3-fcl-collision-foundation`
+- **Pull request de Phase 4.3:** Draft pendiente de publicación.
+- **Última actualización significativa:** 2026-08-30 — Phase 4.2 completada mediante el PR [#12](https://github.com/1816x/Occlusion-Lab/pull/12), mergeado como `5607b26f856481f4aacb36139ec9837f125e80c5`; Phase 4.3 iniciada.
 
 La aplicación web heredada continúa disponible y funcional como referencia. La fundación nativa configura y compila en Debug/Release, `occlusion-core` ofrece unidades fuertes y validación, la CLI ejecuta su autocomprobación determinista y las 17 pruebas CTest pasan. Phase 4 se completó mediante el PR [#10](https://github.com/1816x/Occlusion-Lab/pull/10), mergeado como `11ca272b18467ef0a44140b14e075a311dbb6139`. La verificación local registró 17/17 CTest y 62/62 Vitest. El CI web remoto fue exitoso; el workflow nativo remoto falló y no se presenta como verificado.
 
@@ -92,14 +92,13 @@ La aplicación web heredada continúa disponible y funcional como referencia. La
 
 ## 7. Bloqueos y riesgos
 
-- Bloqueo de publicación (2026-08-27): `git push -u origin codex/phase-4.2-sweep-generation-parity` falló con `fatal: could not read Username for 'https://github.com': No such device or address`; `gh auth status` confirmó que no existe sesión. Por ello el PR y la CI remota de Phase 4.2 permanecen pendientes y no verificados.
 - La primera ejecución del formato nativo detectó archivos sin formatear; se aplicó `clang-format` y la repetición pasó antes del commit final.
 - Riesgo: la paridad cubre únicamente poses, transformaciones y generación determinista de barridos; no permite afirmar paridad de colisión, contacto, barrido ni clínica.
 - Riesgo: Qt, VTK, CGAL y FCL permanecen diferidos.
 
 ## 8. Próxima tarea recomendada
 
-Phase 4.3: introduce an isolated FCL collision and distance library and establish single-pose synthetic contact parity before porting complete evaluated motion sweeps.
+Phase 4.4: implement deterministic native single-pose evaluation and bounded contact-sample normalization before porting complete evaluated motion sweeps.
 
 ## 9. Hitos completados
 
@@ -107,6 +106,7 @@ Phase 4.3: introduce an isolated FCL collision and distance library and establis
 |---|---|---|---|
 | Phase 4 | Fundación C++20, core, CLI, pruebas y CI | [PR #10](https://github.com/1816x/Occlusion-Lab/pull/10), merge `11ca272b18467ef0a44140b14e075a311dbb6139` | Completada; 17/17 CTest y 62/62 Vitest locales; CI web remoto exitoso, workflow nativo remoto fallido. |
 | Phase 4.1 | Fixtures dorados de pose y paridad del contrato C++ | [PR #11](https://github.com/1816x/Occlusion-Lab/pull/11), merge `39e206e48599333d2fa76947352e09be04c39dee` | Completada; 22/22 CTest y 66/66 Vitest locales; GitHub CI del head completado correctamente. |
+| Phase 4.2 | Paridad determinista de generación de barridos: 20 casos y 432 frames | [PR #12](https://github.com/1816x/Occlusion-Lab/pull/12), merge `5607b26f856481f4aacb36139ec9837f125e80c5` | Completada; 27/27 CTest y 85/85 Vitest locales; CI web verificada correctamente; CI nativa remota no verificada. |
 
 ### Verificación local de Phase 4.2 (2026-08-27)
 
@@ -114,4 +114,14 @@ Phase 4.3: introduce an isolated FCL collision and distance library and establis
 - Vitest: PASS, 15 archivos y 85/85 pruebas.
 - CTest Debug: PASS, 27/27 pruebas; configure/build Debug y configure/build Release: PASS.
 - `npm ci`, `parity:verify`, lint (0 errores, una advertencia heredada), typecheck, assets, Rapier-thread, build y audit: PASS; 0 vulnerabilidades.
-- CI web y nativa (Ubuntu/Windows/macOS): no ejecutadas, porque el bloqueo de autenticación impidió publicar la rama y abrir el PR.
+- CI web: verificada correctamente. CI nativa remota (Ubuntu/Windows/macOS): no verificada y no se presenta como aprobada.
+
+### Verificación local de Phase 4.3 (2026-08-30)
+
+- Fixture de colisión single-pose: 7 casos sobre dos cajas cerradas; baseline `5607b26f856481f4aacb36139ec9837f125e80c5`.
+- Vitest: PASS, 16 archivos y 91/91 pruebas.
+- Core CTest Debug sin FCL: PASS, 27/27. Collision CTest Debug: PASS, 17/17 adicionales (44/44 total).
+- Collision Release: configure/build PASS. ASan+UBSan: 44/44 PASS, sin fugas ni comportamiento indefinido reportado.
+- `npm ci`, las tres fixtures de paridad, lint, typecheck, assets, Rapier-thread, build y audit: PASS; 0 vulnerabilidades.
+- CI remota Ubuntu, Windows y macOS: no verificada hasta que el draft PR publique y ejecute todos los jobs; no se presenta como aprobada.
+- Riesgo restante: los resultados multiplataforma y el target FCL exportado por el vcpkg fijado deben confirmarse en el PR. La paridad excluye manifolds y barridos evaluados completos.

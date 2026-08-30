@@ -1,0 +1,6 @@
+find_package(fcl CONFIG REQUIRED)
+add_library(occlusion-collision STATIC src/collision.cpp)
+add_library(occlusion::collision ALIAS occlusion-collision)
+target_include_directories(occlusion-collision PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<INSTALL_INTERFACE:include>)
+target_link_libraries(occlusion-collision PUBLIC occlusion::core PRIVATE fcl occlusion_project_warnings)
+target_compile_features(occlusion-collision PUBLIC cxx_std_20)

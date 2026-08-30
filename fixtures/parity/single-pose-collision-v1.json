@@ -1,0 +1,410 @@
+{
+  "schemaVersion": 1,
+  "behavioralVersion": "phase-4.3",
+  "workerProtocolVersion": 4,
+  "sourceImplementation": "src/physics/synthetic-contact-reference.ts",
+  "sourceBaselineCommit": "5607b26f856481f4aacb36139ec9837f125e80c5",
+  "geometry": {
+    "id": "closed-opposing-boxes-v1",
+    "provenance": "Hand-authored synthetic closed boxes; no patient or downloaded geometry",
+    "units": "meters",
+    "fixed": {
+      "verticesMeters": [
+        [
+          -0.02,
+          -0.01,
+          -0.02
+        ],
+        [
+          0.02,
+          -0.01,
+          -0.02
+        ],
+        [
+          0.02,
+          0,
+          -0.02
+        ],
+        [
+          -0.02,
+          0,
+          -0.02
+        ],
+        [
+          -0.02,
+          -0.01,
+          0.02
+        ],
+        [
+          0.02,
+          -0.01,
+          0.02
+        ],
+        [
+          0.02,
+          0,
+          0.02
+        ],
+        [
+          -0.02,
+          0,
+          0.02
+        ]
+      ],
+      "triangles": [
+        [
+          0,
+          2,
+          1
+        ],
+        [
+          0,
+          3,
+          2
+        ],
+        [
+          4,
+          5,
+          6
+        ],
+        [
+          4,
+          6,
+          7
+        ],
+        [
+          0,
+          1,
+          5
+        ],
+        [
+          0,
+          5,
+          4
+        ],
+        [
+          3,
+          7,
+          6
+        ],
+        [
+          3,
+          6,
+          2
+        ],
+        [
+          0,
+          4,
+          7
+        ],
+        [
+          0,
+          7,
+          3
+        ],
+        [
+          1,
+          2,
+          6
+        ],
+        [
+          1,
+          6,
+          5
+        ]
+      ]
+    },
+    "moving": {
+      "verticesMeters": [
+        [
+          -0.015,
+          0,
+          -0.015
+        ],
+        [
+          0.015,
+          0,
+          -0.015
+        ],
+        [
+          0.015,
+          0.01,
+          -0.015
+        ],
+        [
+          -0.015,
+          0.01,
+          -0.015
+        ],
+        [
+          -0.015,
+          0,
+          0.015
+        ],
+        [
+          0.015,
+          0,
+          0.015
+        ],
+        [
+          0.015,
+          0.01,
+          0.015
+        ],
+        [
+          -0.015,
+          0.01,
+          0.015
+        ]
+      ],
+      "triangles": [
+        [
+          0,
+          2,
+          1
+        ],
+        [
+          0,
+          3,
+          2
+        ],
+        [
+          4,
+          5,
+          6
+        ],
+        [
+          4,
+          6,
+          7
+        ],
+        [
+          0,
+          1,
+          5
+        ],
+        [
+          0,
+          5,
+          4
+        ],
+        [
+          3,
+          7,
+          6
+        ],
+        [
+          3,
+          6,
+          2
+        ],
+        [
+          0,
+          4,
+          7
+        ],
+        [
+          0,
+          7,
+          3
+        ],
+        [
+          1,
+          2,
+          6
+        ],
+        [
+          1,
+          6,
+          5
+        ]
+      ]
+    }
+  },
+  "classificationToleranceMeters": 0.000001,
+  "comparisonToleranceMeters": 1e-9,
+  "parityExclusions": [
+    "contact manifold points",
+    "contact normals",
+    "contact ordering",
+    "contact count",
+    "evaluated motion sweeps"
+  ],
+  "cases": [
+    {
+      "id": "clear-separation",
+      "movingTransform": {
+        "translationMeters": {
+          "x": 0,
+          "y": 0.01,
+          "z": 0
+        },
+        "rotation": [
+          1,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          1
+        ]
+      },
+      "expectedSemanticGapMeters": 0.01,
+      "classification": "separated",
+      "clearanceMeters": 0.01,
+      "penetrationDepthMeters": 0
+    },
+    {
+      "id": "separation-above-tolerance",
+      "movingTransform": {
+        "translationMeters": {
+          "x": 0,
+          "y": 0.0000011,
+          "z": 0
+        },
+        "rotation": [
+          1,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          1
+        ]
+      },
+      "expectedSemanticGapMeters": 0.0000011,
+      "classification": "separated",
+      "clearanceMeters": 0.0000011,
+      "penetrationDepthMeters": 0
+    },
+    {
+      "id": "positive-near-touch",
+      "movingTransform": {
+        "translationMeters": {
+          "x": 0,
+          "y": 5e-7,
+          "z": 0
+        },
+        "rotation": [
+          1,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          1
+        ]
+      },
+      "expectedSemanticGapMeters": 5e-7,
+      "classification": "touching",
+      "clearanceMeters": 0,
+      "penetrationDepthMeters": 0
+    },
+    {
+      "id": "exact-touching",
+      "movingTransform": {
+        "translationMeters": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "rotation": [
+          1,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          1
+        ]
+      },
+      "expectedSemanticGapMeters": 0,
+      "classification": "touching",
+      "clearanceMeters": 0,
+      "penetrationDepthMeters": 0
+    },
+    {
+      "id": "negative-near-touch",
+      "movingTransform": {
+        "translationMeters": {
+          "x": 0,
+          "y": -5e-7,
+          "z": 0
+        },
+        "rotation": [
+          1,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          1
+        ]
+      },
+      "expectedSemanticGapMeters": -5e-7,
+      "classification": "touching",
+      "clearanceMeters": 0,
+      "penetrationDepthMeters": 0
+    },
+    {
+      "id": "penetration-beyond-tolerance",
+      "movingTransform": {
+        "translationMeters": {
+          "x": 0,
+          "y": -0.0000011,
+          "z": 0
+        },
+        "rotation": [
+          1,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          1
+        ]
+      },
+      "expectedSemanticGapMeters": -0.0000011,
+      "classification": "penetrating",
+      "clearanceMeters": 0,
+      "penetrationDepthMeters": 0.0000011
+    },
+    {
+      "id": "clear-penetration",
+      "movingTransform": {
+        "translationMeters": {
+          "x": 0,
+          "y": -0.01,
+          "z": 0
+        },
+        "rotation": [
+          1,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          1
+        ]
+      },
+      "expectedSemanticGapMeters": -0.01,
+      "classification": "penetrating",
+      "clearanceMeters": 0,
+      "penetrationDepthMeters": 0.01
+    }
+  ]
+}
