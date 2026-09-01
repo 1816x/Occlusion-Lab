@@ -118,7 +118,7 @@ CollisionEngine::query(const CollisionModel& fixed, const CollisionModel& moving
         {error(ValidationCode::non_finite, "distance", "FCL returned a non-finite distance")});
   if (distance > contact_tolerance.value())
     return ValidationResult<SinglePoseCollisionResult>::success(
-        {ContactClassification::separated, Meters{distance}, Meters{0}, false});
+        {ContactClassification::separated, Meters{distance}, Meters{0}, false, {}});
   fcl::CollisionRequestd collision_request;
   collision_request.enable_contact = true;
   collision_request.num_max_contacts = 1024;
@@ -128,13 +128,37 @@ CollisionEngine::query(const CollisionModel& fixed, const CollisionModel& moving
   contacts.reserve(std::min<std::size_t>(collision_result.numContacts(), 1024));
   collision_result.getContacts(contacts);
   double maximum = 0;
-  for (const auto& contact : contacts)
-    if (std::isfinite(contact.penetration_depth))
-      maximum = std::max(maximum, contact.penetration_depth);
+  std::vector<ContactCandidate> candidates;
+  candidates.reserve(contacts.size());
+  for (const auto& contact : contacts) {
+    const auto finite_vector = [](const fcl::Vector3d& v) {
+      return std::isfinite(v[0]) && std::isfinite(v[1]) && std::isfinite(v[2]);
+    };
+    if (!std::isfinite(contact.penetration_depth) || !finite_vector(contact.pos) ||
+        !finite_vector(contact.normal))
+      return ValidationResult<SinglePoseCollisionResult>::failure(
+          {error(ValidationCode::non_finite, "contacts", "FCL returned a non-finite contact")});
+    const double norm = contact.normal.norm();
+    if (!std::isfinite(norm) || norm <= std::numeric_limits<double>::epsilon())
+      return ValidationResult<SinglePoseCollisionResult>::failure({error(
+          ValidationCode::invalid_range, "contacts.normal", "FCL returned an invalid normal")});
+    maximum = std::max(maximum, contact.penetration_depth);
+    const auto n = contact.normal / norm;
+    const auto classification = contact.penetration_depth > contact_tolerance.value()
+                                    ? ContactClassification::penetrating
+                                    : ContactClassification::touching;
+    candidates.push_back({{contact.pos[0], contact.pos[1], contact.pos[2]},
+                          {n[0], n[1], n[2]},
+                          Meters{-contact.penetration_depth},
+                          Meters{std::max(0.0, contact.penetration_depth)},
+                          classification});
+  }
   if (maximum > contact_tolerance.value())
-    return ValidationResult<SinglePoseCollisionResult>::success(
-        {ContactClassification::penetrating, Meters{0}, Meters{maximum}, true});
+    return ValidationResult<SinglePoseCollisionResult>::success({ContactClassification::penetrating,
+                                                                 Meters{0}, Meters{maximum}, true,
+                                                                 std::move(candidates)});
   return ValidationResult<SinglePoseCollisionResult>::success(
-      {ContactClassification::touching, Meters{0}, Meters{0}, collision_result.isCollision()});
+      {ContactClassification::touching, Meters{0}, Meters{0}, collision_result.isCollision(),
+       std::move(candidates)});
 }
 } // namespace occlusion::collision

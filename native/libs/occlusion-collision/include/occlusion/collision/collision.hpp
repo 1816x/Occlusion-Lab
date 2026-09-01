@@ -15,11 +15,21 @@ struct TriangleMesh final {
   std::vector<occlusion::core::Vector3> vertices_meters;
   std::vector<Triangle> triangles;
 };
+// Engine-neutral raw candidate. The normal is canonical from fixed maxillary
+// geometry toward moving mandibular geometry in world coordinates.
+struct ContactCandidate final {
+  occlusion::core::Vector3 position_meters;
+  occlusion::core::Vector3 normal_fixed_to_moving;
+  occlusion::core::Meters signed_distance;
+  occlusion::core::Meters penetration_depth;
+  occlusion::core::ContactClassification classification;
+};
 struct SinglePoseCollisionResult final {
   occlusion::core::ContactClassification classification;
   occlusion::core::Meters clearance;
   occlusion::core::Meters penetration_depth;
   bool intersects;
+  std::vector<ContactCandidate> candidates;
 };
 
 class CollisionModel final {

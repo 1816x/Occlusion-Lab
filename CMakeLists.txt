@@ -46,6 +46,7 @@ endif()
 
 if(OCCLUSION_ENABLE_COLLISION)
   add_subdirectory(native/libs/occlusion-collision)
+  add_subdirectory(native/libs/occlusion-evaluation)
 endif()
 
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/native/apps/occlusion-cli/CMakeLists.txt")
@@ -74,5 +75,6 @@ if(OCCLUSION_BUILD_TESTS AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/native/tests/co
   add_subdirectory(native/tests/core)
   if(OCCLUSION_ENABLE_COLLISION)
     add_subdirectory(native/tests/collision)
+    add_subdirectory(native/tests/evaluation)
   endif()
 endif()
