@@ -89,3 +89,19 @@ Sweep inspection cannot advance the guided live lesson, and live results cannot 
 - FCL is a private implementation detail of the optional `occlusion-collision` target; core-only configurations do not find or link it.
 - Mesh validation and BVH construction occur exactly once in `compile`. Immutable, shared compiled models support deterministic repeated and concurrent queries without global caches.
 - Single-pose parity uses closed synthetic boxes and compares only normalized separation/touching/penetration measurements at the existing `1e-6 m` tolerance. Manifold details and evaluated sweeps remain deferred.
+
+## Deterministic contact publication
+
+Normalization is a pure operation: validate finite structure; normalize the fixed-to-moving normal;
+quantize published components to 6 decimals; bucket position on a `1e-5 m` grid; select greatest
+penetration (then normalized lexicographic values); derive a stable ID with 64-bit FNV-1a over the
+canonical normalized values; lexicographically sort position, normal, descending penetration and
+classification; and only then retain at most 32 samples. IDs are evaluation-local value identifiers,
+not FCL indices, pointers, traversal IDs, or globally persistent clinical identifiers.
+
+We rejected exact live FCL manifold goldens because contact points and engine traversal ordering are
+not a portable public contract. `contact-normalization-v1.json` instead freezes pure project-owned
+inputs and metadata byte-for-byte, while live FCL tests assert semantic separation/touching/
+penetration invariants. This does not claim Rapier/FCL manifold parity. All values are `double`
+meters; contact tolerance remains `1e-6 m` and normal unit checks use `1e-9`. No clinical validation,
+force, pressure, complete evaluated sweep, Worker protocol, or export change is included.

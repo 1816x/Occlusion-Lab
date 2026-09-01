@@ -1,8 +1,26 @@
-name: Native core and collision
+name: Native core, collision and evaluation
 on:
   pull_request:
+    paths:
+      - 'CMakeLists.txt'
+      - 'CMakePresets.json'
+      - 'cmake/**'
+      - 'native/**'
+      - 'fixtures/parity/contact-normalization-v1.json'
+      - 'fixtures/parity/single-pose-collision-v1.json'
+      - 'vcpkg.json'
+      - '.github/workflows/native.yml'
   push:
     branches: [main]
+    paths:
+      - 'CMakeLists.txt'
+      - 'CMakePresets.json'
+      - 'cmake/**'
+      - 'native/**'
+      - 'fixtures/parity/contact-normalization-v1.json'
+      - 'fixtures/parity/single-pose-collision-v1.json'
+      - 'vcpkg.json'
+      - '.github/workflows/native.yml' 
 permissions:
   contents: read
 jobs:
@@ -23,7 +41,7 @@ jobs:
         run: ctest --preset native-debug --output-on-failure
 
   collision:
-    name: Collision / ${{ matrix.os }}
+    name: Collision + evaluation / ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -53,11 +71,11 @@ jobs:
         run: cmake --preset collision-debug -DOCCLUSION_FETCH_DEPENDENCIES=OFF -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
       - name: Build collision Debug
         run: cmake --build --preset collision-debug --parallel
-      - name: Test collision parity
+      - name: Test collision semantics and normalization fixture
         run: ctest --preset collision-debug --output-on-failure
 
   sanitizers:
-    name: Collision / Ubuntu / ASan+UBSan
+    name: Collision + evaluation / Ubuntu / ASan+UBSan
     runs-on: ubuntu-latest
     env:
       VCPKG_ROOT: ${{ runner.temp }}/vcpkg
@@ -73,7 +91,7 @@ jobs:
         run: cmake --preset collision-sanitizers -DOCCLUSION_FETCH_DEPENDENCIES=OFF -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
       - name: Build sanitizers
         run: cmake --build --preset collision-sanitizers --parallel
-      - name: Run collision tests under sanitizers
+      - name: Run collision and evaluation tests under sanitizers
         env:
           ASAN_OPTIONS: detect_leaks=1:halt_on_error=1
           UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1

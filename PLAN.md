@@ -6,12 +6,12 @@ Occlusion Lab pretende convertirse en una aplicación científica de escritorio 
 
 ## 2. Estado actual
 
-- **Fase actual:** Phase 4.3: Production-Grade FCL Collision Foundation
-- **Estado:** In progress
-- **Rama y commit iniciales:** `main` en `5607b26f856481f4aacb36139ec9837f125e80c5`
-- **Rama activa:** `codex/phase-4.3-fcl-collision-foundation`
-- **Pull request de Phase 4.3:** Draft pendiente de publicación.
-- **Última actualización significativa:** 2026-08-30 — Phase 4.2 completada mediante el PR [#12](https://github.com/1816x/Occlusion-Lab/pull/12), mergeado como `5607b26f856481f4aacb36139ec9837f125e80c5`; Phase 4.3 iniciada.
+- **Fase actual:** Phase 4.4: Deterministic Native Single-Pose Evaluation
+- **Estado:** Completed
+- **Rama y commit iniciales:** `main` en `da055bc2067b6477eea9efe7abbad0422ed8e9f3`
+- **Rama activa:** `codex/phase-4.4-native-pose-evaluation`
+- **Phase 4.3:** Completed mediante [PR #13](https://github.com/1816x/Occlusion-Lab/pull/13), merge `da055bc2067b6477eea9efe7abbad0422ed8e9f3`.
+- **Última actualización significativa:** 2026-09-01 — Phase 4.3 reconciliada como completada y Phase 4.4 iniciada desde el último `main`.
 
 La aplicación web heredada continúa disponible y funcional como referencia. La fundación nativa configura y compila en Debug/Release, `occlusion-core` ofrece unidades fuertes y validación, la CLI ejecuta su autocomprobación determinista y las 17 pruebas CTest pasan. Phase 4 se completó mediante el PR [#10](https://github.com/1816x/Occlusion-Lab/pull/10), mergeado como `11ca272b18467ef0a44140b14e075a311dbb6139`. La verificación local registró 17/17 CTest y 62/62 Vitest. El CI web remoto fue exitoso; el workflow nativo remoto falló y no se presenta como verificado.
 
@@ -90,15 +90,27 @@ La aplicación web heredada continúa disponible y funcional como referencia. La
 - VTK y Qt pertenecerán a presentación; no entran en `occlusion-core`, que debe permanecer reutilizable y comprobable sin UI.
 - La implementación web no puede eliminarse antes de contar con fixtures dorados, paridad demostrada y una interfaz de escritorio sustituta.
 
+### Verificación local de Phase 4.4 (2026-09-01)
+
+- Fixture de normalización: 10 casos; baseline fijo `da055bc2067b6477eea9efe7abbad0422ed8e9f3`.
+- Native core Debug: configure/build y 27/27 CTest PASS.
+- Native collision/evaluation Debug: configure/build y 63/63 CTest PASS (19 pruebas nuevas).
+- Native core y collision/evaluation Release: configure/build PASS.
+- ASan+UBSan collision/evaluation: configure/build y 63/63 CTest PASS.
+- Web: `npm ci`, parity, lint, typecheck, 91/91 Vitest, assets, Rapier-thread, build y audit PASS (0 vulnerabilidades).
+- CI remota Ubuntu, Windows y macOS: Unverified; no se presenta como aprobada.
+
 ## 7. Bloqueos y riesgos
 
 - La primera ejecución del formato nativo detectó archivos sin formatear; se aplicó `clang-format` y la repetición pasó antes del commit final.
 - Riesgo: la paridad cubre únicamente poses, transformaciones y generación determinista de barridos; no permite afirmar paridad de colisión, contacto, barrido ni clínica.
-- Riesgo: Qt, VTK, CGAL y FCL permanecen diferidos.
+- Riesgo: la estabilidad semántica FCL se prueba localmente, pero los manifolds exactos no son portables ni se consideran contrato.
+- Riesgo: CI remota multiplataforma permanece Unverified hasta inspeccionar los jobs del draft PR.
+- Diferidos: barridos evaluados completos, UI desktop y validación clínica; no se añadieron fuerzas ni presiones.
 
 ## 8. Próxima tarea recomendada
 
-Phase 4.4: implement deterministic native single-pose evaluation and bounded contact-sample normalization before porting complete evaluated motion sweeps.
+Phase 4.5: port complete evaluated motion sweeps and deterministic summaries using the reusable native pose evaluator.
 
 ## 9. Hitos completados
 
@@ -107,6 +119,8 @@ Phase 4.4: implement deterministic native single-pose evaluation and bounded con
 | Phase 4 | Fundación C++20, core, CLI, pruebas y CI | [PR #10](https://github.com/1816x/Occlusion-Lab/pull/10), merge `11ca272b18467ef0a44140b14e075a311dbb6139` | Completada; 17/17 CTest y 62/62 Vitest locales; CI web remoto exitoso, workflow nativo remoto fallido. |
 | Phase 4.1 | Fixtures dorados de pose y paridad del contrato C++ | [PR #11](https://github.com/1816x/Occlusion-Lab/pull/11), merge `39e206e48599333d2fa76947352e09be04c39dee` | Completada; 22/22 CTest y 66/66 Vitest locales; GitHub CI del head completado correctamente. |
 | Phase 4.2 | Paridad determinista de generación de barridos: 20 casos y 432 frames | [PR #12](https://github.com/1816x/Occlusion-Lab/pull/12), merge `5607b26f856481f4aacb36139ec9837f125e80c5` | Completada; 27/27 CTest y 85/85 Vitest locales; CI web verificada correctamente; CI nativa remota no verificada. |
+| Phase 4.4 | Evaluación nativa single-pose determinista y normalización acotada | Draft PR | Completed localmente; 63/63 CTest (19 nuevas), 91/91 Vitest PASS; ASan+UBSan PASS; CI remota Unverified. |
+| Phase 4.3 | Fundación de colisión FCL de producción | [PR #13](https://github.com/1816x/Occlusion-Lab/pull/13), merge `da055bc2067b6477eea9efe7abbad0422ed8e9f3` | Completed; 91/91 Vitest, 44/44 CTest (27 core + 17 collision), ASan y UBSan locales PASS; CI nativa remota Unverified. |
 
 ### Verificación local de Phase 4.2 (2026-08-27)
 

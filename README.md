@@ -129,3 +129,23 @@ This boundary generates poses and transforms only. Collision evaluation, contact
 `occlusion-collision` provides a project-owned two-stage API: validate and compile a closed `TriangleMesh` once, then reuse the immutable, shared `CollisionModel` for repeated `RigidTransform` queries. FCL is linked privately and is absent from both `occlusion-core` and public collision headers. Configure `collision-debug`, `collision-release`, or `collision-sanitizers`; default native presets remain FCL-free.
 
 The closed-box fixture `fixtures/parity/single-pose-collision-v1.json` covers seven deterministic gaps around the existing `1e-6 m` tolerance. `npm run parity:verify` verifies pose, sweep-generation, and collision fixtures; focused collision commands append `:collision`. Parity includes only classification, clearance, and penetration depth. Manifold points, normals, ordering/count, evaluated sweeps, UI changes, and clinical interpretation are excluded.
+
+## Phase 4.4: native single-pose evaluation
+
+`occlusion-evaluation` is the reusable orchestration boundary above `occlusion-core` and
+`occlusion-collision`. A session validates two triangle meshes, compiles exactly two immutable FCL
+BVHs, and reuses them for validated read-only pose queries. FCL headers remain private to the
+collision library.
+
+Native results use `double` meters. Separation exposes FCL distance as optional clearance;
+touching and penetration deliberately have no clearance value. Contacts are validated, oriented
+from fixed maxillary toward moving mandibular geometry, normalized to unit length, quantized to six
+decimal places, deduplicated on a `1e-5 m` grid, deterministically resolved and sorted, assigned
+value-derived FNV-1a stable IDs, then truncated to 32. FCL traversal order is not public behavior.
+The browser contract, Worker protocol, and exports are unchanged; unlike the browser result, the
+native contract explicitly records measurement availability, applied transform, optional clearance,
+intersection state, and structured errors.
+
+The normalization fixture is engine-neutral rather than an exact FCL manifold golden: manifold
+coordinates can legitimately vary with FCL and platform. Phase 4.4 covers one pose only. Complete
+evaluated sweeps, UI integration, clinical validation, forces, and pressures remain deferred.

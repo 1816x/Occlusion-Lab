@@ -87,3 +87,17 @@ The native `SweepPoseFrame` contract is deliberately separate from the older eva
 ## Phase 4.3 collision boundary
 
 `TriangleMesh → validate/compile once → immutable CollisionModel → repeated transform queries` is the required lifecycle. The optional `occlusion-collision` library privately owns FCL BVHs and depends inward on `occlusion-core`; neither core nor collision public headers expose FCL. Per-query objects are lightweight and compiled geometry is reused across all frames. Closed synthetic boxes define semantic classification parity at `1e-6 m`; manifold points, normals, ordering, and counts are deliberately excluded. See [ADR-0002](adr/0002-isolated-fcl-collision-boundary.md).
+
+## Native evaluation boundary (Phase 4.4)
+
+The dependency graph is `occlusion-evaluation -> {occlusion-core, occlusion-collision}`.
+Core remains free of FCL, JSON, and UI concerns; collision alone translates project-owned meshes
+and transforms to FCL. Evaluation owns session orchestration and deterministic publication. Its
+session compiles fixed and moving BVHs once, shares their immutable storage, validates a pose before
+incrementing/executing a query, applies `mandibular_pose_to_transform`, and supports concurrent
+read-only calls.
+
+Collision returns bounded engine-neutral candidates in world-space meters with normals oriented
+from fixed maxillary to moving mandibular geometry. Evaluation rejects an entire failed query rather
+than returning partial scientific data. A separated FCL distance is native clearance; clearance is
+absent for touching/penetrating results. Aggregate penetration is the maximum valid candidate depth.
