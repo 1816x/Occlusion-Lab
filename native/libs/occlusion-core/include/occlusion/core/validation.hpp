@@ -21,6 +21,7 @@ public:
   }
   [[nodiscard]] bool has_value() const noexcept { return value_.has_value(); }
   [[nodiscard]] explicit operator bool() const noexcept { return has_value(); }
+  [[nodiscard]] T& value() { return value_.value(); }
   [[nodiscard]] const T& value() const { return value_.value(); }
   [[nodiscard]] const std::vector<ValidationError>& errors() const noexcept { return errors_; }
 

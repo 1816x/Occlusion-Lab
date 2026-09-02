@@ -8,6 +8,10 @@ on:
       - 'native/**'
       - 'fixtures/parity/contact-normalization-v1.json'
       - 'fixtures/parity/single-pose-collision-v1.json'
+      - 'fixtures/parity/evaluated-sweep-summary-v1.json'
+      - 'scripts/parity/evaluated-sweep-summary-fixture.ts'
+      - 'scripts/parity/cli.mjs'
+      - 'package.json'
       - 'vcpkg.json'
       - '.github/workflows/native.yml'
   push:
@@ -19,6 +23,10 @@ on:
       - 'native/**'
       - 'fixtures/parity/contact-normalization-v1.json'
       - 'fixtures/parity/single-pose-collision-v1.json'
+      - 'fixtures/parity/evaluated-sweep-summary-v1.json'
+      - 'scripts/parity/evaluated-sweep-summary-fixture.ts'
+      - 'scripts/parity/cli.mjs'
+      - 'package.json'
       - 'vcpkg.json'
       - '.github/workflows/native.yml' 
 permissions:
@@ -48,11 +56,14 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
     env:
-      VCPKG_ROOT: ${{ runner.temp }}/vcpkg
-      VCPKG_DEFAULT_BINARY_CACHE: ${{ runner.temp }}/vcpkg-binary-cache
       VCPKG_MANIFEST_FEATURES: collision
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Initialize runner-specific vcpkg paths
+        shell: bash
+        run: |
+          echo "VCPKG_ROOT=$RUNNER_TEMP/vcpkg" >> "$GITHUB_ENV"
+          echo "VCPKG_DEFAULT_BINARY_CACHE=$RUNNER_TEMP/vcpkg-binary-cache" >> "$GITHUB_ENV"
       - uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809
         with:
           path: |
@@ -78,10 +89,11 @@ jobs:
     name: Collision + evaluation / Ubuntu / ASan+UBSan
     runs-on: ubuntu-latest
     env:
-      VCPKG_ROOT: ${{ runner.temp }}/vcpkg
       VCPKG_MANIFEST_FEATURES: collision
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Initialize runner-specific vcpkg path
+        run: echo "VCPKG_ROOT=$RUNNER_TEMP/vcpkg" >> "$GITHUB_ENV"
       - name: Bootstrap pinned vcpkg
         run: |
           git clone https://github.com/microsoft/vcpkg.git "$VCPKG_ROOT"

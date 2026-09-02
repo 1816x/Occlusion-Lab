@@ -1,0 +1,679 @@
+{
+  "schemaVersion": "1.0.0",
+  "units": {
+    "penetrationDepth": "meters",
+    "normalizedProgress": "unitless [0, 1]"
+  },
+  "sourceBaselineCommit": "46ffc9524e781fe2e8d8c269027434f422c2abf7",
+  "parityScope": "deterministic sweep summary semantics; excludes live collision manifolds",
+  "cases": [
+    {
+      "id": "no-contact",
+      "frames": [
+        {
+          "classification": "separated",
+          "penetrationDepthMeters": 0
+        },
+        {
+          "classification": "separated",
+          "penetrationDepthMeters": 0
+        },
+        {
+          "classification": "separated",
+          "penetrationDepthMeters": 0
+        }
+      ],
+      "expected": {
+        "totalFrameCount": 3,
+        "firstContactFrame": null,
+        "lastContactFrame": null,
+        "contactFrameCount": 0,
+        "maximumPenetrationMeters": 0,
+        "maximumPenetrationFrame": null,
+        "contactPersistsThroughFinalFrame": false
+      }
+    },
+    {
+      "id": "all-touching",
+      "frames": [
+        {
+          "classification": "touching",
+          "penetrationDepthMeters": 0
+        },
+        {
+          "classification": "touching",
+          "penetrationDepthMeters": 0
+        },
+        {
+          "classification": "touching",
+          "penetrationDepthMeters": 0
+        }
+      ],
+      "expected": {
+        "totalFrameCount": 3,
+        "firstContactFrame": 0,
+        "lastContactFrame": 2,
+        "contactFrameCount": 3,
+        "maximumPenetrationMeters": 0,
+        "maximumPenetrationFrame": null,
+        "contactPersistsThroughFinalFrame": true
+      }
+    },
+    {
+      "id": "all-penetrating",
+      "frames": [
+        {
+          "classification": "penetrating",
+          "penetrationDepthMeters": 0.001
+        },
+        {
+          "classification": "penetrating",
+          "penetrationDepthMeters": 0.002
+        },
+        {
+          "classification": "penetrating",
+          "penetrationDepthMeters": 0.003
+        }
+      ],
+      "expected": {
+        "totalFrameCount": 3,
+        "firstContactFrame": 0,
+        "lastContactFrame": 2,
+        "contactFrameCount": 3,
+        "maximumPenetrationMeters": 0.003,
+        "maximumPenetrationFrame": 2,
+        "contactPersistsThroughFinalFrame": true
+      }
+    },
+    {
+      "id": "contact-begins-midway",
+      "frames": [
+        {
+          "classification": "separated",
+          "penetrationDepthMeters": 0
+        },
+        {
+          "classification": "separated",
+          "penetrationDepthMeters": 0
+        },
+        {
+          "classification": "touching",
+          "penetrationDepthMeters": 0
+        },
+        {
+          "classification": "penetrating",
+          "penetrationDepthMeters": 0.002
+        }
+      ],
+      "expected": {
+        "totalFrameCount": 4,
+        "firstContactFrame": 2,
+        "lastContactFrame": 3,
+        "contactFrameCount": 2,
+        "maximumPenetrationMeters": 0.002,
+        "maximumPenetrationFrame": 3,
+        "contactPersistsThroughFinalFrame": true
+      }
+    },
+    {
+      "id": "contact-ends-before-final",
+      "frames": [
+        {
+          "classification": "touching",
+          "penetrationDepthMeters": 0
+        },
+        {
+          "classification": "penetrating",
+          "penetrationDepthMeters": 0.003
+        },
+        {
+          "classification": "separated",
+          "penetrationDepthMeters": 0
+        }
+      ],
+      "expected": {
+        "totalFrameCount": 3,
+        "firstContactFrame": 0,
+        "lastContactFrame": 1,
+        "contactFrameCount": 2,
+        "maximumPenetrationMeters": 0.003,
+        "maximumPenetrationFrame": 1,
+        "contactPersistsThroughFinalFrame": false
+      }
+    },
+    {
+      "id": "contact-persists-final",
+      "frames": [
+        {
+          "classification": "separated",
+          "penetrationDepthMeters": 0
+        },
+        {
+          "classification": "touching",
+          "penetrationDepthMeters": 0
+        },
+        {
+          "classification": "touching",
+          "penetrationDepthMeters": 0
+        }
+      ],
+      "expected": {
+        "totalFrameCount": 3,
+        "firstContactFrame": 1,
+        "lastContactFrame": 2,
+        "contactFrameCount": 2,
+        "maximumPenetrationMeters": 0,
+        "maximumPenetrationFrame": null,
+        "contactPersistsThroughFinalFrame": true
+      }
+    },
+    {
+      "id": "multiple-penetration-peaks",
+      "frames": [
+        {
+          "classification": "penetrating",
+          "penetrationDepthMeters": 0.001
+        },
+        {
+          "classification": "penetrating",
+          "penetrationDepthMeters": 0.004
+        },
+        {
+          "classification": "penetrating",
+          "penetrationDepthMeters": 0.002
+        },
+        {
+          "classification": "penetrating",
+          "penetrationDepthMeters": 0.006
+        }
+      ],
+      "expected": {
+        "totalFrameCount": 4,
+        "firstContactFrame": 0,
+        "lastContactFrame": 3,
+        "contactFrameCount": 4,
+        "maximumPenetrationMeters": 0.006,
+        "maximumPenetrationFrame": 3,
+        "contactPersistsThroughFinalFrame": true
+      }
+    },
+    {
+      "id": "equal-maximum-earliest",
+      "frames": [
+        {
+          "classification": "penetrating",
+          "penetrationDepthMeters": 0.005
+        },
+        {
+          "classification": "penetrating",
+          "penetrationDepthMeters": 0.002
+        },
+        {
+          "classification": "penetrating",
+          "penetrationDepthMeters": 0.005
+        }
+      ],
+      "expected": {
+        "totalFrameCount": 3,
+        "firstContactFrame": 0,
+        "lastContactFrame": 2,
+        "contactFrameCount": 3,
+        "maximumPenetrationMeters": 0.005,
+        "maximumPenetrationFrame": 0,
+        "contactPersistsThroughFinalFrame": true
+      }
+    },
+    {
+      "id": "mixed-states",
+      "frames": [
+        {
+          "classification": "separated",
+          "penetrationDepthMeters": 0
+        },
+        {
+          "classification": "touching",
+          "penetrationDepthMeters": 0
+        },
+        {
+          "classification": "penetrating",
+          "penetrationDepthMeters": 0.003
+        },
+        {
+          "classification": "separated",
+          "penetrationDepthMeters": 0
+        },
+        {
+          "classification": "touching",
+          "penetrationDepthMeters": 0
+        }
+      ],
+      "expected": {
+        "totalFrameCount": 5,
+        "firstContactFrame": 1,
+        "lastContactFrame": 4,
+        "contactFrameCount": 3,
+        "maximumPenetrationMeters": 0.003,
+        "maximumPenetrationFrame": 2,
+        "contactPersistsThroughFinalFrame": true
+      }
+    },
+    {
+      "id": "minimum-two-frames",
+      "frames": [
+        {
+          "classification": "separated",
+          "penetrationDepthMeters": 0
+        },
+        {
+          "classification": "touching",
+          "penetrationDepthMeters": 0
+        }
+      ],
+      "expected": {
+        "totalFrameCount": 2,
+        "firstContactFrame": 1,
+        "lastContactFrame": 1,
+        "contactFrameCount": 1,
+        "maximumPenetrationMeters": 0,
+        "maximumPenetrationFrame": null,
+        "contactPersistsThroughFinalFrame": true
+      }
+    },
+    {
+      "id": "default-31-frames",
+      "frames": [
+        {
+          "classification": "separated",
+          "penetrationDepthMeters": 0
+        },
+        {
+          "classification": "separated",
+          "penetrationDepthMeters": 0
+        },
+        {
+          "classification": "separated",
+          "penetrationDepthMeters": 0
+        },
+        {
+          "classification": "separated",
+          "penetrationDepthMeters": 0
+        },
+        {
+          "classification": "separated",
+          "penetrationDepthMeters": 0
+        },
+        {
+          "classification": "separated",
+          "penetrationDepthMeters": 0
+        },
+        {
+          "classification": "separated",
+          "penetrationDepthMeters": 0
+        },
+        {
+          "classification": "separated",
+          "penetrationDepthMeters": 0
+        },
+        {
+          "classification": "separated",
+          "penetrationDepthMeters": 0
+        },
+        {
+          "classification": "separated",
+          "penetrationDepthMeters": 0
+        },
+        {
+          "classification": "separated",
+          "penetrationDepthMeters": 0
+        },
+        {
+          "classification": "separated",
+          "penetrationDepthMeters": 0
+        },
+        {
+          "classification": "separated",
+          "penetrationDepthMeters": 0
+        },
+        {
+          "classification": "separated",
+          "penetrationDepthMeters": 0
+        },
+        {
+          "classification": "separated",
+          "penetrationDepthMeters": 0
+        },
+        {
+          "classification": "penetrating",
+          "penetrationDepthMeters": 0.0001
+        },
+        {
+          "classification": "penetrating",
+          "penetrationDepthMeters": 0.0002
+        },
+        {
+          "classification": "penetrating",
+          "penetrationDepthMeters": 0.00030000000000000003
+        },
+        {
+          "classification": "penetrating",
+          "penetrationDepthMeters": 0.0004
+        },
+        {
+          "classification": "penetrating",
+          "penetrationDepthMeters": 0.0005
+        },
+        {
+          "classification": "penetrating",
+          "penetrationDepthMeters": 0.0006000000000000001
+        },
+        {
+          "classification": "penetrating",
+          "penetrationDepthMeters": 0.0007
+        },
+        {
+          "classification": "penetrating",
+          "penetrationDepthMeters": 0.0008
+        },
+        {
+          "classification": "penetrating",
+          "penetrationDepthMeters": 0.0009000000000000001
+        },
+        {
+          "classification": "penetrating",
+          "penetrationDepthMeters": 0.001
+        },
+        {
+          "classification": "penetrating",
+          "penetrationDepthMeters": 0.0011
+        },
+        {
+          "classification": "penetrating",
+          "penetrationDepthMeters": 0.0012000000000000001
+        },
+        {
+          "classification": "penetrating",
+          "penetrationDepthMeters": 0.0013000000000000002
+        },
+        {
+          "classification": "penetrating",
+          "penetrationDepthMeters": 0.0014
+        },
+        {
+          "classification": "penetrating",
+          "penetrationDepthMeters": 0.0015
+        },
+        {
+          "classification": "penetrating",
+          "penetrationDepthMeters": 0.0016
+        }
+      ],
+      "expected": {
+        "totalFrameCount": 31,
+        "firstContactFrame": 15,
+        "lastContactFrame": 30,
+        "contactFrameCount": 16,
+        "maximumPenetrationMeters": 0.0016,
+        "maximumPenetrationFrame": 30,
+        "contactPersistsThroughFinalFrame": true
+      }
+    },
+    {
+      "id": "maximum-61-frames",
+      "frames": [
+        {
+          "classification": "penetrating",
+          "penetrationDepthMeters": 0.001
+        },
+        {
+          "classification": "touching",
+          "penetrationDepthMeters": 0
+        },
+        {
+          "classification": "separated",
+          "penetrationDepthMeters": 0
+        },
+        {
+          "classification": "penetrating",
+          "penetrationDepthMeters": 0.00103
+        },
+        {
+          "classification": "touching",
+          "penetrationDepthMeters": 0
+        },
+        {
+          "classification": "separated",
+          "penetrationDepthMeters": 0
+        },
+        {
+          "classification": "penetrating",
+          "penetrationDepthMeters": 0.00106
+        },
+        {
+          "classification": "touching",
+          "penetrationDepthMeters": 0
+        },
+        {
+          "classification": "separated",
+          "penetrationDepthMeters": 0
+        },
+        {
+          "classification": "penetrating",
+          "penetrationDepthMeters": 0.00109
+        },
+        {
+          "classification": "touching",
+          "penetrationDepthMeters": 0
+        },
+        {
+          "classification": "separated",
+          "penetrationDepthMeters": 0
+        },
+        {
+          "classification": "penetrating",
+          "penetrationDepthMeters": 0.0011200000000000001
+        },
+        {
+          "classification": "touching",
+          "penetrationDepthMeters": 0
+        },
+        {
+          "classification": "separated",
+          "penetrationDepthMeters": 0
+        },
+        {
+          "classification": "penetrating",
+          "penetrationDepthMeters": 0.00115
+        },
+        {
+          "classification": "touching",
+          "penetrationDepthMeters": 0
+        },
+        {
+          "classification": "separated",
+          "penetrationDepthMeters": 0
+        },
+        {
+          "classification": "penetrating",
+          "penetrationDepthMeters": 0.00118
+        },
+        {
+          "classification": "touching",
+          "penetrationDepthMeters": 0
+        },
+        {
+          "classification": "separated",
+          "penetrationDepthMeters": 0
+        },
+        {
+          "classification": "penetrating",
+          "penetrationDepthMeters": 0.0012100000000000001
+        },
+        {
+          "classification": "touching",
+          "penetrationDepthMeters": 0
+        },
+        {
+          "classification": "separated",
+          "penetrationDepthMeters": 0
+        },
+        {
+          "classification": "penetrating",
+          "penetrationDepthMeters": 0.00124
+        },
+        {
+          "classification": "touching",
+          "penetrationDepthMeters": 0
+        },
+        {
+          "classification": "separated",
+          "penetrationDepthMeters": 0
+        },
+        {
+          "classification": "penetrating",
+          "penetrationDepthMeters": 0.00127
+        },
+        {
+          "classification": "touching",
+          "penetrationDepthMeters": 0
+        },
+        {
+          "classification": "separated",
+          "penetrationDepthMeters": 0
+        },
+        {
+          "classification": "penetrating",
+          "penetrationDepthMeters": 0.0013
+        },
+        {
+          "classification": "touching",
+          "penetrationDepthMeters": 0
+        },
+        {
+          "classification": "separated",
+          "penetrationDepthMeters": 0
+        },
+        {
+          "classification": "penetrating",
+          "penetrationDepthMeters": 0.00133
+        },
+        {
+          "classification": "touching",
+          "penetrationDepthMeters": 0
+        },
+        {
+          "classification": "separated",
+          "penetrationDepthMeters": 0
+        },
+        {
+          "classification": "penetrating",
+          "penetrationDepthMeters": 0.00136
+        },
+        {
+          "classification": "touching",
+          "penetrationDepthMeters": 0
+        },
+        {
+          "classification": "separated",
+          "penetrationDepthMeters": 0
+        },
+        {
+          "classification": "penetrating",
+          "penetrationDepthMeters": 0.0013900000000000002
+        },
+        {
+          "classification": "touching",
+          "penetrationDepthMeters": 0
+        },
+        {
+          "classification": "separated",
+          "penetrationDepthMeters": 0
+        },
+        {
+          "classification": "penetrating",
+          "penetrationDepthMeters": 0.00142
+        },
+        {
+          "classification": "touching",
+          "penetrationDepthMeters": 0
+        },
+        {
+          "classification": "separated",
+          "penetrationDepthMeters": 0
+        },
+        {
+          "classification": "penetrating",
+          "penetrationDepthMeters": 0.0014500000000000001
+        },
+        {
+          "classification": "touching",
+          "penetrationDepthMeters": 0
+        },
+        {
+          "classification": "separated",
+          "penetrationDepthMeters": 0
+        },
+        {
+          "classification": "penetrating",
+          "penetrationDepthMeters": 0.00148
+        },
+        {
+          "classification": "touching",
+          "penetrationDepthMeters": 0
+        },
+        {
+          "classification": "separated",
+          "penetrationDepthMeters": 0
+        },
+        {
+          "classification": "penetrating",
+          "penetrationDepthMeters": 0.00151
+        },
+        {
+          "classification": "touching",
+          "penetrationDepthMeters": 0
+        },
+        {
+          "classification": "separated",
+          "penetrationDepthMeters": 0
+        },
+        {
+          "classification": "penetrating",
+          "penetrationDepthMeters": 0.0015400000000000001
+        },
+        {
+          "classification": "touching",
+          "penetrationDepthMeters": 0
+        },
+        {
+          "classification": "separated",
+          "penetrationDepthMeters": 0
+        },
+        {
+          "classification": "penetrating",
+          "penetrationDepthMeters": 0.0015700000000000002
+        },
+        {
+          "classification": "touching",
+          "penetrationDepthMeters": 0
+        },
+        {
+          "classification": "separated",
+          "penetrationDepthMeters": 0
+        },
+        {
+          "classification": "penetrating",
+          "penetrationDepthMeters": 0.0016
+        }
+      ],
+      "expected": {
+        "totalFrameCount": 61,
+        "firstContactFrame": 0,
+        "lastContactFrame": 60,
+        "contactFrameCount": 41,
+        "maximumPenetrationMeters": 0.0016,
+        "maximumPenetrationFrame": 60,
+        "contactPersistsThroughFinalFrame": true
+      }
+    }
+  ]
+}
