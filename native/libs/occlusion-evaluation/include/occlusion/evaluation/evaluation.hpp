@@ -43,6 +43,30 @@ struct PoseEvaluationResult final {
   std::size_t normalized_contact_count;
   std::vector<NormalizedContactSample> contacts;
 };
+struct EvaluatedSweepFrame final {
+  std::size_t index;
+  double normalized_progress;
+  occlusion::core::MandibularPose requested_pose;
+  PoseEvaluationResult evaluation;
+};
+struct EvaluatedSweepSummary final {
+  std::size_t total_frame_count;
+  std::optional<std::size_t> first_contact_frame;
+  std::optional<std::size_t> last_contact_frame;
+  std::size_t contact_frame_count;
+  occlusion::core::Meters maximum_penetration;
+  std::optional<std::size_t> maximum_penetration_frame;
+  bool contact_persists_through_final_frame;
+};
+struct EvaluatedSweepResult final {
+  occlusion::core::SweepPreset preset;
+  std::size_t requested_frame_count;
+  occlusion::core::MandibularPose final_pose;
+  std::vector<EvaluatedSweepFrame> frames;
+  EvaluatedSweepSummary summary;
+};
+[[nodiscard]] occlusion::core::ValidationResult<EvaluatedSweepSummary>
+summarize_evaluated_sweep(const std::vector<EvaluatedSweepFrame>& frames);
 [[nodiscard]] occlusion::core::ValidationResult<std::vector<NormalizedContactSample>>
 normalize_contacts(std::vector<occlusion::collision::ContactCandidate> candidates);
 
@@ -52,6 +76,8 @@ public:
   create(occlusion::collision::TriangleMesh fixed, occlusion::collision::TriangleMesh moving);
   [[nodiscard]] occlusion::core::ValidationResult<PoseEvaluationResult>
   evaluate(occlusion::core::MandibularPose pose) const;
+  [[nodiscard]] occlusion::core::ValidationResult<EvaluatedSweepResult>
+  evaluate_sweep(occlusion::core::SweepPreset preset, std::size_t frame_count) const;
   [[nodiscard]] std::size_t compilation_count() const noexcept;
   [[nodiscard]] std::size_t query_count() const noexcept;
 
