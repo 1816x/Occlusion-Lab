@@ -40,7 +40,8 @@
       "displayName": "Collision Debug",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
-        "OCCLUSION_ENABLE_COLLISION": "ON"
+        "OCCLUSION_ENABLE_COLLISION": "ON",
+        "VCPKG_MANIFEST_FEATURES": "collision"
       }
     },
     {
@@ -50,7 +51,8 @@
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
         "OCCLUSION_ENABLE_COLLISION": "ON",
-        "OCCLUSION_BUILD_TESTS": "OFF"
+        "OCCLUSION_BUILD_TESTS": "OFF",
+        "VCPKG_MANIFEST_FEATURES": "collision"
       }
     },
     {
@@ -58,7 +60,8 @@
       "inherits": "collision-debug",
       "displayName": "Collision ASan/UBSan",
       "cacheVariables": {
-        "OCCLUSION_ENABLE_SANITIZERS": "ON"
+        "OCCLUSION_ENABLE_SANITIZERS": "ON",
+        "VCPKG_MANIFEST_FEATURES": "collision"
       }
     }
   ],
@@ -102,6 +105,20 @@
     {
       "name": "collision-sanitizers",
       "configurePreset": "collision-sanitizers",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "native-release",
+      "configurePreset": "native-release",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "collision-release",
+      "configurePreset": "collision-release",
       "output": {
         "outputOnFailure": true
       }

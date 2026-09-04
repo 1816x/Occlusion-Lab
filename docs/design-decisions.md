@@ -105,3 +105,12 @@ inputs and metadata byte-for-byte, while live FCL tests assert semantic separati
 penetration invariants. This does not claim Rapier/FCL manifold parity. All values are `double`
 meters; contact tolerance remains `1e-6 m` and normal unit checks use `1e-9`. No clinical validation,
 force, pressure, complete evaluated sweep, Worker protocol, or export change is included.
+
+## Phase 4.5: evaluated motion sweeps
+
+- **Reuse and ordering:** execution delegates interpolation to `occlusion-core`, then calls the existing evaluator sequentially. Two lifetime BVHs serve every query and frame storage reserves exactly the requested count. Parallelism is deferred pending whole-workload evidence.
+- **Bounded memory:** normalization caps each frame at 32 samples, hence 1,952 for 61 frames. No singleton or global mutable cache exists.
+- **Fail closed:** invalid counts and presets execute no queries. Summary validation rejects empty/noncontiguous frames, invalid/nonmonotonic progress, and inconsistent classifications. Frame failures receive a `frames[index].` field prefix and partial work is discarded.
+- **Summary contract:** a published sample establishes contact; strict-greater maximum updates preserve the earliest tie; persistence means final-frame contact. Native absent indexes are optionals and fixture JSON uses `null`; Worker behavior is unchanged.
+- **Fixture and parity:** 12 versioned cases pin baseline `46ffc9524e781fe2e8d8c269027434f422c2abf7`, meters, stable bytes, and dependency-free TypeScript reference behavior. Generation is an intentional reviewed rebaseline. Exact Rapier/FCL manifold parity is excluded.
+- **Deferred scope:** CLI JSON, desktop UI, mesh import, CGAL, and clinical validation remain future work. No patient data, force, pressure, diagnosis, or treatment behavior was added.

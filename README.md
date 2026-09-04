@@ -4,7 +4,7 @@ Occlusion Lab is a **work in progress** educational browser sandbox for syntheti
 
 ## C++ migration (Phase 4)
 
-The project is migrating toward a C++20, desktop-first scientific architecture. The existing Next.js/React/Three.js application remains intact as the production behavioral reference. Phase 4.1 completed pose validation/transform parity; Phase 4.2 adds only deterministic sweep endpoint, frame-count, and pose-interpolation parity. No collision or clinical parity is claimed. CGAL/FCL geometry and collision modules plus Qt 6/VTK presentation are planned, not implemented.
+The project is migrating toward a C++20, desktop-first scientific architecture. The existing Next.js/React/Three.js application remains intact as the production behavioral reference. Phase 4.5 adds native evaluated sweeps above the implemented FCL collision and single-pose evaluation layers. It establishes deterministic summary-contract parity, not exact Rapier/FCL manifold parity. CGAL processing, Qt 6/VTK presentation, mesh import, CLI exposure, and clinical validation remain future work.
 
 [`PLAN.md`](PLAN.md) is the concise source of truth for migration status, verification results, risks, and the single next task. The architectural rationale is recorded in [ADR-0001](docs/adr/0001-cpp-desktop-architecture.md).
 
@@ -149,3 +149,11 @@ intersection state, and structured errors.
 The normalization fixture is engine-neutral rather than an exact FCL manifold golden: manifold
 coordinates can legitimately vary with FCL and platform. Phase 4.4 covers one pose only. Complete
 evaluated sweeps, UI integration, clinical validation, forces, and pressures remain deferred.
+
+## Phase 4.5: native evaluated motion sweeps
+
+`PoseEvaluator::evaluate_sweep` obtains poses exclusively from the Phase 4.2 generator and evaluates them sequentially through the existing pose operation. Exactly two compiled BVHs are retained for the evaluator lifetime; a 61-frame sweep performs 61 queries without rebuilding geometry. Frames reserve exact capacity and each publishes at most 32 contacts, for at most 1,952 samples.
+
+The pure summary defines contact by a nonempty published-contact vector, selects first and last contact in order, retains the earliest equal penetration maximum, and reports final persistence only for final-frame contact. Missing native indexes are `std::optional`; golden JSON represents absence with `null`, while the browser remains unchanged. Validation rejects invalid order, progress, and inconsistent measurements. Per-frame failures use `frames[index].` fields and never return successful partial data.
+
+The 12-case `evaluated-sweep-summary-v1.json` fixture uses a dependency-free TypeScript reference to `summarizeSweep()` semantics. `npm run parity:verify` detects byte drift; `npm run parity:generate` is an intentional reviewed rebaseline only. This covers summary behavior, not exact Rapier/FCL manifolds. CLI JSON, desktop UI, mesh import, CGAL, and clinical validation remain deferred.

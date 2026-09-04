@@ -6,12 +6,17 @@ Occlusion Lab pretende convertirse en una aplicación científica de escritorio 
 
 ## 2. Estado actual
 
-- **Fase actual:** Phase 4.4: Deterministic Native Single-Pose Evaluation
-- **Estado:** Completed
-- **Rama y commit iniciales:** `main` en `da055bc2067b6477eea9efe7abbad0422ed8e9f3`
-- **Rama activa:** `codex/phase-4.4-native-pose-evaluation`
+- **Fase actual:** Phase 4.5: Native Evaluated Motion Sweeps and Deterministic Summaries
+- **Estado:** In progress
+- **Commit base esperado:** `46ffc9524e781fe2e8d8c269027434f422c2abf7`
+- **Rama activa:** `codex/implement-phase-4.5-evaluated-motion-sweeps`
+- **PR en curso:** https://github.com/1816x/Occlusion-Lab/pull/15
+- **Head publicado al iniciar la reparación:** `e6c46f5368641d12d6676447b5338ecc0b30ea0d`
+- **Estado CI previo a la reparación:** Web PASS; Core PASS en Ubuntu, Windows y macOS; Collision + evaluation FAIL en Ubuntu, Windows y macOS; Sanitizers Ubuntu FAIL.
+- **Causas diagnosticadas:** incompatibilidad de versión solicitada Eigen 3.4 frente al paquete Eigen 5.0.1; feature `collision` de vcpkg no activada mediante CMake; selección MinGW incompatible con el triplet MSVC `x64-windows`.
 - **Phase 4.3:** Completed mediante [PR #13](https://github.com/1816x/Occlusion-Lab/pull/13), merge `da055bc2067b6477eea9efe7abbad0422ed8e9f3`.
-- **Última actualización significativa:** 2026-09-01 — Phase 4.3 reconciliada como completada y Phase 4.4 iniciada desde el último `main`.
+- **Phase 4.4:** Completed mediante [PR #14](https://github.com/1816x/Occlusion-Lab/pull/14), head `3d3b3de6cbded3ecaf6b2d61c53ebdb4b84fedca`, merge `46ffc9524e781fe2e8d8c269027434f422c2abf7`.
+- **Última actualización significativa:** 2026-09-02 — Phase 4.4 reconciliada como completada y Phase 4.5 iniciada desde el último `main`.
 
 La aplicación web heredada continúa disponible y funcional como referencia. La fundación nativa configura y compila en Debug/Release, `occlusion-core` ofrece unidades fuertes y validación, la CLI ejecuta su autocomprobación determinista y las 17 pruebas CTest pasan. Phase 4 se completó mediante el PR [#10](https://github.com/1816x/Occlusion-Lab/pull/10), mergeado como `11ca272b18467ef0a44140b14e075a311dbb6139`. La verificación local registró 17/17 CTest y 62/62 Vitest. El CI web remoto fue exitoso; el workflow nativo remoto falló y no se presenta como verificado.
 
@@ -21,11 +26,13 @@ La aplicación web heredada continúa disponible y funcional como referencia. La
 |---|---|---|---|---|
 | Contratos de dominio | TypeScript y nuevos contratos C++ | Biblioteca C++20 `occlusion-core` | Fundación implementada | Sin lógica clínica. |
 | Unidades y transformaciones | Tipos fuertes C++ | Tipos fuertes C++ con metros internos | Fundación implementada | Conversión de mm explícita. |
-| Procesamiento geométrico | Flujo web existente | CGAL | Futuro | No se implementa en Phase 4. |
-| Detección de colisiones | Worker web/Rapier | FCL | Futuro | FCL se reservará para colisión y distancia. |
-| Análisis de barrido de movimiento | Web existente | Motor C++ | Futuro | Primero se crearán fixtures dorados. |
+| Procesamiento geométrico | Flujo web existente | CGAL | Futuro | CGAL y validación clínica permanecen diferidos. |
+| Detección de colisiones | Worker web/Rapier y FCL nativo | FCL | Implementado | Fundación FCL y evaluación single-pose implementadas. |
+| Evaluación de pose individual | Worker web/Rapier y `occlusion-evaluation` | Motor C++ | Implementado | Contrato nativo engine-neutral sobre FCL. |
+| Análisis de barrido de movimiento | Web existente | Motor C++ | Fase actual | Phase 4.5 implementa barridos evaluados. |
 | Renderer | Three.js | VTK | Futuro | No forma parte del core. |
 | UI de escritorio | No existe | Qt 6 | Futuro | Arquitectura desktop-first. |
+| Validación clínica | No existe | Investigación futura | Futuro | No se realizan afirmaciones clínicas. |
 | CLI | `occlusion-cli` | `occlusion-cli` extensible | Fundación implementada | Solo versión y autocomprobación. |
 | Pruebas | Vitest/web y GoogleTest nativo | GoogleTest + pruebas web | Fundación implementada | Se mantiene la suite heredada. |
 | CI | Web y workflow nativo | CI web y nativa multiplataforma | Implementado, pendiente ejecución remota | Sin debilitar CI existente. |
@@ -98,10 +105,11 @@ La aplicación web heredada continúa disponible y funcional como referencia. La
 - Native core y collision/evaluation Release: configure/build PASS.
 - ASan+UBSan collision/evaluation: configure/build y 63/63 CTest PASS.
 - Web: `npm ci`, parity, lint, typecheck, 91/91 Vitest, assets, Rapier-thread, build y audit PASS (0 vulnerabilidades).
-- CI remota Ubuntu, Windows y macOS: Unverified; no se presenta como aprobada.
+- Web GitHub Actions: PASS. Native workflow [run 33525752697](https://github.com/1816x/Occlusion-Lab/actions/runs/33525752697): **FAIL** antes de crear jobs (cero jobs), no `Unverified`.
 
 ## 7. Bloqueos y riesgos
 
+- Causa exacta del fallo nativo 33525752697: el workflow evaluaba `${{ runner.temp }}` en `jobs.<job_id>.env`, un ámbito donde el contexto `runner` todavía no está disponible; GitHub rechazó el workflow antes de crear jobs. Phase 4.5 traslada esas rutas a pasos ejecutables que publican `$RUNNER_TEMP` mediante `$GITHUB_ENV`.
 - La primera ejecución del formato nativo detectó archivos sin formatear; se aplicó `clang-format` y la repetición pasó antes del commit final.
 - Riesgo: la paridad cubre únicamente poses, transformaciones y generación determinista de barridos; no permite afirmar paridad de colisión, contacto, barrido ni clínica.
 - Riesgo: la estabilidad semántica FCL se prueba localmente, pero los manifolds exactos no son portables ni se consideran contrato.
@@ -110,7 +118,7 @@ La aplicación web heredada continúa disponible y funcional como referencia. La
 
 ## 8. Próxima tarea recomendada
 
-Phase 4.5: port complete evaluated motion sweeps and deterministic summaries using the reusable native pose evaluator.
+Phase 4.6: expose deterministic native pose and sweep evaluation through the CLI with versioned JSON output.
 
 ## 9. Hitos completados
 
@@ -119,8 +127,8 @@ Phase 4.5: port complete evaluated motion sweeps and deterministic summaries usi
 | Phase 4 | Fundación C++20, core, CLI, pruebas y CI | [PR #10](https://github.com/1816x/Occlusion-Lab/pull/10), merge `11ca272b18467ef0a44140b14e075a311dbb6139` | Completada; 17/17 CTest y 62/62 Vitest locales; CI web remoto exitoso, workflow nativo remoto fallido. |
 | Phase 4.1 | Fixtures dorados de pose y paridad del contrato C++ | [PR #11](https://github.com/1816x/Occlusion-Lab/pull/11), merge `39e206e48599333d2fa76947352e09be04c39dee` | Completada; 22/22 CTest y 66/66 Vitest locales; GitHub CI del head completado correctamente. |
 | Phase 4.2 | Paridad determinista de generación de barridos: 20 casos y 432 frames | [PR #12](https://github.com/1816x/Occlusion-Lab/pull/12), merge `5607b26f856481f4aacb36139ec9837f125e80c5` | Completada; 27/27 CTest y 85/85 Vitest locales; CI web verificada correctamente; CI nativa remota no verificada. |
-| Phase 4.4 | Evaluación nativa single-pose determinista y normalización acotada | Draft PR | Completed localmente; 63/63 CTest (19 nuevas), 91/91 Vitest PASS; ASan+UBSan PASS; CI remota Unverified. |
 | Phase 4.3 | Fundación de colisión FCL de producción | [PR #13](https://github.com/1816x/Occlusion-Lab/pull/13), merge `da055bc2067b6477eea9efe7abbad0422ed8e9f3` | Completed; 91/91 Vitest, 44/44 CTest (27 core + 17 collision), ASan y UBSan locales PASS; CI nativa remota Unverified. |
+| Phase 4.4 | Evaluación nativa single-pose determinista y normalización acotada | [PR #14](https://github.com/1816x/Occlusion-Lab/pull/14), head `3d3b3de6cbded3ecaf6b2d61c53ebdb4b84fedca`, merge `46ffc9524e781fe2e8d8c269027434f422c2abf7` | Completed; 63/63 CTest (19 nuevas), 91/91 Vitest; ASan+UBSan locales y Web Actions PASS; native run 33525752697 FAIL antes de crear jobs. |
 
 ### Verificación local de Phase 4.2 (2026-08-27)
 
@@ -139,3 +147,24 @@ Phase 4.5: port complete evaluated motion sweeps and deterministic summaries usi
 - `npm ci`, las tres fixtures de paridad, lint, typecheck, assets, Rapier-thread, build y audit: PASS; 0 vulnerabilidades.
 - CI remota Ubuntu, Windows y macOS: no verificada hasta que el draft PR publique y ejecute todos los jobs; no se presenta como aprobada.
 - Riesgo restante: los resultados multiplataforma y el target FCL exportado por el vcpkg fijado deben confirmarse en el PR. La paridad excluye manifolds y barridos evaluados completos.
+
+### Verificación local de Phase 4.5 (2026-09-02)
+
+- Fixture de resumen: 12 casos, incluidos 2, 31 y 61 frames; baseline `46ffc9524e781fe2e8d8c269027434f422c2abf7`.
+- Native core Debug: 27/27 CTest PASS. Collision/evaluation Debug: 75/75 PASS (12 pruebas nuevas).
+- Native core y collision/evaluation Release: configure/build PASS. ASan+UBSan: 75/75 PASS.
+- Web: `npm ci`, parity, lint, typecheck, 91/91 Vitest, assets, Rapier-thread, build y audit PASS (0 vulnerabilidades).
+- Barridos secuenciales: exactamente dos BVH, hasta 32 contactos/frame y 1.952 en 61 frames.
+- Paridad limitada al resumen, no manifolds Rapier/FCL. CLI, UI desktop, importación de mallas y validación clínica están diferidos.
+
+### Reparación CI de Phase 4.5 (2026-09-04)
+
+- Se mantuvo el PR draft [#15](https://github.com/1816x/Occlusion-Lab/pull/15) y su historia publicada; no se inició Phase 4.6.
+- Eigen: FetchContent resolvió 3.4.0; el manifiesto vcpkg fijado instaló y configuró Eigen 5.0.1 correctamente tras separar la comprobación mínima `>= 3.4.0` de las reglas de compatibilidad major del paquete.
+- vcpkg: los presets de colisión activan `VCPKG_MANIFEST_FEATURES=collision`. La instalación local confirmó `fcl` 0.7.0#5 y sus dependencias `ccd` y `octomap`, con GCC 13.3.0 y triplet `x64-linux`.
+- Native core Debug: configure/build y 27/27 CTest PASS. Native core Release: configure/build PASS; 0 pruebas registradas porque el preset desactiva tests.
+- Collision/evaluation Debug: configure/build y 75/75 CTest PASS. Collision/evaluation Release: configure/build PASS; 0 pruebas registradas porque el preset desactiva tests.
+- Sanitizers: configure/build y 75/75 CTest PASS con ASan+UBSan.
+- Web: `npm ci`, parity, lint, typecheck, 91/91 Vitest, assets, Rapier-thread, build y audit PASS; 0 vulnerabilidades.
+- Formato nativo, fixture dorado sin cambios durante la reparación, ausencia de outputs rastreados y aislamiento de dependencias de `occlusion-core`: PASS.
+- Verificación remota: **BLOCKED en este entorno antes del push**. `git push origin HEAD:codex/implement-phase-4.5-evaluated-motion-sweeps` falló porque no hay credenciales GitHub (`could not read Username`). Por tanto, los resultados remotos reparados permanecen pendientes y no se afirma que los checks estén verdes.
