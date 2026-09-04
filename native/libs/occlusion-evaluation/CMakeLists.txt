@@ -1,4 +1,4 @@
-add_library(occlusion-evaluation STATIC src/evaluation.cpp src/normalization.cpp)
+add_library(occlusion-evaluation STATIC src/evaluation.cpp src/normalization.cpp src/sweep_summary.cpp)
 add_library(occlusion::evaluation ALIAS occlusion-evaluation)
 target_include_directories(occlusion-evaluation PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<INSTALL_INTERFACE:include>)
 target_link_libraries(occlusion-evaluation PUBLIC occlusion::core occlusion::collision PRIVATE occlusion_project_warnings)

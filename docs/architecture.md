@@ -101,3 +101,11 @@ Collision returns bounded engine-neutral candidates in world-space meters with n
 from fixed maxillary to moving mandibular geometry. Evaluation rejects an entire failed query rather
 than returning partial scientific data. A separated FCL distance is native clearance; clearance is
 absent for touching/penetrating results. Aggregate penetration is the maximum valid candidate depth.
+
+## Phase 4.5 evaluated-sweep flow
+
+`SweepPreset + frame count → occlusion-core generate_sweep_pose_frames() → sequential PoseEvaluator::evaluate() calls → ordered EvaluatedSweepFrame vector → pure validated summary → EvaluatedSweepResult`.
+
+Frame-count and preset validation precede collision work. The evaluator owns two compiled immutable FCL BVHs and reuses them for every frame, without mesh reconstruction or global caches. Output reserves the exact count; normalized publication remains bounded to 32 contacts per frame (1,952 across 61 frames). Sequential execution intentionally preserves deterministic order until complete-workload evidence could justify parallelism. An evaluation error is prefixed with `frames[index].` and aborts the sweep.
+
+Summary parity covers contact-frame selection, maximum penetration with earliest-frame tie breaking, and final-frame contact persistence. Native absent indexes use `std::optional`; fixture JSON uses `null`. Exact FCL/Rapier manifold parity is not claimed. CLI serialization, Qt/VTK UI, CGAL/mesh import, and clinical validation remain future boundaries.

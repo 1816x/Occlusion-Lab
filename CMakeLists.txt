@@ -33,20 +33,45 @@ if(OCCLUSION_FETCH_DEPENDENCIES)
     URL_HASH SHA256=8586084f71f9bde545ee7fa6d00288b264a2b7ac3607b974e54d13e7162c1c72
     SYSTEM EXCLUDE_FROM_ALL)
   FetchContent_MakeAvailable(Eigen3)
+  set(OCCLUSION_EIGEN_VERSION "3.4.0")
   if(OCCLUSION_BUILD_TESTS)
     set(BUILD_TESTING ON CACHE BOOL "" FORCE)
   endif()
 else()
-  find_package(Eigen3 3.4 CONFIG REQUIRED)
+  find_package(Eigen3 CONFIG REQUIRED)
+  set(OCCLUSION_EIGEN_VERSION "${Eigen3_VERSION}")
 endif()
+
+# Eigen's config package uses major-version compatibility, so request the package
+# without a version and enforce this project's minimum explicitly. This accepts
+# both the pinned FetchContent 3.4 release and newer vcpkg releases.
+if(NOT OCCLUSION_EIGEN_VERSION)
+  message(FATAL_ERROR "Eigen was found, but its CMake configuration did not expose a version")
+endif()
+if(OCCLUSION_EIGEN_VERSION VERSION_LESS "3.4.0")
+  message(FATAL_ERROR "Occlusion Lab requires Eigen 3.4.0 or newer (found ${OCCLUSION_EIGEN_VERSION})")
+endif()
+
+if(DEFINED VCPKG_TARGET_TRIPLET)
+  set(OCCLUSION_VCPKG_TRIPLET "${VCPKG_TARGET_TRIPLET}")
+else()
+  set(OCCLUSION_VCPKG_TRIPLET "not configured")
+endif()
+message(STATUS "Occlusion Lab C++ compiler: ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}")
+message(STATUS "Occlusion Lab vcpkg target triplet: ${OCCLUSION_VCPKG_TRIPLET}")
+message(STATUS "Occlusion Lab Eigen version: ${OCCLUSION_EIGEN_VERSION}")
 
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/native/libs/occlusion-core/CMakeLists.txt")
   add_subdirectory(native/libs/occlusion-core)
 endif()
 
 if(OCCLUSION_ENABLE_COLLISION)
+  find_package(fcl CONFIG REQUIRED)
+  message(STATUS "Occlusion Lab FCL found: YES (${fcl_DIR})")
   add_subdirectory(native/libs/occlusion-collision)
   add_subdirectory(native/libs/occlusion-evaluation)
+else()
+  message(STATUS "Occlusion Lab FCL found: NO (collision support disabled)")
 endif()
 
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/native/apps/occlusion-cli/CMakeLists.txt")
