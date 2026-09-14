@@ -6,12 +6,12 @@ Occlusion Lab pretende convertirse en una aplicación científica de escritorio 
 
 ## 2. Estado actual
 
-- **Fase actual:** Phase 4.4: Deterministic Native Single-Pose Evaluation
+- **Fase actual:** Phase 4.5: Deterministic Native Evaluated Motion Sweeps
 - **Estado:** Completed
-- **Rama y commit iniciales:** `main` en `da055bc2067b6477eea9efe7abbad0422ed8e9f3`
-- **Rama activa:** `codex/phase-4.4-native-pose-evaluation`
+- **Rama y commit iniciales:** `main` en `46ffc9524e781fe2e8d8c269027434f422c2abf7`
+- **Rama activa:** `work`
 - **Phase 4.3:** Completed mediante [PR #13](https://github.com/1816x/Occlusion-Lab/pull/13), merge `da055bc2067b6477eea9efe7abbad0422ed8e9f3`.
-- **Última actualización significativa:** 2026-09-01 — Phase 4.3 reconciliada como completada y Phase 4.4 iniciada desde el último `main`.
+- **Última actualización significativa:** 2026-09-14 — Phase 4.5 implementa barridos nativos evaluados y resúmenes deterministas sobre el evaluador reusable.
 
 La aplicación web heredada continúa disponible y funcional como referencia. La fundación nativa configura y compila en Debug/Release, `occlusion-core` ofrece unidades fuertes y validación, la CLI ejecuta su autocomprobación determinista y las 17 pruebas CTest pasan. Phase 4 se completó mediante el PR [#10](https://github.com/1816x/Occlusion-Lab/pull/10), mergeado como `11ca272b18467ef0a44140b14e075a311dbb6139`. La verificación local registró 17/17 CTest y 62/62 Vitest. El CI web remoto fue exitoso; el workflow nativo remoto falló y no se presenta como verificado.
 
@@ -106,11 +106,11 @@ La aplicación web heredada continúa disponible y funcional como referencia. La
 - Riesgo: la paridad cubre únicamente poses, transformaciones y generación determinista de barridos; no permite afirmar paridad de colisión, contacto, barrido ni clínica.
 - Riesgo: la estabilidad semántica FCL se prueba localmente, pero los manifolds exactos no son portables ni se consideran contrato.
 - Riesgo: CI remota multiplataforma permanece Unverified hasta inspeccionar los jobs del draft PR.
-- Diferidos: barridos evaluados completos, UI desktop y validación clínica; no se añadieron fuerzas ni presiones.
+- Diferidos: paridad semántica de resúmenes evaluados, UI desktop y validación clínica; no se añadieron fuerzas ni presiones.
 
 ## 8. Próxima tarea recomendada
 
-Phase 4.5: port complete evaluated motion sweeps and deterministic summaries using the reusable native pose evaluator.
+Phase 4.6: define a versioned semantic parity fixture for evaluated sweep summaries without freezing engine-specific contact manifolds.
 
 ## 9. Hitos completados
 
@@ -120,6 +120,7 @@ Phase 4.5: port complete evaluated motion sweeps and deterministic summaries usi
 | Phase 4.1 | Fixtures dorados de pose y paridad del contrato C++ | [PR #11](https://github.com/1816x/Occlusion-Lab/pull/11), merge `39e206e48599333d2fa76947352e09be04c39dee` | Completada; 22/22 CTest y 66/66 Vitest locales; GitHub CI del head completado correctamente. |
 | Phase 4.2 | Paridad determinista de generación de barridos: 20 casos y 432 frames | [PR #12](https://github.com/1816x/Occlusion-Lab/pull/12), merge `5607b26f856481f4aacb36139ec9837f125e80c5` | Completada; 27/27 CTest y 85/85 Vitest locales; CI web verificada correctamente; CI nativa remota no verificada. |
 | Phase 4.4 | Evaluación nativa single-pose determinista y normalización acotada | Draft PR | Completed localmente; 63/63 CTest (19 nuevas), 91/91 Vitest PASS; ASan+UBSan PASS; CI remota Unverified. |
+| Phase 4.5 | Barridos nativos evaluados, reutilización de BVH y resúmenes deterministas | Current PR | Implementada; 67/67 CTest y 91/91 Vitest locales PASS; CI remota Unverified. |
 | Phase 4.3 | Fundación de colisión FCL de producción | [PR #13](https://github.com/1816x/Occlusion-Lab/pull/13), merge `da055bc2067b6477eea9efe7abbad0422ed8e9f3` | Completed; 91/91 Vitest, 44/44 CTest (27 core + 17 collision), ASan y UBSan locales PASS; CI nativa remota Unverified. |
 
 ### Verificación local de Phase 4.2 (2026-08-27)

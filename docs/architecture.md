@@ -101,3 +101,18 @@ Collision returns bounded engine-neutral candidates in world-space meters with n
 from fixed maxillary to moving mandibular geometry. Evaluation rejects an entire failed query rather
 than returning partial scientific data. A separated FCL distance is native clearance; clearance is
 absent for touching/penetrating results. Aggregate penetration is the maximum valid candidate depth.
+
+## Native evaluated sweeps (Phase 4.5)
+
+`PoseEvaluator::evaluate_sweep` composes the Phase 4.2 generator with the Phase 4.4 evaluator. It
+validates the requested 2–61 frame count before issuing any collision query, evaluates frames
+sequentially with the session's two already-compiled BVHs, and publishes each generated index,
+unrounded progress value, requested pose, applied transform, measurements, and normalized contacts.
+An evaluation failure rejects the complete sweep; partial results are never returned.
+
+The native summary follows the legacy deterministic reduction: contact frames are frames with at
+least one normalized sample; first and last contact are optional; maximum penetration uses the
+earliest frame when values tie; and persistence means that the last contact is the final frame.
+The result also carries the exact evaluated endpoint as `final_pose`. This is a native orchestration
+contract, not a claim that FCL and Rapier contact manifolds are identical, and it adds no UI,
+protocol, export, force, pressure, diagnostic, or clinical semantics.

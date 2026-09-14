@@ -105,3 +105,16 @@ inputs and metadata byte-for-byte, while live FCL tests assert semantic separati
 penetration invariants. This does not claim Rapier/FCL manifold parity. All values are `double`
 meters; contact tolerance remains `1e-6 m` and normal unit checks use `1e-9`. No clinical validation,
 force, pressure, complete evaluated sweep, Worker protocol, or export change is included.
+
+## Deterministic native sweep evaluation (Phase 4.5)
+
+Complete native sweeps reuse one `PoseEvaluator`: meshes are compiled twice per session rather than
+per frame, frame generation remains owned by core, and evaluation remains owned by the optional FCL
+layer. Invalid frame counts fail before queries. Frames are processed in index order and any frame
+failure makes the operation fail atomically, so callers cannot mistake a prefix for a complete
+scientific result.
+
+Summary contact membership is based on published normalized samples, matching the observable native
+result rather than private FCL traversal data. Strict greater-than comparison selects the earliest
+maximum-penetration frame, including frame zero when all depths are zero. Optional first/last contact,
+final-frame persistence, and the exact final pose make the reduction explicit and reproducible.
