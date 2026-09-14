@@ -1,7 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
   "name": "occlusion-lab",
-  "version-semver": "0.4.0",
+  "version-semver": "0.5.0",
   "builtin-baseline": "f3457518c19c4efdb3b9307a8bb4e27d4b989933",
   "dependencies": [
     "eigen3",

@@ -111,6 +111,57 @@ TEST(Evaluator, SupportsConcurrentReadOnlyQueries) {
     EXPECT_TRUE(x.get());
   EXPECT_EQ(e.query_count(), 8);
 }
+TEST(EvaluatedSweep, RejectsFrameCountsBeforeIssuingQueries) {
+  auto e = PoseEvaluator::create(box(), box()).value();
+  EXPECT_FALSE(e.evaluate_sweep(SweepPreset::closing, minimum_sweep_frame_count - 1));
+  EXPECT_FALSE(e.evaluate_sweep(SweepPreset::closing, maximum_sweep_frame_count + 1));
+  EXPECT_EQ(e.query_count(), 0);
+}
+TEST(EvaluatedSweep, EvaluatesEveryGeneratedFrameWithReusableModels) {
+  auto e = PoseEvaluator::create(box(), box()).value();
+  auto result = e.evaluate_sweep(SweepPreset::closing, 11);
+  ASSERT_TRUE(result);
+  EXPECT_EQ(e.compilation_count(), 2);
+  EXPECT_EQ(e.query_count(), 11);
+  ASSERT_EQ(result.value().frames.size(), 11);
+  EXPECT_EQ(result.value().requested_frame_count, 11);
+  for (std::size_t index = 0; index < result.value().frames.size(); ++index) {
+    const auto& frame = result.value().frames[index];
+    EXPECT_EQ(frame.index, index);
+    EXPECT_DOUBLE_EQ(frame.normalized_progress, static_cast<double>(index) / 10.0);
+    EXPECT_EQ(
+        frame.evaluation.requested_pose.opening.value(),
+        generate_sweep_pose_frames(SweepPreset::closing, 11).value()[index].pose.opening.value());
+  }
+  EXPECT_EQ(result.value().final_pose.opening.value(), 0.0);
+}
+TEST(EvaluatedSweep, ProducesDeterministicAuthoritativeSummary) {
+  auto e = PoseEvaluator::create(box(), box()).value();
+  auto first = e.evaluate_sweep(SweepPreset::closing, 11);
+  auto second = e.evaluate_sweep(SweepPreset::closing, 11);
+  ASSERT_TRUE(first && second);
+  const auto& summary = first.value().summary;
+  EXPECT_EQ(summary.total_frame_count, 11);
+  EXPECT_EQ(summary.contact_frame_count,
+            std::count_if(
+                first.value().frames.begin(), first.value().frames.end(),
+                [](const auto& frame) { return frame.evaluation.normalized_contact_count > 0; }));
+  EXPECT_EQ(summary.first_contact_frame, second.value().summary.first_contact_frame);
+  EXPECT_EQ(summary.last_contact_frame, second.value().summary.last_contact_frame);
+  EXPECT_DOUBLE_EQ(summary.maximum_penetration.value(),
+                   second.value().summary.maximum_penetration.value());
+  EXPECT_EQ(summary.maximum_penetration_frame, second.value().summary.maximum_penetration_frame);
+  EXPECT_EQ(summary.contact_persists_through_final_frame,
+            summary.last_contact_frame == std::optional<std::size_t>{10});
+}
+TEST(EvaluatedSweep, UsesEarliestFrameForEqualZeroMaximum) {
+  auto e = PoseEvaluator::create(box(), box()).value();
+  auto result = e.evaluate_sweep(SweepPreset::protrusive, 2);
+  ASSERT_TRUE(result);
+  if (result.value().summary.maximum_penetration.value() == 0.0) {
+    EXPECT_EQ(result.value().summary.maximum_penetration_frame, 0);
+  }
+}
 TEST(Normalization, RejectsInvalidNormalsAndNonFiniteValues) {
   EXPECT_FALSE(normalize_contacts({candidate(0, 0, {0, 0, 0})}));
   EXPECT_FALSE(normalize_contacts({candidate(std::numeric_limits<double>::quiet_NaN())}));
