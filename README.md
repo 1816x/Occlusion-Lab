@@ -130,6 +130,18 @@ This boundary generates poses and transforms only. Collision evaluation, contact
 
 The closed-box fixture `fixtures/parity/single-pose-collision-v1.json` covers seven deterministic gaps around the existing `1e-6 m` tolerance. `npm run parity:verify` verifies pose, sweep-generation, and collision fixtures; focused collision commands append `:collision`. Parity includes only classification, clearance, and penetration depth. Manifold points, normals, ordering/count, evaluated sweeps, UI changes, and clinical interpretation are excluded.
 
+## Phase 4.6: evaluated-sweep summary parity
+
+`fixtures/parity/evaluated-sweep-summary-v1.json` freezes the portable reduction shared by the
+legacy TypeScript reference and native evaluation: contact membership comes from a positive
+published contact count, absent contact uses JSON `null`, equal penetration maxima keep the
+earliest frame, and persistence means the final frame has contact. The eight engine-neutral cases
+cover empty-contact, discontinuous-contact, touching, penetration, tie, and final-frame behavior.
+
+Run `npm run parity:verify:summary` for the focused read-only check. The native reducer rejects
+empty, non-contiguous, negative-depth, and non-finite inputs before reduction. This fixture does not
+freeze Rapier or FCL manifold points, normals, ordering, or counts and is not clinical validation.
+
 ## Phase 4.4: native single-pose evaluation
 
 `occlusion-evaluation` is the reusable orchestration boundary above `occlusion-core` and

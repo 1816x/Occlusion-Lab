@@ -162,6 +162,50 @@ TEST(EvaluatedSweep, UsesEarliestFrameForEqualZeroMaximum) {
     EXPECT_EQ(result.value().summary.maximum_penetration_frame, 0);
   }
 }
+TEST(SweepSummary, RejectsInvalidPortableInputs) {
+  EXPECT_FALSE(summarize_sweep({}));
+  EXPECT_FALSE(summarize_sweep({{1, 0, Meters{0}}}));
+  EXPECT_FALSE(summarize_sweep({{0, 0, Meters{-0.001}}}));
+  EXPECT_FALSE(summarize_sweep({{0, 0, Meters{std::numeric_limits<double>::quiet_NaN()}}}));
+}
+TEST(SweepSummaryFixture, MatchesEveryLegacySemanticCase) {
+  std::ifstream input(OCCLUSION_SWEEP_SUMMARY_FIXTURE_SOURCE);
+  nlohmann::json fixture;
+  input >> fixture;
+  ASSERT_EQ(fixture["schemaVersion"], 1);
+  ASSERT_EQ(fixture["sourceBaselineCommit"], "2ec46d13a16ad197a397a90bae6d6e29c7016de1");
+  ASSERT_TRUE(fixture["manifoldParityExcluded"]);
+  ASSERT_EQ(fixture["cases"].size(), 8);
+  for (const auto& test_case : fixture["cases"]) {
+    std::vector<SweepSummaryFrame> frames;
+    for (const auto& frame : test_case["frames"])
+      frames.push_back(
+          {frame["frameIndex"], frame["contactCount"], Meters{frame["penetrationDepthMeters"]}});
+    const auto actual = summarize_sweep(frames);
+    ASSERT_TRUE(actual) << test_case["id"];
+    const auto& expected = test_case["expectedSummary"];
+    EXPECT_EQ(actual.value().total_frame_count, expected["totalFrameCount"]);
+    EXPECT_EQ(actual.value().contact_frame_count, expected["contactFrameCount"]);
+    EXPECT_DOUBLE_EQ(actual.value().maximum_penetration.value(),
+                     expected["maximumPenetrationMeters"]);
+    EXPECT_EQ(actual.value().maximum_penetration_frame, expected["maximumPenetrationFrame"]);
+    EXPECT_EQ(actual.value().contact_persists_through_final_frame,
+              expected["contactPersistsThroughFinalFrame"]);
+    const auto compare_optional = [](const std::optional<std::size_t>& actual_value,
+                                     const nlohmann::json& expected_value) {
+      if (expected_value.is_null())
+        return !actual_value;
+      return actual_value == std::optional<std::size_t>{expected_value.get<std::size_t>()};
+    };
+    EXPECT_TRUE(
+        compare_optional(actual.value().first_contact_frame, expected["firstContactFrame"]));
+    EXPECT_TRUE(compare_optional(actual.value().last_contact_frame, expected["lastContactFrame"]));
+  }
+}
+TEST(SweepSummaryFixture, TrackedFixtureCopyIsByteExact) {
+  EXPECT_EQ(read(OCCLUSION_SWEEP_SUMMARY_FIXTURE_SOURCE),
+            read(OCCLUSION_SWEEP_SUMMARY_FIXTURE_COPY));
+}
 TEST(Normalization, RejectsInvalidNormalsAndNonFiniteValues) {
   EXPECT_FALSE(normalize_contacts({candidate(0, 0, {0, 0, 0})}));
   EXPECT_FALSE(normalize_contacts({candidate(std::numeric_limits<double>::quiet_NaN())}));

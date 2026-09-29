@@ -1,5 +1,6 @@
 #include "occlusion/evaluation/evaluation.hpp"
 #include <atomic>
+#include <cmath>
 #include <utility>
 
 namespace occlusion::evaluation {
@@ -68,11 +69,8 @@ PoseEvaluator::evaluate_sweep(occlusion::core::SweepPreset preset, std::size_t f
 
   std::vector<EvaluatedSweepFrame> frames;
   frames.reserve(generated.value().size());
-  std::optional<std::size_t> first_contact;
-  std::optional<std::size_t> last_contact;
-  std::size_t contact_count = 0;
-  occlusion::core::Meters maximum_penetration{0.0};
-  std::size_t maximum_penetration_frame = 0;
+  std::vector<SweepSummaryFrame> summary_frames;
+  summary_frames.reserve(generated.value().size());
 
   for (const auto& generated_frame : generated.value()) {
     auto evaluation = evaluate(generated_frame.pose);
@@ -83,27 +81,60 @@ PoseEvaluator::evaluate_sweep(occlusion::core::SweepPreset preset, std::size_t f
       return ValidationResult<EvaluatedSweepResult>::failure(std::move(errors));
     }
     auto value = evaluation.value();
-    if (value.normalized_contact_count > 0) {
-      if (!first_contact)
-        first_contact = generated_frame.index;
-      last_contact = generated_frame.index;
-      ++contact_count;
-    }
-    if (value.penetration_depth.value() > maximum_penetration.value()) {
-      maximum_penetration = value.penetration_depth;
-      maximum_penetration_frame = generated_frame.index;
-    }
+    summary_frames.push_back(
+        {generated_frame.index, value.normalized_contact_count, value.penetration_depth});
     frames.push_back(
         {generated_frame.index, generated_frame.normalized_progress, std::move(value)});
   }
 
-  const bool persists = last_contact && *last_contact + 1 == frames.size();
-  EvaluatedSweepSummary summary{frames.size(), first_contact,       last_contact,
-                                contact_count, maximum_penetration, maximum_penetration_frame,
-                                persists};
+  auto summary = summarize_sweep(summary_frames);
+  if (!summary)
+    return ValidationResult<EvaluatedSweepResult>::failure(summary.errors());
   const auto final_pose = frames.back().evaluation.requested_pose;
   return ValidationResult<EvaluatedSweepResult>::success(
-      {preset, frame_count, final_pose, std::move(frames), std::move(summary)});
+      {preset, frame_count, final_pose, std::move(frames), summary.value()});
+}
+
+ValidationResult<EvaluatedSweepSummary>
+summarize_sweep(const std::vector<SweepSummaryFrame>& frames) {
+  if (frames.empty())
+    return ValidationResult<EvaluatedSweepSummary>::failure(
+        {{occlusion::core::ValidationCode::invalid_range, "frames", "must not be empty"}});
+
+  std::optional<std::size_t> first_contact;
+  std::optional<std::size_t> last_contact;
+  std::size_t contact_frame_count = 0;
+  occlusion::core::Meters maximum_penetration{0.0};
+  std::size_t maximum_penetration_frame = 0;
+  for (std::size_t position = 0; position < frames.size(); ++position) {
+    const auto& frame = frames[position];
+    const auto field = "frames[" + std::to_string(position) + "]";
+    if (frame.index != position)
+      return ValidationResult<EvaluatedSweepSummary>::failure(
+          {{occlusion::core::ValidationCode::invalid_range, field + ".index",
+            "must be contiguous and zero-based"}});
+    if (!std::isfinite(frame.penetration_depth.value()))
+      return ValidationResult<EvaluatedSweepSummary>::failure(
+          {{occlusion::core::ValidationCode::non_finite, field + ".penetration_depth",
+            "must be finite"}});
+    if (frame.penetration_depth.value() < 0.0)
+      return ValidationResult<EvaluatedSweepSummary>::failure(
+          {{occlusion::core::ValidationCode::invalid_range, field + ".penetration_depth",
+            "must be non-negative"}});
+    if (frame.contact_count > 0) {
+      if (!first_contact)
+        first_contact = frame.index;
+      last_contact = frame.index;
+      ++contact_frame_count;
+    }
+    if (frame.penetration_depth.value() > maximum_penetration.value()) {
+      maximum_penetration = frame.penetration_depth;
+      maximum_penetration_frame = frame.index;
+    }
+  }
+  return ValidationResult<EvaluatedSweepSummary>::success(
+      {frames.size(), first_contact, last_contact, contact_frame_count, maximum_penetration,
+       maximum_penetration_frame, last_contact && *last_contact == frames.back().index});
 }
 std::size_t PoseEvaluator::compilation_count() const noexcept { return 2; }
 std::size_t PoseEvaluator::query_count() const noexcept {

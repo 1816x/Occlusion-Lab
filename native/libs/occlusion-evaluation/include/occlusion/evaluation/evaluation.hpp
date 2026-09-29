@@ -60,6 +60,17 @@ struct EvaluatedSweepSummary final {
   bool contact_persists_through_final_frame;
 };
 
+// Engine-neutral input to the portable sweep-summary reduction. Contact manifold
+// coordinates and ordering are deliberately not part of this contract.
+struct SweepSummaryFrame final {
+  std::size_t index;
+  std::size_t contact_count;
+  occlusion::core::Meters penetration_depth;
+};
+
+[[nodiscard]] occlusion::core::ValidationResult<EvaluatedSweepSummary>
+summarize_sweep(const std::vector<SweepSummaryFrame>& frames);
+
 struct EvaluatedSweepResult final {
   occlusion::core::SweepPreset preset;
   std::size_t requested_frame_count;
