@@ -1,0 +1,259 @@
+{
+  "schemaVersion": 1,
+  "behavioralVersion": "evaluated-sweep-summary-v1",
+  "sourceImplementation": "src/workers/sweep-science.ts",
+  "sourceBaselineCommit": "2ec46d13a16ad197a397a90bae6d6e29c7016de1",
+  "internalUnit": "meters",
+  "contactRule": "contactCount > 0",
+  "maximumTieRule": "earliest frame",
+  "manifoldParityExcluded": true,
+  "cases": [
+    {
+      "id": "no-contact-two-frames",
+      "frames": [
+        {
+          "frameIndex": 0,
+          "contactCount": 0,
+          "penetrationDepthMeters": 0
+        },
+        {
+          "frameIndex": 1,
+          "contactCount": 0,
+          "penetrationDepthMeters": 0
+        }
+      ],
+      "expectedSummary": {
+        "totalFrameCount": 2,
+        "firstContactFrame": null,
+        "lastContactFrame": null,
+        "contactFrameCount": 0,
+        "maximumPenetrationMeters": 0,
+        "maximumPenetrationFrame": 0,
+        "contactPersistsThroughFinalFrame": false
+      }
+    },
+    {
+      "id": "touching-first-only",
+      "frames": [
+        {
+          "frameIndex": 0,
+          "contactCount": 2,
+          "penetrationDepthMeters": 0
+        },
+        {
+          "frameIndex": 1,
+          "contactCount": 0,
+          "penetrationDepthMeters": 0
+        },
+        {
+          "frameIndex": 2,
+          "contactCount": 0,
+          "penetrationDepthMeters": 0
+        }
+      ],
+      "expectedSummary": {
+        "totalFrameCount": 3,
+        "firstContactFrame": 0,
+        "lastContactFrame": 0,
+        "contactFrameCount": 1,
+        "maximumPenetrationMeters": 0,
+        "maximumPenetrationFrame": 0,
+        "contactPersistsThroughFinalFrame": false
+      }
+    },
+    {
+      "id": "touching-final-only",
+      "frames": [
+        {
+          "frameIndex": 0,
+          "contactCount": 0,
+          "penetrationDepthMeters": 0
+        },
+        {
+          "frameIndex": 1,
+          "contactCount": 0,
+          "penetrationDepthMeters": 0
+        },
+        {
+          "frameIndex": 2,
+          "contactCount": 1,
+          "penetrationDepthMeters": 0
+        }
+      ],
+      "expectedSummary": {
+        "totalFrameCount": 3,
+        "firstContactFrame": 2,
+        "lastContactFrame": 2,
+        "contactFrameCount": 1,
+        "maximumPenetrationMeters": 0,
+        "maximumPenetrationFrame": 0,
+        "contactPersistsThroughFinalFrame": true
+      }
+    },
+    {
+      "id": "discontinuous-contact",
+      "frames": [
+        {
+          "frameIndex": 0,
+          "contactCount": 0,
+          "penetrationDepthMeters": 0
+        },
+        {
+          "frameIndex": 1,
+          "contactCount": 1,
+          "penetrationDepthMeters": 0
+        },
+        {
+          "frameIndex": 2,
+          "contactCount": 0,
+          "penetrationDepthMeters": 0
+        },
+        {
+          "frameIndex": 3,
+          "contactCount": 3,
+          "penetrationDepthMeters": 0
+        },
+        {
+          "frameIndex": 4,
+          "contactCount": 0,
+          "penetrationDepthMeters": 0
+        }
+      ],
+      "expectedSummary": {
+        "totalFrameCount": 5,
+        "firstContactFrame": 1,
+        "lastContactFrame": 3,
+        "contactFrameCount": 2,
+        "maximumPenetrationMeters": 0,
+        "maximumPenetrationFrame": 0,
+        "contactPersistsThroughFinalFrame": false
+      }
+    },
+    {
+      "id": "penetration-maximum-middle",
+      "frames": [
+        {
+          "frameIndex": 0,
+          "contactCount": 0,
+          "penetrationDepthMeters": 0
+        },
+        {
+          "frameIndex": 1,
+          "contactCount": 1,
+          "penetrationDepthMeters": 0.001
+        },
+        {
+          "frameIndex": 2,
+          "contactCount": 2,
+          "penetrationDepthMeters": 0.004
+        },
+        {
+          "frameIndex": 3,
+          "contactCount": 1,
+          "penetrationDepthMeters": 0.002
+        }
+      ],
+      "expectedSummary": {
+        "totalFrameCount": 4,
+        "firstContactFrame": 1,
+        "lastContactFrame": 3,
+        "contactFrameCount": 3,
+        "maximumPenetrationMeters": 0.004,
+        "maximumPenetrationFrame": 2,
+        "contactPersistsThroughFinalFrame": true
+      }
+    },
+    {
+      "id": "equal-maximum-keeps-earliest",
+      "frames": [
+        {
+          "frameIndex": 0,
+          "contactCount": 1,
+          "penetrationDepthMeters": 0.003
+        },
+        {
+          "frameIndex": 1,
+          "contactCount": 1,
+          "penetrationDepthMeters": 0.003
+        },
+        {
+          "frameIndex": 2,
+          "contactCount": 1,
+          "penetrationDepthMeters": 0.001
+        }
+      ],
+      "expectedSummary": {
+        "totalFrameCount": 3,
+        "firstContactFrame": 0,
+        "lastContactFrame": 2,
+        "contactFrameCount": 3,
+        "maximumPenetrationMeters": 0.003,
+        "maximumPenetrationFrame": 0,
+        "contactPersistsThroughFinalFrame": true
+      }
+    },
+    {
+      "id": "depth-without-manifold-contact",
+      "frames": [
+        {
+          "frameIndex": 0,
+          "contactCount": 0,
+          "penetrationDepthMeters": 0
+        },
+        {
+          "frameIndex": 1,
+          "contactCount": 0,
+          "penetrationDepthMeters": 0.002
+        },
+        {
+          "frameIndex": 2,
+          "contactCount": 0,
+          "penetrationDepthMeters": 0
+        }
+      ],
+      "expectedSummary": {
+        "totalFrameCount": 3,
+        "firstContactFrame": null,
+        "lastContactFrame": null,
+        "contactFrameCount": 0,
+        "maximumPenetrationMeters": 0.002,
+        "maximumPenetrationFrame": 1,
+        "contactPersistsThroughFinalFrame": false
+      }
+    },
+    {
+      "id": "all-contact-with-zero-depth",
+      "frames": [
+        {
+          "frameIndex": 0,
+          "contactCount": 1,
+          "penetrationDepthMeters": 0
+        },
+        {
+          "frameIndex": 1,
+          "contactCount": 4,
+          "penetrationDepthMeters": 0
+        },
+        {
+          "frameIndex": 2,
+          "contactCount": 1,
+          "penetrationDepthMeters": 0
+        },
+        {
+          "frameIndex": 3,
+          "contactCount": 2,
+          "penetrationDepthMeters": 0
+        }
+      ],
+      "expectedSummary": {
+        "totalFrameCount": 4,
+        "firstContactFrame": 0,
+        "lastContactFrame": 3,
+        "contactFrameCount": 4,
+        "maximumPenetrationMeters": 0,
+        "maximumPenetrationFrame": 0,
+        "contactPersistsThroughFinalFrame": true
+      }
+    }
+  ]
+}

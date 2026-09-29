@@ -118,3 +118,14 @@ Summary contact membership is based on published normalized samples, matching th
 result rather than private FCL traversal data. Strict greater-than comparison selects the earliest
 maximum-penetration frame, including frame zero when all depths are zero. Optional first/last contact,
 final-frame persistence, and the exact final pose make the reduction explicit and reproducible.
+
+## Phase 4.6: semantic summary parity
+
+- The portable parity surface is the reduction input (`frameIndex`, `contactCount`, and
+  `penetrationDepthMeters`) and the seven summary outputs, not collision-engine manifolds.
+- The legacy TypeScript reducer generates eight canonical cases from the Phase 4.5 merge baseline;
+  native tests load the tracked bytes and execute each case independently.
+- Native reduction validates non-empty, contiguous frames and finite non-negative depths. A strict
+  greater-than maximum comparison preserves the first frame on ties.
+- Contact points, normals, ordering, per-engine counts, forces, pressures, UI changes, and clinical
+  conclusions remain explicitly outside this phase.
