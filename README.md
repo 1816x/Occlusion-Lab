@@ -142,6 +142,24 @@ Run `npm run parity:verify:summary` for the focused read-only check. The native 
 empty, non-contiguous, negative-depth, and non-finite inputs before reduction. This fixture does not
 freeze Rapier or FCL manifold points, normals, ordering, or counts and is not clinical validation.
 
+## Phase 4.7: synthetic evaluation CLI
+
+A collision-enabled build exposes the native evaluation boundary without requiring a desktop UI.
+The CLI owns a versioned, closed-box synthetic fixture and accepts validated millimeter inputs:
+
+```sh
+build/native/collision-debug/native/apps/occlusion-cli/occlusion-cli \
+  --evaluate-fixture pose 70 0 0
+build/native/collision-debug/native/apps/occlusion-cli/occlusion-cli \
+  --evaluate-fixture sweep closing 31
+```
+
+Both commands emit one deterministic JSON document to standard output. Pose output contains the
+normalized classification, optional clearance, penetration depth, and published contact count;
+sweep output contains the portable summary. Invalid numbers, out-of-domain poses, unknown presets,
+and frame counts outside 2–61 fail before publishing a result. This interface intentionally accepts
+no patient mesh or clinical data and does not claim cross-engine manifold parity.
+
 ## Phase 4.4: native single-pose evaluation
 
 `occlusion-evaluation` is the reusable orchestration boundary above `occlusion-core` and

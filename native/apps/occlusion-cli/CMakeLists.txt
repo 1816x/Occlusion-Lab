@@ -1,3 +1,7 @@
 add_executable(occlusion-cli src/main.cpp)
 target_link_libraries(occlusion-cli PRIVATE occlusion::core occlusion_project_warnings)
+if(OCCLUSION_ENABLE_COLLISION)
+  target_link_libraries(occlusion-cli PRIVATE occlusion::evaluation)
+  target_compile_definitions(occlusion-cli PRIVATE OCCLUSION_CLI_ENABLE_EVALUATION=1)
+endif()
 target_compile_features(occlusion-cli PRIVATE cxx_std_20)
