@@ -6,14 +6,14 @@ Occlusion Lab pretende convertirse en una aplicación científica de escritorio 
 
 ## 2. Estado actual
 
-- **Fase actual:** Phase 4.6: Evaluated Sweep Summary Semantic Parity
+- **Fase actual:** Phase 4.7: Synthetic Fixture Evaluation CLI
 - **Estado:** Completed
 - **Rama y commit iniciales:** `main` en `46ffc9524e781fe2e8d8c269027434f422c2abf7`
 - **Rama activa:** `work`
 - **Phase 4.3:** Completed mediante [PR #13](https://github.com/1816x/Occlusion-Lab/pull/13), merge `da055bc2067b6477eea9efe7abbad0422ed8e9f3`.
-- **Última actualización significativa:** 2026-09-29 — Phase 4.6 fija la paridad semántica versionada de resúmenes de barrido sin congelar manifolds específicos del motor.
+- **Última actualización significativa:** 2026-09-29 — Phase 4.7 expone evaluación nativa reproducible de una fixture sintética mediante CLI, sin introducir ingestión de datos clínicos.
 
-La aplicación web heredada continúa disponible y funcional como referencia. La base nativa configura y compila en Debug/Release, `occlusion-core` ofrece unidades fuertes y validación, y las capas opcionales de colisión/evaluación ejecutan poses y barridos deterministas. Phase 4.6 añade una fixture dorada con ocho casos de resumen; la tanda local actual registra 70/70 CTest y 94/94 Vitest. La CI remota de esta tanda permanece sin verificar.
+La aplicación web heredada continúa disponible y funcional como referencia. La base nativa configura y compila en Debug/Release, `occlusion-core` ofrece unidades fuertes y validación, y las capas opcionales de colisión/evaluación ejecutan poses y barridos deterministas. Phase 4.7 expone la fixture sintética mediante CLI; la tanda local actual registra 74/74 CTest y 94/94 Vitest. La CI remota de esta tanda permanece sin verificar.
 
 ## 3. Estado de arquitectura
 
@@ -26,7 +26,7 @@ La aplicación web heredada continúa disponible y funcional como referencia. La
 | Análisis de barrido de movimiento | Web existente y evaluación C++ | Motor C++ | Barrido y resumen implementados | Paridad semántica del resumen cubierta por fixture versionada. |
 | Renderer | Three.js | VTK | Futuro | No forma parte del core. |
 | UI de escritorio | No existe | Qt 6 | Futuro | Arquitectura desktop-first. |
-| CLI | `occlusion-cli` | `occlusion-cli` extensible | Fundación implementada | Solo versión y autocomprobación. |
+| CLI | `occlusion-cli` | `occlusion-cli` extensible | Evaluación sintética implementada | Pose y barrido disponibles en builds con colisión. |
 | Pruebas | Vitest/web y GoogleTest nativo | GoogleTest + pruebas web | Fundación implementada | Se mantiene la suite heredada. |
 | CI | Web y workflow nativo | CI web y nativa multiplataforma | Implementado, pendiente ejecución remota | Sin debilitar CI existente. |
 | Aplicación web heredada | Next.js/React/Three.js | Referencia temporal | Conservada | No eliminar antes de paridad y UI sustituta. |
@@ -110,7 +110,7 @@ La aplicación web heredada continúa disponible y funcional como referencia. La
 
 ## 8. Próxima tarea recomendada
 
-Phase 4.7: expose validated synthetic fixture evaluation through `occlusion-cli` so native workflows can be exercised without a desktop UI.
+Phase 4.8: define a versioned, engine-neutral JSON export schema for complete native evaluation results without treating manifold details as parity guarantees.
 
 ## 9. Hitos completados
 
@@ -122,7 +122,17 @@ Phase 4.7: expose validated synthetic fixture evaluation through `occlusion-cli`
 | Phase 4.3 | Fundación de colisión FCL de producción | [PR #13](https://github.com/1816x/Occlusion-Lab/pull/13), merge `da055bc2067b6477eea9efe7abbad0422ed8e9f3` | Completed; 91/91 Vitest, 44/44 CTest (27 core + 17 collision), ASan y UBSan locales PASS; CI nativa remota Unverified. |
 | Phase 4.4 | Evaluación nativa single-pose determinista y normalización acotada | Draft PR | Completed localmente; 63/63 CTest (19 nuevas), 91/91 Vitest PASS; ASan+UBSan PASS; CI remota Unverified. |
 | Phase 4.5 | Barridos nativos evaluados, reutilización de BVH y resúmenes deterministas | [PR #17](https://github.com/1816x/Occlusion-Lab/pull/17), merge `2ec46d13a16ad197a397a90bae6d6e29c7016de1` | Completada; 67/67 CTest y 91/91 Vitest locales PASS; CI remota Unverified. |
-| Phase 4.6 | Fixture versionada de paridad semántica para resúmenes evaluados | Current PR | Completada localmente; 8 casos engine-neutral, 70/70 CTest; CI remota Unverified. |
+| Phase 4.6 | Fixture versionada de paridad semántica para resúmenes evaluados | [PR #18](https://github.com/1816x/Occlusion-Lab/pull/18), merge `d3f5f9e` | Completada localmente; 8 casos engine-neutral, 70/70 CTest; CI remota Unverified. |
+| Phase 4.7 | Evaluación de pose y barrido sobre fixture sintética mediante CLI JSON | Current PR | Completada localmente; 74/74 CTest y 94/94 Vitest; CI remota Unverified. |
+
+### Verificación local de Phase 4.7 (2026-09-29)
+
+- CLI con colisión: pose y barrido producen JSON versionado válido sobre `synthetic-boxes-v1`.
+- Native core Debug: configure/build y 27/27 CTest PASS.
+- Native collision/evaluation Debug: configure/build y 74/74 CTest PASS (cuatro pruebas CLI nuevas).
+- Native collision/evaluation Release: configure/build PASS.
+- Web: fixtures de paridad, lint, typecheck, 94/94 Vitest y aislamiento de Rapier PASS.
+- Formato nativo: PASS. CI remota: Unverified y no se presenta como aprobada.
 
 ### Verificación local de Phase 4.6 (2026-09-29)
 

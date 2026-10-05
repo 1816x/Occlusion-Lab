@@ -128,3 +128,17 @@ native tests.
 Only summary semantics cross this parity boundary. The fixture intentionally contains no mesh,
 contact point, normal, stable contact ID, or engine traversal detail, so it does not claim exact
 Rapier/FCL manifold parity. Rebaselining remains explicit and reviewed.
+
+## Headless synthetic workflow (Phase 4.7)
+
+When `OCCLUSION_ENABLE_COLLISION` is enabled, `occlusion-cli` links the evaluation library and
+constructs two fixed 100 mm closed cubes identified as `synthetic-boxes-v1`. The `pose` operation
+converts three finite millimeter arguments through the public strong-unit API, then relies on
+`PoseEvaluator` for domain validation and evaluation. The `sweep` operation maps an explicit preset
+and frame count into `evaluate_sweep`. Each successful invocation writes exactly one versioned JSON
+object; failures write no partial result and use a non-zero exit status.
+
+The executable is an adapter only: mesh compilation, pose transforms, contact normalization, and
+summary reduction remain in their existing libraries. Core-only builds do not acquire FCL, JSON,
+filesystem, or UI dependencies. The built-in geometry is synthetic and immutable; arbitrary mesh
+ingestion, clinical interpretation, and exact engine-manifold serialization remain deferred.

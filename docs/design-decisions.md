@@ -129,3 +129,16 @@ final-frame persistence, and the exact final pose make the reduction explicit an
   greater-than maximum comparison preserves the first frame on ties.
 - Contact points, normals, ordering, per-engine counts, forces, pressures, UI changes, and clinical
   conclusions remain explicitly outside this phase.
+
+## Phase 4.7: CLI evaluation adapter
+
+- A single explicit `--evaluate-fixture` command separates scientific evaluation from the existing
+  diagnostic flags and makes the synthetic nature of the input visible at every invocation.
+- Inputs use millimeters for operator convenience but are converted immediately to strongly typed
+  meters. Strict full-token parsing rejects non-finite values and trailing characters.
+- Output is a compact, versioned JSON document written without adding a JSON dependency to the
+  production target. Optional measurements use JSON `null`, and doubles use round-trip precision.
+- The collision feature gates both linkage and command availability, preserving the lightweight
+  core-only CLI. The versioned built-in boxes exercise FCL but are not a mesh-import mechanism.
+- Sweep output publishes the stable engine-neutral summary rather than platform-sensitive contact
+  manifolds. No force, pressure, diagnosis, patient data, or clinical validation is introduced.
