@@ -10,7 +10,7 @@ gtest_discover_tests(occlusion-evaluation-tests DISCOVERY_MODE PRE_TEST)
 add_test(NAME cli-evaluate-synthetic-pose
   COMMAND occlusion-cli --evaluate-fixture pose 0 0 0)
 set_tests_properties(cli-evaluate-synthetic-pose PROPERTIES
-  PASS_REGULAR_EXPRESSION "\"fixture\":\"synthetic-boxes-v1\".*\"classification\":\"separated\"")
+  PASS_REGULAR_EXPRESSION "\"fixtureId\":\"synthetic-boxes-v1\".*\"classification\":\"separated\"")
 
 add_test(NAME cli-evaluate-synthetic-sweep
   COMMAND occlusion-cli --evaluate-fixture sweep closing 11)

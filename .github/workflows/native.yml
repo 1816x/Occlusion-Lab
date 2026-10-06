@@ -8,6 +8,7 @@ on:
       - 'native/**'
       - 'fixtures/parity/contact-normalization-v1.json'
       - 'fixtures/parity/single-pose-collision-v1.json'
+      - 'fixtures/parity/evaluated-sweep-summary-v1.json'
       - 'vcpkg.json'
       - '.github/workflows/native.yml'
   push:
@@ -19,6 +20,7 @@ on:
       - 'native/**'
       - 'fixtures/parity/contact-normalization-v1.json'
       - 'fixtures/parity/single-pose-collision-v1.json'
+      - 'fixtures/parity/evaluated-sweep-summary-v1.json'
       - 'vcpkg.json'
       - '.github/workflows/native.yml' 
 permissions:

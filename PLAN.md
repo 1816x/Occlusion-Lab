@@ -6,14 +6,14 @@ Occlusion Lab pretende convertirse en una aplicación científica de escritorio 
 
 ## 2. Estado actual
 
-- **Fase actual:** Phase 4.7: Synthetic Fixture Evaluation CLI
-- **Estado:** Completed
+- **Fase actual:** Phase 4.8: Versioned Native Evaluation Export
+- **Estado:** In progress
 - **Rama y commit iniciales:** `main` en `46ffc9524e781fe2e8d8c269027434f422c2abf7`
 - **Rama activa:** `work`
 - **Phase 4.3:** Completed mediante [PR #13](https://github.com/1816x/Occlusion-Lab/pull/13), merge `da055bc2067b6477eea9efe7abbad0422ed8e9f3`.
-- **Última actualización significativa:** 2026-09-29 — Phase 4.7 expone evaluación nativa reproducible de una fixture sintética mediante CLI, sin introducir ingestión de datos clínicos.
+- **Última actualización significativa:** 2026-10-05 — Phase 4.8 comenzó con un serializador JSON v1 reutilizable y determinista para resultados completos de pose y barrido.
 
-La aplicación web heredada continúa disponible y funcional como referencia. La base nativa configura y compila en Debug/Release, `occlusion-core` ofrece unidades fuertes y validación, y las capas opcionales de colisión/evaluación ejecutan poses y barridos deterministas. Phase 4.7 expone la fixture sintética mediante CLI; la tanda local actual registra 74/74 CTest y 94/94 Vitest. La CI remota de esta tanda permanece sin verificar.
+La aplicación web heredada continúa disponible y funcional como referencia. La base nativa configura y compila en Debug/Release, `occlusion-core` ofrece unidades fuertes y validación, y las capas opcionales de colisión/evaluación ejecutan poses y barridos deterministas. Phase 4.7 expone la fixture sintética mediante CLI. Phase 4.8 ya exporta el resultado nativo completo (incluidos frames y contactos normalizados) mediante un contrato versionado y engine-neutral; la tanda nativa local actual registra 76/76 CTest. La CI remota de esta tanda permanece sin verificar.
 
 ## 3. Estado de arquitectura
 
@@ -26,7 +26,7 @@ La aplicación web heredada continúa disponible y funcional como referencia. La
 | Análisis de barrido de movimiento | Web existente y evaluación C++ | Motor C++ | Barrido y resumen implementados | Paridad semántica del resumen cubierta por fixture versionada. |
 | Renderer | Three.js | VTK | Futuro | No forma parte del core. |
 | UI de escritorio | No existe | Qt 6 | Futuro | Arquitectura desktop-first. |
-| CLI | `occlusion-cli` | `occlusion-cli` extensible | Evaluación sintética implementada | Pose y barrido disponibles en builds con colisión. |
+| CLI | `occlusion-cli` | `occlusion-cli` extensible | Evaluación y export v1 implementados | Pose y barrido completo disponibles en builds con colisión. |
 | Pruebas | Vitest/web y GoogleTest nativo | GoogleTest + pruebas web | Fundación implementada | Se mantiene la suite heredada. |
 | CI | Web y workflow nativo | CI web y nativa multiplataforma | Implementado, pendiente ejecución remota | Sin debilitar CI existente. |
 | Aplicación web heredada | Next.js/React/Three.js | Referencia temporal | Conservada | No eliminar antes de paridad y UI sustituta. |
@@ -110,7 +110,7 @@ La aplicación web heredada continúa disponible y funcional como referencia. La
 
 ## 8. Próxima tarea recomendada
 
-Phase 4.8: define a versioned, engine-neutral JSON export schema for complete native evaluation results without treating manifold details as parity guarantees.
+Completar Phase 4.8: congelar ejemplos dorados del export JSON v1, verificar el contrato en CI multiplataforma y documentar la política explícita de compatibilidad antes de comenzar ingestión de mallas.
 
 ## 9. Hitos completados
 
@@ -123,7 +123,23 @@ Phase 4.8: define a versioned, engine-neutral JSON export schema for complete na
 | Phase 4.4 | Evaluación nativa single-pose determinista y normalización acotada | Draft PR | Completed localmente; 63/63 CTest (19 nuevas), 91/91 Vitest PASS; ASan+UBSan PASS; CI remota Unverified. |
 | Phase 4.5 | Barridos nativos evaluados, reutilización de BVH y resúmenes deterministas | [PR #17](https://github.com/1816x/Occlusion-Lab/pull/17), merge `2ec46d13a16ad197a397a90bae6d6e29c7016de1` | Completada; 67/67 CTest y 91/91 Vitest locales PASS; CI remota Unverified. |
 | Phase 4.6 | Fixture versionada de paridad semántica para resúmenes evaluados | [PR #18](https://github.com/1816x/Occlusion-Lab/pull/18), merge `d3f5f9e` | Completada localmente; 8 casos engine-neutral, 70/70 CTest; CI remota Unverified. |
-| Phase 4.7 | Evaluación de pose y barrido sobre fixture sintética mediante CLI JSON | Current PR | Completada localmente; 74/74 CTest y 94/94 Vitest; CI remota Unverified. |
+| Phase 4.7 | Evaluación de pose y barrido sobre fixture sintética mediante CLI JSON | [PR #19](https://github.com/1816x/Occlusion-Lab/pull/19), merge `e226060` | Completada localmente; 74/74 CTest y 94/94 Vitest; CI remota Unverified. |
+| Phase 4.8 | Export JSON v1 completo, determinista y engine-neutral | Current PR | En progreso; serializador y CLI implementados, 76/76 CTest locales PASS; faltan ejemplos dorados y CI remota. |
+
+### Alineación de PR de Phase 4.5 (2026-10-05)
+
+- PR #15 fue la propuesta inicial de barridos nativos evaluados y PR #16 combinó correcciones de toolchain con ese trabajo.
+- Ambos quedaron superados por la integración final de Phase 4.5 en PR #17; no deben fusionarse sobre `work`.
+- Phase 4.7 quedó integrada posteriormente mediante PR #19. La rama `work` ya contiene ambas líneas de trabajo.
+- El filtro de paths de CI nativa ahora incluye la fixture de resumen evaluado, corrigiendo la omisión que podía evitar la ejecución del workflow.
+
+### Inicio local de Phase 4.8 (2026-10-05)
+
+- Export JSON v1 con identificador de schema, unidades explícitas y orden estable.
+- Pose: incluye pose solicitada, transformación aplicada, mediciones, intersección y contactos normalizados.
+- Barrido: incluye preset, pose final, resumen y todos los frames completos.
+- El contrato declara explícitamente que no garantiza paridad de manifolds entre motores.
+- Native collision/evaluation Debug: configure/build y 76/76 CTest PASS.
 
 ### Verificación local de Phase 4.7 (2026-09-29)
 
