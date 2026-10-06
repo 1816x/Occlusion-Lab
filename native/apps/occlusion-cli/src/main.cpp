@@ -1,7 +1,6 @@
 #include <charconv>
 #include <cmath>
 #include <cstddef>
-#include <iomanip>
 #include <iostream>
 #include <limits>
 #include <optional>
@@ -45,7 +44,6 @@ int self_check() {
 
 #ifdef OCCLUSION_CLI_ENABLE_EVALUATION
 using occlusion::collision::TriangleMesh;
-using occlusion::core::ContactClassification;
 using occlusion::core::MandibularPose;
 using occlusion::core::Millimeters;
 using occlusion::core::SweepPreset;
@@ -99,25 +97,6 @@ std::optional<SweepPreset> parse_preset(std::string_view value) {
   return std::nullopt;
 }
 
-std::string_view classification_name(ContactClassification value) {
-  switch (value) {
-  case ContactClassification::separated:
-    return "separated";
-  case ContactClassification::touching:
-    return "touching";
-  case ContactClassification::penetrating:
-    return "penetrating";
-  }
-  return "unknown";
-}
-
-void write_optional_index(std::optional<std::size_t> value) {
-  if (value)
-    std::cout << *value;
-  else
-    std::cout << "null";
-}
-
 std::optional<PoseEvaluator> make_synthetic_evaluator() {
   auto evaluator = PoseEvaluator::create(synthetic_box(), synthetic_box());
   if (!evaluator) {
@@ -150,19 +129,8 @@ int evaluate_pose(int argc, char* argv[]) {
     std::cerr << "Pose is outside the validated native domain.\n";
     return 2;
   }
-  const auto& value = result.value();
-  std::cout << std::setprecision(17)
-            << "{\"schemaVersion\":1,\"fixture\":\"synthetic-boxes-v1\",\"kind\":\"pose\",";
-  std::cout << "\"poseMeters\":{\"opening\":" << pose.opening.value()
-            << ",\"protrusion\":" << pose.protrusion.value()
-            << ",\"lateral\":" << pose.lateral_displacement.value() << "},\"classification\":\""
-            << classification_name(value.classification) << "\",\"clearanceMeters\":";
-  if (value.clearance)
-    std::cout << value.clearance->value();
-  else
-    std::cout << "null";
-  std::cout << ",\"penetrationDepthMeters\":" << value.penetration_depth.value()
-            << ",\"contactCount\":" << value.normalized_contact_count << "}\n";
+  std::cout << occlusion::evaluation::serialize_evaluation_json(result.value(),
+                                                                "synthetic-boxes-v1");
   return 0;
 }
 
@@ -185,20 +153,8 @@ int evaluate_sweep(int argc, char* argv[]) {
     std::cerr << "Frame count must be within the validated range [2, 61].\n";
     return 2;
   }
-  const auto& summary = result.value().summary;
-  std::cout << std::setprecision(17)
-            << "{\"schemaVersion\":1,\"fixture\":\"synthetic-boxes-v1\",\"kind\":\"sweep\",";
-  std::cout << "\"preset\":\"" << argv[3] << "\",\"requestedFrameCount\":" << *frames
-            << ",\"summary\":{\"totalFrameCount\":" << summary.total_frame_count
-            << ",\"firstContactFrame\":";
-  write_optional_index(summary.first_contact_frame);
-  std::cout << ",\"lastContactFrame\":";
-  write_optional_index(summary.last_contact_frame);
-  std::cout << ",\"contactFrameCount\":" << summary.contact_frame_count
-            << ",\"maximumPenetrationMeters\":" << summary.maximum_penetration.value()
-            << ",\"maximumPenetrationFrame\":" << summary.maximum_penetration_frame
-            << ",\"contactPersistsThroughFinalFrame\":"
-            << (summary.contact_persists_through_final_frame ? "true" : "false") << "}}\n";
+  std::cout << occlusion::evaluation::serialize_evaluation_json(result.value(),
+                                                                "synthetic-boxes-v1");
   return 0;
 }
 

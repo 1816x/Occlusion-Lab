@@ -4,7 +4,7 @@ Occlusion Lab is a **work in progress** educational browser sandbox for syntheti
 
 ## C++ migration (Phase 4)
 
-The project is migrating toward a C++20, desktop-first scientific architecture. The existing Next.js/React/Three.js application remains intact as the production behavioral reference. Phase 4.1 completed pose validation/transform parity; Phase 4.2 adds only deterministic sweep endpoint, frame-count, and pose-interpolation parity. No collision or clinical parity is claimed. CGAL/FCL geometry and collision modules plus Qt 6/VTK presentation are planned, not implemented.
+The project is migrating toward a C++20, desktop-first scientific architecture. The existing Next.js/React/Three.js application remains intact as the production behavioral reference. The native foundation now includes pose and sweep contracts, optional FCL collision/evaluation, and a synthetic evaluation CLI. Phase 4.8 is introducing a versioned, deterministic JSON interchange boundary for complete native pose and sweep results. CGAL mesh processing and Qt 6/VTK presentation remain future work; no clinical parity or validation is claimed.
 
 [`PLAN.md`](PLAN.md) is the concise source of truth for migration status, verification results, risks, and the single next task. The architectural rationale is recorded in [ADR-0001](docs/adr/0001-cpp-desktop-architecture.md).
 
@@ -179,3 +179,9 @@ intersection state, and structured errors.
 The normalization fixture is engine-neutral rather than an exact FCL manifold golden: manifold
 coordinates can legitimately vary with FCL and platform. Phase 4.4 covers one pose only. Complete
 evaluated sweeps, UI integration, clinical validation, forces, and pressures remain deferred.
+
+## Phase 4.8: versioned native evaluation export
+
+Collision-enabled builds now serialize complete pose and evaluated-sweep results as schema version 1 JSON. Documents identify `occlusion-native-evaluation`, declare meter and row-major rotation units, preserve stable property order, and end with a newline. Sweep exports include the final pose, portable summary, and every fully evaluated frame; pose and frame payloads include the applied transform, measurement availability, optional clearance/intersection values, and bounded normalized contacts.
+
+The format is engine-neutral only at the normalized contract boundary. Every document sets `manifoldParityGuaranteed` to `false`: contact manifold details may differ between FCL, Rapier, versions, and platforms. Phase 4.8 does not add patient-mesh ingestion, clinical semantics, force, pressure, diagnosis, or treatment guidance. Golden export examples, compatibility policy, and remote multiplatform verification remain the next completion gates.

@@ -162,6 +162,47 @@ TEST(EvaluatedSweep, UsesEarliestFrameForEqualZeroMaximum) {
     EXPECT_EQ(result.value().summary.maximum_penetration_frame, 0);
   }
 }
+TEST(EvaluationExport, SerializesCompletePoseDeterministically) {
+  auto evaluator = PoseEvaluator::create(box(), box()).value();
+  const auto result = evaluator.evaluate(pose(.07));
+  ASSERT_TRUE(result);
+  const auto first = serialize_evaluation_json(result.value(), "fixture-\"escaped");
+  const auto second = serialize_evaluation_json(result.value(), "fixture-\"escaped");
+  EXPECT_EQ(first, second);
+  EXPECT_EQ(first.back(), '\n');
+
+  const auto document = nlohmann::json::parse(first);
+  EXPECT_EQ(document["schema"], "occlusion-native-evaluation");
+  EXPECT_EQ(document["schemaVersion"], evaluation_export_schema_version);
+  EXPECT_EQ(document["fixtureId"], "fixture-\"escaped");
+  EXPECT_EQ(document["kind"], "pose");
+  EXPECT_EQ(document["units"]["length"], "meters");
+  EXPECT_FALSE(document["manifoldParityGuaranteed"]);
+  EXPECT_EQ(document["requestedPoseMeters"]["opening"], .07);
+  EXPECT_EQ(document["appliedTransform"]["rotationMatrix"].size(), 9);
+  EXPECT_EQ(document["contactCount"], document["contacts"].size());
+}
+TEST(EvaluationExport, SerializesEverySweepFrameAndSummary) {
+  auto evaluator = PoseEvaluator::create(box(), box()).value();
+  const auto result = evaluator.evaluate_sweep(SweepPreset::closing, 3);
+  ASSERT_TRUE(result);
+  const auto document =
+      nlohmann::json::parse(serialize_evaluation_json(result.value(), "synthetic-boxes-v1"));
+  EXPECT_EQ(document["kind"], "sweep");
+  EXPECT_EQ(document["preset"], "closing");
+  EXPECT_EQ(document["requestedFrameCount"], 3);
+  ASSERT_EQ(document["frames"].size(), 3);
+  EXPECT_EQ(document["summary"]["totalFrameCount"], 3);
+  EXPECT_EQ(document["frames"][0]["frameIndex"], 0);
+  EXPECT_EQ(document["frames"][2]["frameIndex"], 2);
+  EXPECT_EQ(document["frames"][2]["requestedPoseMeters"], document["finalPoseMeters"]);
+  for (const auto& frame : document["frames"]) {
+    EXPECT_TRUE(frame.contains("appliedTransform"));
+    EXPECT_TRUE(frame.contains("classification"));
+    EXPECT_TRUE(frame.contains("measurementStatus"));
+    EXPECT_TRUE(frame.contains("contacts"));
+  }
+}
 TEST(SweepSummary, RejectsInvalidPortableInputs) {
   EXPECT_FALSE(summarize_sweep({}));
   EXPECT_FALSE(summarize_sweep({{1, 0, Meters{0}}}));

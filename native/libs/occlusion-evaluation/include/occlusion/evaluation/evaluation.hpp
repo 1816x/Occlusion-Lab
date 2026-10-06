@@ -5,6 +5,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace occlusion::evaluation {
@@ -13,6 +14,7 @@ inline constexpr double contact_deduplication_grid_meters = 1e-5;
 inline constexpr int contact_quantization_decimal_places = 6;
 inline constexpr double normal_unit_tolerance = 1e-9;
 inline constexpr const char* normalization_algorithm_version = "1";
+inline constexpr std::size_t evaluation_export_schema_version = 1;
 
 enum class MeasurementStatus { available, unavailable };
 struct NormalizedContactSample final {
@@ -97,4 +99,11 @@ private:
   explicit PoseEvaluator(std::shared_ptr<Implementation> implementation) noexcept;
   std::shared_ptr<Implementation> implementation_;
 };
+
+// Deterministic, engine-neutral interchange documents. The export deliberately
+// retains normalized contacts but does not promise parity of raw engine manifolds.
+[[nodiscard]] std::string serialize_evaluation_json(const PoseEvaluationResult& result,
+                                                    std::string_view fixture_id);
+[[nodiscard]] std::string serialize_evaluation_json(const EvaluatedSweepResult& result,
+                                                    std::string_view fixture_id);
 } // namespace occlusion::evaluation
