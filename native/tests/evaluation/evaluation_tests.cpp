@@ -43,6 +43,31 @@ ContactCandidate candidate(double x, double depth = 0, Vector3 normal = {0, 1, 0
           depth > contact_tolerance.value() ? ContactClassification::penetrating
                                             : ContactClassification::touching};
 }
+RigidTransform identity_transform(Vector3 translation) {
+  return {translation, {1, 0, 0, 0, 1, 0, 0, 0, 1}};
+}
+PoseEvaluationResult golden_separated_evaluation() {
+  return {{Meters{.01}, Meters{.02}, Meters{-.03}},
+          identity_transform({-.03, .15, .02}),
+          ContactClassification::separated,
+          MeasurementStatus::available,
+          Meters{.004},
+          Meters{0},
+          false,
+          0,
+          {}};
+}
+PoseEvaluationResult golden_touching_evaluation() {
+  return {{Meters{.02}, Meters{0}, Meters{-.01}},
+          identity_transform({-.01, .14, 0}),
+          ContactClassification::touching,
+          MeasurementStatus::available,
+          std::nullopt,
+          Meters{0},
+          true,
+          1,
+          {{"contact-1", {0.1, 0.2, 0.3}, {0, 1, 0}, Meters{0}, ContactClassification::touching}}};
+}
 std::string read(const char* path) {
   std::ifstream f(path, std::ios::binary);
   return {std::istreambuf_iterator<char>(f), {}};
@@ -161,6 +186,64 @@ TEST(EvaluatedSweep, UsesEarliestFrameForEqualZeroMaximum) {
   if (result.value().summary.maximum_penetration.value() == 0.0) {
     EXPECT_EQ(result.value().summary.maximum_penetration_frame, 0);
   }
+}
+TEST(EvaluationExport, SerializesCompletePoseDeterministically) {
+  auto evaluator = PoseEvaluator::create(box(), box()).value();
+  const auto result = evaluator.evaluate(pose(.07));
+  ASSERT_TRUE(result);
+  const auto first = serialize_evaluation_json(result.value(), "fixture-\"escaped");
+  const auto second = serialize_evaluation_json(result.value(), "fixture-\"escaped");
+  EXPECT_EQ(first, second);
+  EXPECT_EQ(first.back(), '\n');
+
+  const auto document = nlohmann::json::parse(first);
+  EXPECT_EQ(document["schema"], "occlusion-native-evaluation");
+  EXPECT_EQ(document["schemaVersion"], evaluation_export_schema_version);
+  EXPECT_EQ(document["fixtureId"], "fixture-\"escaped");
+  EXPECT_EQ(document["kind"], "pose");
+  EXPECT_EQ(document["units"]["length"], "meters");
+  EXPECT_FALSE(document["manifoldParityGuaranteed"]);
+  EXPECT_EQ(document["requestedPoseMeters"]["opening"], .07);
+  EXPECT_EQ(document["appliedTransform"]["rotationMatrix"].size(), 9);
+  EXPECT_EQ(document["contactCount"], document["contacts"].size());
+}
+TEST(EvaluationExport, SerializesEverySweepFrameAndSummary) {
+  auto evaluator = PoseEvaluator::create(box(), box()).value();
+  const auto result = evaluator.evaluate_sweep(SweepPreset::closing, 3);
+  ASSERT_TRUE(result);
+  const auto document =
+      nlohmann::json::parse(serialize_evaluation_json(result.value(), "synthetic-boxes-v1"));
+  EXPECT_EQ(document["kind"], "sweep");
+  EXPECT_EQ(document["preset"], "closing");
+  EXPECT_EQ(document["requestedFrameCount"], 3);
+  ASSERT_EQ(document["frames"].size(), 3);
+  EXPECT_EQ(document["summary"]["totalFrameCount"], 3);
+  EXPECT_EQ(document["frames"][0]["frameIndex"], 0);
+  EXPECT_EQ(document["frames"][2]["frameIndex"], 2);
+  EXPECT_EQ(document["frames"][2]["requestedPoseMeters"], document["finalPoseMeters"]);
+  for (const auto& frame : document["frames"]) {
+    EXPECT_TRUE(frame.contains("appliedTransform"));
+    EXPECT_TRUE(frame.contains("classification"));
+    EXPECT_TRUE(frame.contains("measurementStatus"));
+    EXPECT_TRUE(frame.contains("contacts"));
+  }
+}
+TEST(EvaluationExportFixture, PoseBytesAreFrozen) {
+  EXPECT_EQ(serialize_evaluation_json(golden_separated_evaluation(), "synthetic-golden-v1"),
+            read(OCCLUSION_POSE_EXPORT_FIXTURE_SOURCE));
+  EXPECT_EQ(read(OCCLUSION_POSE_EXPORT_FIXTURE_SOURCE), read(OCCLUSION_POSE_EXPORT_FIXTURE_COPY));
+}
+TEST(EvaluationExportFixture, SweepBytesAreFrozen) {
+  const auto separated = golden_separated_evaluation();
+  const auto touching = golden_touching_evaluation();
+  const EvaluatedSweepResult sweep{
+      SweepPreset::left_lateral,        2,
+      touching.requested_pose,          {{0, 0, separated}, {1, 1, touching}},
+      {2, 1, 1, 1, Meters{0}, 0, true},
+  };
+  EXPECT_EQ(serialize_evaluation_json(sweep, "synthetic-golden-v1"),
+            read(OCCLUSION_SWEEP_EXPORT_FIXTURE_SOURCE));
+  EXPECT_EQ(read(OCCLUSION_SWEEP_EXPORT_FIXTURE_SOURCE), read(OCCLUSION_SWEEP_EXPORT_FIXTURE_COPY));
 }
 TEST(SweepSummary, RejectsInvalidPortableInputs) {
   EXPECT_FALSE(summarize_sweep({}));

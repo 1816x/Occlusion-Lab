@@ -1,0 +1,368 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://occlusion-lab.local/schemas/native-evaluation-v1.schema.json",
+  "title": "Occlusion Lab native evaluation export v1",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/poseDocument"
+    },
+    {
+      "$ref": "#/$defs/sweepDocument"
+    }
+  ],
+  "$defs": {
+    "documentHeader": {
+      "type": "object",
+      "properties": {
+        "schema": {
+          "const": "occlusion-native-evaluation"
+        },
+        "schemaVersion": {
+          "const": 1
+        },
+        "fixtureId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "units": {
+          "type": "object",
+          "properties": {
+            "length": {
+              "const": "meters"
+            },
+            "rotation": {
+              "const": "row-major-3x3"
+            }
+          },
+          "required": [
+            "length",
+            "rotation"
+          ],
+          "additionalProperties": false
+        },
+        "manifoldParityGuaranteed": {
+          "const": false
+        }
+      }
+    },
+    "pose": {
+      "type": "object",
+      "properties": {
+        "opening": {
+          "type": "number"
+        },
+        "protrusion": {
+          "type": "number"
+        },
+        "lateral": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "opening",
+        "protrusion",
+        "lateral"
+      ],
+      "additionalProperties": false
+    },
+    "vector": {
+      "type": "object",
+      "properties": {
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        },
+        "z": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "x",
+        "y",
+        "z"
+      ],
+      "additionalProperties": false
+    },
+    "transform": {
+      "type": "object",
+      "properties": {
+        "translationMeters": {
+          "$ref": "#/$defs/vector"
+        },
+        "rotationMatrix": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 9,
+          "maxItems": 9
+        }
+      },
+      "required": [
+        "translationMeters",
+        "rotationMatrix"
+      ],
+      "additionalProperties": false
+    },
+    "contact": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "positionMeters": {
+          "$ref": "#/$defs/vector"
+        },
+        "normalFixedToMoving": {
+          "$ref": "#/$defs/vector"
+        },
+        "penetrationDepthMeters": {
+          "type": "number",
+          "minimum": 0
+        },
+        "classification": {
+          "enum": [
+            "touching",
+            "penetrating"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "positionMeters",
+        "normalFixedToMoving",
+        "penetrationDepthMeters",
+        "classification"
+      ],
+      "additionalProperties": false
+    },
+    "evaluation": {
+      "type": "object",
+      "properties": {
+        "requestedPoseMeters": {
+          "$ref": "#/$defs/pose"
+        },
+        "appliedTransform": {
+          "$ref": "#/$defs/transform"
+        },
+        "classification": {
+          "enum": [
+            "separated",
+            "touching",
+            "penetrating"
+          ]
+        },
+        "measurementStatus": {
+          "enum": [
+            "available",
+            "unavailable"
+          ]
+        },
+        "clearanceMeters": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "penetrationDepthMeters": {
+          "type": "number",
+          "minimum": 0
+        },
+        "intersects": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "contactCount": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 32
+        },
+        "contacts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/contact"
+          },
+          "maxItems": 32
+        }
+      },
+      "required": [
+        "requestedPoseMeters",
+        "appliedTransform",
+        "classification",
+        "measurementStatus",
+        "clearanceMeters",
+        "penetrationDepthMeters",
+        "intersects",
+        "contactCount",
+        "contacts"
+      ]
+    },
+    "summary": {
+      "type": "object",
+      "properties": {
+        "totalFrameCount": {
+          "type": "integer",
+          "minimum": 2,
+          "maximum": 61
+        },
+        "firstContactFrame": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "lastContactFrame": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "contactFrameCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "maximumPenetrationMeters": {
+          "type": "number",
+          "minimum": 0
+        },
+        "maximumPenetrationFrame": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "contactPersistsThroughFinalFrame": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "totalFrameCount",
+        "firstContactFrame",
+        "lastContactFrame",
+        "contactFrameCount",
+        "maximumPenetrationMeters",
+        "maximumPenetrationFrame",
+        "contactPersistsThroughFinalFrame"
+      ],
+      "additionalProperties": false
+    },
+    "frame": {
+      "type": "object",
+      "allOf": [
+        {
+          "$ref": "#/$defs/evaluation"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "frameIndex": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "progress": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          },
+          "required": [
+            "frameIndex",
+            "progress"
+          ]
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+    "poseDocument": {
+      "type": "object",
+      "allOf": [
+        {
+          "$ref": "#/$defs/documentHeader"
+        },
+        {
+          "$ref": "#/$defs/evaluation"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "pose"
+            }
+          },
+          "required": [
+            "schema",
+            "schemaVersion",
+            "fixtureId",
+            "kind",
+            "units",
+            "manifoldParityGuaranteed"
+          ]
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+    "sweepDocument": {
+      "type": "object",
+      "allOf": [
+        {
+          "$ref": "#/$defs/documentHeader"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "sweep"
+            },
+            "preset": {
+              "enum": [
+                "closing",
+                "protrusive",
+                "left-lateral",
+                "right-lateral"
+              ]
+            },
+            "requestedFrameCount": {
+              "type": "integer",
+              "minimum": 2,
+              "maximum": 61
+            },
+            "finalPoseMeters": {
+              "$ref": "#/$defs/pose"
+            },
+            "summary": {
+              "$ref": "#/$defs/summary"
+            },
+            "frames": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/frame"
+              },
+              "minItems": 2,
+              "maxItems": 61
+            }
+          },
+          "required": [
+            "schema",
+            "schemaVersion",
+            "fixtureId",
+            "kind",
+            "units",
+            "manifoldParityGuaranteed",
+            "preset",
+            "requestedFrameCount",
+            "finalPoseMeters",
+            "summary",
+            "frames"
+          ]
+        }
+      ],
+      "unevaluatedProperties": false
+    }
+  }
+}
