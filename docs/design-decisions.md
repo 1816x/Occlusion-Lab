@@ -9,7 +9,7 @@
 - **Incremental migration:** The TypeScript application remains the behavioral reference. It cannot be removed until golden fixtures demonstrate parity and a desktop UI replaces required workflows.
 - **Clinical boundary:** Native contracts and tests are engineering infrastructure only. They add no collision, biomechanical, diagnostic, treatment, or clinically validated functionality.
 
-See [ADR-0001](adr/0001-cpp-desktop-architecture.md) for the full context and consequences, and [`PLAN.md`](../PLAN.md) for current status and the next planned fixture task.
+See [ADR-0001](adr/0001-cpp-desktop-architecture.md) for the full context and consequences, and [`PLAN.md`](../PLAN.md) for current status and the next planned migration task.
 
 ## Phase 1 decisions
 
@@ -142,3 +142,22 @@ final-frame persistence, and the exact final pose make the reduction explicit an
   core-only CLI. The versioned built-in boxes exercise FCL but are not a mesh-import mechanism.
 - Sweep output publishes the stable engine-neutral summary rather than platform-sensitive contact
   manifolds. No force, pressure, diagnosis, patient data, or clinical validation is introduced.
+
+## Phase 4.8: versioned native result export
+
+- **Decision:** complete pose and evaluated-sweep results use one deterministic JSON writer and the
+  `occlusion-native-evaluation` schema identifier with an integer schema version.
+- **Compatibility:** any field, order, unit, nullability, spelling, number-representation, or semantic
+  change requires a new version and reviewed golden documents.
+- **Portability boundary:** normalized contacts are included but explicitly are not manifold parity;
+  the portable sweep summary remains the engine-neutral reduction.
+
+## Phase 4.9: bounded synthetic OBJ ingestion
+
+- **Decision:** begin ingestion with a strict, dependency-free, in-memory OBJ triangle subset rather
+  than adding CGAL, filesystem policy, triangulation, repair, or broad format ambiguity at once.
+- **Units:** vertex coordinates are meters; the parser never guesses scale from content or filenames.
+- **Safety:** byte, vertex, and triangle ceilings are checked before growth beyond configured limits;
+  failures carry a stable code plus line, field, and message and never expose a partial mesh.
+- **Separation:** the ingestion library depends only on `occlusion-core`. Collision conversion, file
+  selection, and evaluation are deferred to an adapter so FCL does not leak into ingestion.
