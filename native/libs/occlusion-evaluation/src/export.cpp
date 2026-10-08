@@ -1,7 +1,8 @@
 #include "occlusion/evaluation/evaluation.hpp"
 
+#include <array>
+#include <charconv>
 #include <iomanip>
-#include <limits>
 #include <locale>
 #include <sstream>
 
@@ -74,20 +75,37 @@ void write_string(std::ostream& output, std::string_view value) {
   output << '"';
 }
 
+void write_number(std::ostream& output, double value) {
+  std::array<char, 32> buffer{};
+  const auto [end, error] = std::to_chars(buffer.data(), buffer.data() + buffer.size(), value);
+  if (error == std::errc{})
+    output.write(buffer.data(), end - buffer.data());
+  else
+    output << "null";
+}
+
 void write_pose(std::ostream& output, const MandibularPose& pose) {
-  output << "{\"opening\":" << pose.opening.value() << ",\"protrusion\":" << pose.protrusion.value()
-         << ",\"lateral\":" << pose.lateral_displacement.value() << '}';
+  output << "{\"opening\":";
+  write_number(output, pose.opening.value());
+  output << ",\"protrusion\":";
+  write_number(output, pose.protrusion.value());
+  output << ",\"lateral\":";
+  write_number(output, pose.lateral_displacement.value());
+  output << '}';
 }
 
 void write_transform(std::ostream& output, const RigidTransform& transform) {
-  output << "{\"translationMeters\":{"
-         << "\"x\":" << transform.translation_meters.x
-         << ",\"y\":" << transform.translation_meters.y
-         << ",\"z\":" << transform.translation_meters.z << "},\"rotationMatrix\":[";
+  output << "{\"translationMeters\":{\"x\":";
+  write_number(output, transform.translation_meters.x);
+  output << ",\"y\":";
+  write_number(output, transform.translation_meters.y);
+  output << ",\"z\":";
+  write_number(output, transform.translation_meters.z);
+  output << "},\"rotationMatrix\":[";
   for (std::size_t index = 0; index < transform.rotation.size(); ++index) {
     if (index != 0)
       output << ',';
-    output << transform.rotation[index];
+    write_number(output, transform.rotation[index]);
   }
   output << "]}";
 }
@@ -110,11 +128,12 @@ void write_evaluation(std::ostream& output, const PoseEvaluationResult& result) 
                                                                        : "unavailable")
          << "\",\"clearanceMeters\":";
   if (result.clearance)
-    output << result.clearance->value();
+    write_number(output, result.clearance->value());
   else
     output << "null";
-  output << ",\"penetrationDepthMeters\":" << result.penetration_depth.value()
-         << ",\"intersects\":";
+  output << ",\"penetrationDepthMeters\":";
+  write_number(output, result.penetration_depth.value());
+  output << ",\"intersects\":";
   if (result.intersects)
     output << (*result.intersects ? "true" : "false");
   else
@@ -126,14 +145,21 @@ void write_evaluation(std::ostream& output, const PoseEvaluationResult& result) 
     const auto& contact = result.contacts[index];
     output << "{\"id\":";
     write_string(output, contact.stable_id);
-    output << ",\"positionMeters\":{" << "\"x\":" << contact.position_meters.x
-           << ",\"y\":" << contact.position_meters.y << ",\"z\":" << contact.position_meters.z
-           << "},\"normalFixedToMoving\":{"
-           << "\"x\":" << contact.normal_fixed_to_moving.x
-           << ",\"y\":" << contact.normal_fixed_to_moving.y
-           << ",\"z\":" << contact.normal_fixed_to_moving.z
-           << "},\"penetrationDepthMeters\":" << contact.penetration_depth.value()
-           << ",\"classification\":\"" << classification_name(contact.classification) << "\"}";
+    output << ",\"positionMeters\":{\"x\":";
+    write_number(output, contact.position_meters.x);
+    output << ",\"y\":";
+    write_number(output, contact.position_meters.y);
+    output << ",\"z\":";
+    write_number(output, contact.position_meters.z);
+    output << "},\"normalFixedToMoving\":{\"x\":";
+    write_number(output, contact.normal_fixed_to_moving.x);
+    output << ",\"y\":";
+    write_number(output, contact.normal_fixed_to_moving.y);
+    output << ",\"z\":";
+    write_number(output, contact.normal_fixed_to_moving.z);
+    output << "},\"penetrationDepthMeters\":";
+    write_number(output, contact.penetration_depth.value());
+    output << ",\"classification\":\"" << classification_name(contact.classification) << "\"}";
   }
   output << ']';
 }
@@ -141,8 +167,7 @@ void write_evaluation(std::ostream& output, const PoseEvaluationResult& result) 
 std::ostringstream document_start(std::string_view fixture_id, std::string_view kind) {
   std::ostringstream output;
   output.imbue(std::locale::classic());
-  output << std::setprecision(std::numeric_limits<double>::max_digits10)
-         << "{\"schema\":\"occlusion-native-evaluation\",\"schemaVersion\":"
+  output << "{\"schema\":\"occlusion-native-evaluation\",\"schemaVersion\":"
          << evaluation_export_schema_version << ",\"fixtureId\":";
   write_string(output, fixture_id);
   output << ",\"kind\":";
@@ -174,8 +199,9 @@ std::string serialize_evaluation_json(const EvaluatedSweepResult& result,
   output << ",\"lastContactFrame\":";
   write_optional_index(output, result.summary.last_contact_frame);
   output << ",\"contactFrameCount\":" << result.summary.contact_frame_count
-         << ",\"maximumPenetrationMeters\":" << result.summary.maximum_penetration.value()
-         << ",\"maximumPenetrationFrame\":" << result.summary.maximum_penetration_frame
+         << ",\"maximumPenetrationMeters\":";
+  write_number(output, result.summary.maximum_penetration.value());
+  output << ",\"maximumPenetrationFrame\":" << result.summary.maximum_penetration_frame
          << ",\"contactPersistsThroughFinalFrame\":"
          << (result.summary.contact_persists_through_final_frame ? "true" : "false")
          << "},\"frames\":[";
@@ -183,8 +209,9 @@ std::string serialize_evaluation_json(const EvaluatedSweepResult& result,
     if (index != 0)
       output << ',';
     const auto& frame = result.frames[index];
-    output << "{\"frameIndex\":" << frame.index << ",\"progress\":" << frame.normalized_progress
-           << ',';
+    output << "{\"frameIndex\":" << frame.index << ",\"progress\":";
+    write_number(output, frame.normalized_progress);
+    output << ',';
     write_evaluation(output, frame.evaluation);
     output << '}';
   }

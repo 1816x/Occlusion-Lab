@@ -4,7 +4,7 @@
 
 The target is a desktop-first C++20 system whose scientific engine is independent of presentation. Phase 4 currently provides the `occlusion-core` static library (typed units, domain contracts, and validation), `occlusion-cli` (version and self-check), GoogleTest/CTest coverage, CMake presets, and native CI. Internal scientific lengths are `double` meters; millimeter conversion is explicit.
 
-CGAL mesh processing, FCL collision/distance queries, motion analysis, VTK rendering, and the Qt 6 desktop UI are planned modules only. None is linked into `occlusion-core`. This dependency boundary keeps the core reusable by CLI, tests, and the future desktop application without UI, filesystem, networking, or rendering concerns.
+FCL collision/distance queries and native motion evaluation are implemented outside `occlusion-core`; bounded OBJ ingestion is isolated in `occlusion-mesh-io`. CGAL mesh processing, VTK rendering, and the Qt 6 desktop UI remain planned modules. None is linked into `occlusion-core`. This dependency boundary keeps the core reusable by CLI, tests, and the future desktop application without UI, filesystem, networking, or rendering concerns.
 
 The browser runtime documented below remains the legacy behavioral reference during incremental migration. Its Worker physics, exports, tolerances, and UI are not replaced in Phase 4. Removal requires golden-result parity and a replacement desktop interface. Current status and verification are maintained in [`PLAN.md`](../PLAN.md), with rationale in [ADR-0001](adr/0001-cpp-desktop-architecture.md). All current data and behavior remain synthetic and educational, without clinical validation.
 
@@ -142,3 +142,14 @@ The executable is an adapter only: mesh compilation, pose transforms, contact no
 summary reduction remain in their existing libraries. Core-only builds do not acquire FCL, JSON,
 filesystem, or UI dependencies. The built-in geometry is synthetic and immutable; arbitrary mesh
 ingestion, clinical interpretation, and exact engine-manifold serialization remain deferred.
+
+## Export and ingestion boundaries (Phases 4.8–4.9)
+
+Phase 4.8 centralizes complete pose and sweep JSON serialization in `occlusion-evaluation`. A
+machine-readable schema and engine-neutral golden documents freeze its version-1 field semantics
+and byte representation while explicitly excluding cross-engine manifold parity.
+
+Phase 4.9 adds `occlusion-mesh-io` beside, not inside, `occlusion-core`. It parses a strict in-memory
+OBJ triangle subset with explicit meter units, resource ceilings, and structured failures. It has no
+FCL, CGAL, filesystem, or UI dependency and does not publish partial data. Conversion into the
+collision mesh type and CLI file handling remain a later adapter boundary.

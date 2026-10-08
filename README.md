@@ -4,7 +4,7 @@ Occlusion Lab is a **work in progress** educational browser sandbox for syntheti
 
 ## C++ migration (Phase 4)
 
-The project is migrating toward a C++20, desktop-first scientific architecture. The existing Next.js/React/Three.js application remains intact as the production behavioral reference. The native foundation now includes pose and sweep contracts, optional FCL collision/evaluation, and a synthetic evaluation CLI. Phase 4.8 is introducing a versioned, deterministic JSON interchange boundary for complete native pose and sweep results. CGAL mesh processing and Qt 6/VTK presentation remain future work; no clinical parity or validation is claimed.
+The project is migrating toward a C++20, desktop-first scientific architecture. The existing Next.js/React/Three.js application remains intact as the production behavioral reference. The native foundation now includes pose and sweep contracts, optional FCL collision/evaluation, a synthetic evaluation CLI, versioned JSON exports, and bounded synthetic OBJ ingestion. CGAL mesh processing and Qt 6/VTK presentation remain future work; no clinical parity or validation is claimed.
 
 [`PLAN.md`](PLAN.md) is the concise source of truth for migration status, verification results, risks, and the single next task. The architectural rationale is recorded in [ADR-0001](docs/adr/0001-cpp-desktop-architecture.md).
 
@@ -184,4 +184,20 @@ evaluated sweeps, UI integration, clinical validation, forces, and pressures rem
 
 Collision-enabled builds now serialize complete pose and evaluated-sweep results as schema version 1 JSON. Documents identify `occlusion-native-evaluation`, declare meter and row-major rotation units, preserve stable property order, and end with a newline. Sweep exports include the final pose, portable summary, and every fully evaluated frame; pose and frame payloads include the applied transform, measurement availability, optional clearance/intersection values, and bounded normalized contacts.
 
-The format is engine-neutral only at the normalized contract boundary. Every document sets `manifoldParityGuaranteed` to `false`: contact manifold details may differ between FCL, Rapier, versions, and platforms. Phase 4.8 does not add patient-mesh ingestion, clinical semantics, force, pressure, diagnosis, or treatment guidance. Golden export examples, compatibility policy, and remote multiplatform verification remain the next completion gates.
+The format is engine-neutral only at the normalized contract boundary. Every document sets `manifoldParityGuaranteed` to `false`: contact manifold details may differ between FCL, Rapier, versions, and platforms. Phase 4.8 does not add patient-mesh ingestion, clinical semantics, force, pressure, diagnosis, or treatment guidance. Remote multiplatform verification remains the final completion gate.
+
+The complete field contract, byte-level golden examples, rebaseline rules, and compatibility policy
+are documented in [`docs/native-evaluation-export-v1.md`](docs/native-evaluation-export-v1.md).
+
+## Phase 4.9: bounded synthetic mesh ingestion
+
+`occlusion-mesh-io` is a dependency-free boundary for untrusted synthetic mesh text. Its initial
+format is a deliberately strict Wavefront OBJ subset: blank lines, comments, meter-valued `v x y z`
+records, and triangular `f i j k` records with positive one-based indices referencing preceding
+vertices. It rejects texture/normal indices, relative indices, polygons, unsupported statements,
+non-finite coordinates, malformed numbers, repeated triangle indices, and incomplete meshes.
+
+Parsing is bounded by default to 16 MiB, 1,000,000 vertices, and 2,000,000 triangles and returns a
+structured error code, line, field, and message without publishing a partial mesh. This phase does
+not read arbitrary filesystem paths, infer units, ingest patient data, repair geometry, or connect
+imported meshes to collision evaluation; that adapter is the next native boundary.

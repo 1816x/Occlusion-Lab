@@ -42,6 +42,7 @@ endif()
 
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/native/libs/occlusion-core/CMakeLists.txt")
   add_subdirectory(native/libs/occlusion-core)
+  add_subdirectory(native/libs/occlusion-mesh-io)
 endif()
 
 if(OCCLUSION_ENABLE_COLLISION)
@@ -73,6 +74,7 @@ if(OCCLUSION_BUILD_TESTS AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/native/tests/co
     find_package(nlohmann_json 3.11.3 CONFIG REQUIRED)
   endif()
   add_subdirectory(native/tests/core)
+  add_subdirectory(native/tests/mesh-io)
   if(OCCLUSION_ENABLE_COLLISION)
     add_subdirectory(native/tests/collision)
     add_subdirectory(native/tests/evaluation)

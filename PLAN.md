@@ -6,14 +6,14 @@ Occlusion Lab pretende convertirse en una aplicación científica de escritorio 
 
 ## 2. Estado actual
 
-- **Fase actual:** Phase 4.8: Versioned Native Evaluation Export
-- **Estado:** In progress
+- **Fase actual:** Phase 4.9: Bounded Synthetic Mesh Ingestion
+- **Estado:** Completed locally; remote CI unverified
 - **Rama y commit iniciales:** `main` en `46ffc9524e781fe2e8d8c269027434f422c2abf7`
 - **Rama activa:** `work`
 - **Phase 4.3:** Completed mediante [PR #13](https://github.com/1816x/Occlusion-Lab/pull/13), merge `da055bc2067b6477eea9efe7abbad0422ed8e9f3`.
-- **Última actualización significativa:** 2026-10-05 — Phase 4.8 comenzó con un serializador JSON v1 reutilizable y determinista para resultados completos de pose y barrido.
+- **Última actualización significativa:** 2026-10-07 — Phase 4.9 añadió ingestión OBJ sintética acotada, sin filesystem, reparación geométrica ni datos clínicos.
 
-La aplicación web heredada continúa disponible y funcional como referencia. La base nativa configura y compila en Debug/Release, `occlusion-core` ofrece unidades fuertes y validación, y las capas opcionales de colisión/evaluación ejecutan poses y barridos deterministas. Phase 4.7 expone la fixture sintética mediante CLI. Phase 4.8 ya exporta el resultado nativo completo (incluidos frames y contactos normalizados) mediante un contrato versionado y engine-neutral; la tanda nativa local actual registra 76/76 CTest. La CI remota de esta tanda permanece sin verificar.
+La aplicación web heredada continúa disponible y funcional como referencia. La base nativa configura y compila en Debug/Release, `occlusion-core` ofrece unidades fuertes y validación, y las capas opcionales de colisión/evaluación ejecutan poses y barridos deterministas. Phase 4.7 expone la fixture sintética mediante CLI. Phase 4.8 exporta el resultado nativo completo mediante un contrato versionado y engine-neutral. Phase 4.9 añade un parser OBJ triangular estricto con límites de recursos y errores estructurados; la tanda core local actual registra 34/34 CTest y la tanda con colisión 85/85 CTest. La CI remota de esta tanda permanece sin verificar.
 
 ## 3. Estado de arquitectura
 
@@ -21,7 +21,8 @@ La aplicación web heredada continúa disponible y funcional como referencia. La
 |---|---|---|---|---|
 | Contratos de dominio | TypeScript y nuevos contratos C++ | Biblioteca C++20 `occlusion-core` | Fundación implementada | Sin lógica clínica. |
 | Unidades y transformaciones | Tipos fuertes C++ | Tipos fuertes C++ con metros internos | Fundación implementada | Conversión de mm explícita. |
-| Procesamiento geométrico | Flujo web existente | CGAL | Futuro | No se implementa en Phase 4. |
+| Ingestión de mallas | Parser OBJ sintético acotado | Entrada validada antes de CGAL | Fundación implementada | Solo texto en memoria, triángulos y metros; sin filesystem ni reparación. |
+| Procesamiento geométrico | Flujo web existente | CGAL | Futuro | Aún no implementado. |
 | Detección de colisiones | Worker web/Rapier y biblioteca FCL opcional | FCL | Fundación implementada | Sin afirmar igualdad de manifolds entre motores. |
 | Análisis de barrido de movimiento | Web existente y evaluación C++ | Motor C++ | Barrido y resumen implementados | Paridad semántica del resumen cubierta por fixture versionada. |
 | Renderer | Three.js | VTK | Futuro | No forma parte del core. |
@@ -106,11 +107,11 @@ La aplicación web heredada continúa disponible y funcional como referencia. La
 - Riesgo: la paridad de resúmenes cubre solo la reducción de frames ya evaluados; no permite afirmar igualdad de manifolds Rapier/FCL ni paridad clínica.
 - Riesgo: la estabilidad semántica FCL se prueba localmente, pero los manifolds exactos no son portables ni se consideran contrato.
 - Riesgo: CI remota multiplataforma permanece Unverified hasta inspeccionar los jobs del draft PR.
-- Diferidos: ingestión de mallas, UI desktop y validación clínica; no se añadieron fuerzas ni presiones.
+- Diferidos: adaptador de filesystem/colisión para mallas, UI desktop y validación clínica; no se añadieron fuerzas ni presiones.
 
 ## 8. Próxima tarea recomendada
 
-Completar Phase 4.8: congelar ejemplos dorados del export JSON v1, verificar el contrato en CI multiplataforma y documentar la política explícita de compatibilidad antes de comenzar ingestión de mallas.
+Phase 4.10: añadir un adaptador explícito desde `occlusion-mesh-io` hacia el modelo de colisión y exponer evaluación CLI de dos ficheros sintéticos bajo una política de filesystem acotada.
 
 ## 9. Hitos completados
 
@@ -120,11 +121,23 @@ Completar Phase 4.8: congelar ejemplos dorados del export JSON v1, verificar el 
 | Phase 4.1 | Fixtures dorados de pose y paridad del contrato C++ | [PR #11](https://github.com/1816x/Occlusion-Lab/pull/11), merge `39e206e48599333d2fa76947352e09be04c39dee` | Completada; 22/22 CTest y 66/66 Vitest locales; GitHub CI del head completado correctamente. |
 | Phase 4.2 | Paridad determinista de generación de barridos: 20 casos y 432 frames | [PR #12](https://github.com/1816x/Occlusion-Lab/pull/12), merge `5607b26f856481f4aacb36139ec9837f125e80c5` | Completada; 27/27 CTest y 85/85 Vitest locales; CI web verificada correctamente; CI nativa remota no verificada. |
 | Phase 4.3 | Fundación de colisión FCL de producción | [PR #13](https://github.com/1816x/Occlusion-Lab/pull/13), merge `da055bc2067b6477eea9efe7abbad0422ed8e9f3` | Completed; 91/91 Vitest, 44/44 CTest (27 core + 17 collision), ASan y UBSan locales PASS; CI nativa remota Unverified. |
-| Phase 4.4 | Evaluación nativa single-pose determinista y normalización acotada | Draft PR | Completed localmente; 63/63 CTest (19 nuevas), 91/91 Vitest PASS; ASan+UBSan PASS; CI remota Unverified. |
+| Phase 4.4 | Evaluación nativa single-pose determinista y normalización acotada | [PR #14](https://github.com/1816x/Occlusion-Lab/pull/14), merge `46ffc95` | Completed localmente; 63/63 CTest (19 nuevas), 91/91 Vitest PASS; ASan+UBSan PASS; CI remota Unverified. |
 | Phase 4.5 | Barridos nativos evaluados, reutilización de BVH y resúmenes deterministas | [PR #17](https://github.com/1816x/Occlusion-Lab/pull/17), merge `2ec46d13a16ad197a397a90bae6d6e29c7016de1` | Completada; 67/67 CTest y 91/91 Vitest locales PASS; CI remota Unverified. |
 | Phase 4.6 | Fixture versionada de paridad semántica para resúmenes evaluados | [PR #18](https://github.com/1816x/Occlusion-Lab/pull/18), merge `d3f5f9e` | Completada localmente; 8 casos engine-neutral, 70/70 CTest; CI remota Unverified. |
 | Phase 4.7 | Evaluación de pose y barrido sobre fixture sintética mediante CLI JSON | [PR #19](https://github.com/1816x/Occlusion-Lab/pull/19), merge `e226060` | Completada localmente; 74/74 CTest y 94/94 Vitest; CI remota Unverified. |
-| Phase 4.8 | Export JSON v1 completo, determinista y engine-neutral | Current PR | En progreso; serializador y CLI implementados, 76/76 CTest locales PASS; faltan ejemplos dorados y CI remota. |
+| Phase 4.8 | Export JSON v1 completo, determinista y engine-neutral | Commit `24a4528` | Completada localmente; ejemplos dorados y política de compatibilidad incluidos; CI remota Unverified. |
+| Phase 4.9 | Ingestión OBJ sintética acotada y errores estructurados | Current PR | Completada localmente; 7 pruebas específicas, 34/34 CTest core y 85/85 CTest con colisión; CI remota Unverified. |
+
+### Verificación local de Phase 4.9 (2026-10-07)
+
+- `occlusion-mesh-io` acepta únicamente comentarios, líneas vacías, vértices XYZ en metros y caras triangulares con índices positivos a vértices precedentes.
+- Límites por defecto: 16 MiB de entrada, 1.000.000 de vértices y 2.000.000 de triángulos.
+- Errores estructurados publican código, línea, campo y mensaje; nunca se devuelve una malla parcial.
+- Native core Debug: configure/build y 34/34 CTest PASS (7 pruebas nuevas).
+- Native collision/evaluation Debug: configure/build y 85/85 CTest PASS.
+- Web: Next.js 16.4.0, Vitest 4.1.11, lint, typecheck, 94/94 Vitest, build y audit de producción PASS (0 vulnerabilidades).
+- No se añadieron filesystem, datos clínicos, inferencia de unidades, triangulación, reparación, CGAL ni FCL al parser.
+- CI remota Ubuntu, Windows y macOS: Unverified.
 
 ### Alineación de PR de Phase 4.5 (2026-10-05)
 
@@ -139,7 +152,10 @@ Completar Phase 4.8: congelar ejemplos dorados del export JSON v1, verificar el 
 - Pose: incluye pose solicitada, transformación aplicada, mediciones, intersección y contactos normalizados.
 - Barrido: incluye preset, pose final, resumen y todos los frames completos.
 - El contrato declara explícitamente que no garantiza paridad de manifolds entre motores.
-- Native collision/evaluation Debug: configure/build y 76/76 CTest PASS.
+- Ejemplos dorados engine-neutral de pose y barrido completo congelan el contrato byte a byte.
+- La política de compatibilidad exige nueva versión para cambios de campos, orden, unidades, nulabilidad, representación o semántica.
+- Native collision/evaluation Debug: configure/build y 78/78 CTest PASS.
+- CI remota Ubuntu, Windows y macOS: Unverified; es el único gate pendiente de Phase 4.8.
 
 ### Verificación local de Phase 4.7 (2026-09-29)
 
