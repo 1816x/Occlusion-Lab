@@ -7,7 +7,7 @@ Occlusion Lab pretende convertirse en una aplicación científica de escritorio 
 ## 2. Estado actual
 
 - **Fase actual:** Phase 4.11: Synthetic OBJ Topology Validation
-- **Estado:** Implementada localmente; CI nativa multiplataforma pendiente
+- **Estado:** Implementada y publicada en `main`; CI nativa multiplataforma pendiente
 - **Rama y commit iniciales:** `main` en `46ffc9524e781fe2e8d8c269027434f422c2abf7`
 - **Rama activa:** `work`
 - **Phase 4.3:** Completed mediante [PR #13](https://github.com/1816x/Occlusion-Lab/pull/13), merge `da055bc2067b6477eea9efe7abbad0422ed8e9f3`.
@@ -129,7 +129,7 @@ Phase 4.12: implementar la primera frontera opcional de procesamiento CGAL descr
 | Phase 4.8 | Export JSON v1 completo, determinista y engine-neutral | Commit `24a4528` | Completada localmente; ejemplos dorados y política de compatibilidad incluidos; CI remota Unverified. |
 | Phase 4.9 | Ingestión OBJ sintética acotada y errores estructurados | Merge #22, `2fb68c9` | Completada localmente; 7 pruebas específicas, 34/34 CTest core y 85/85 CTest con colisión; CI remota nativa no verificada. |
 | Phase 4.10 | Adaptador CLI para dos ficheros OBJ sintéticos y evaluación existente | `7e22412` | Implementada y publicada en `main`; CI web remota PASS. CI nativa parcialmente completada; tres jobs sin runner. |
-| Phase 4.11 | Validación topológica y orientación OBJ antes de FCL | Pendiente de publicar | Implementada localmente; 39/39 CTest core, 100/100 CTest colisión y 100/100 ASan+UBSan PASS; CI remota pendiente. |
+| Phase 4.11 | Validación topológica y orientación OBJ antes de FCL | `5c98b0c` | Publicada en `main`; 39/39 CTest core, 100/100 CTest colisión y 100/100 ASan+UBSan PASS locales; CI remota pendiente. |
 
 ### Verificación local de Phase 4.11 (2026-10-20)
 
