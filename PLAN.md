@@ -127,8 +127,8 @@ Phase 4.11: validar topología cerrada y orientación de mallas OBJ sintéticas 
 | Phase 4.6 | Fixture versionada de paridad semántica para resúmenes evaluados | [PR #18](https://github.com/1816x/Occlusion-Lab/pull/18), merge `d3f5f9e` | Completada localmente; 8 casos engine-neutral, 70/70 CTest; CI remota Unverified. |
 | Phase 4.7 | Evaluación de pose y barrido sobre fixture sintética mediante CLI JSON | [PR #19](https://github.com/1816x/Occlusion-Lab/pull/19), merge `e226060` | Completada localmente; 74/74 CTest y 94/94 Vitest; CI remota Unverified. |
 | Phase 4.8 | Export JSON v1 completo, determinista y engine-neutral | Commit `24a4528` | Completada localmente; ejemplos dorados y política de compatibilidad incluidos; CI remota Unverified. |
-| Phase 4.9 | Ingestión OBJ sintética acotada y errores estructurados | Current PR | Completada localmente; 7 pruebas específicas, 34/34 CTest core y 85/85 CTest con colisión; CI remota Unverified. |
-| Phase 4.10 | Adaptador CLI para dos ficheros OBJ sintéticos y evaluación existente | Árbol de trabajo actual | Implementada localmente; ver verificación actual. CI remota Unverified. |
+| Phase 4.9 | Ingestión OBJ sintética acotada y errores estructurados | Merge #22, `2fb68c9` | Completada localmente; 7 pruebas específicas, 34/34 CTest core y 85/85 CTest con colisión; CI remota nativa no verificada. |
+| Phase 4.10 | Adaptador CLI para dos ficheros OBJ sintéticos y evaluación existente | `7e22412` | Implementada y publicada en `main`; ver verificación actual. CI web remota y sanitizer Ubuntu PASS; matrices core/collision en cola. |
 
 ### Verificación local de Phase 4.10 (2026-10-20)
 
@@ -137,7 +137,8 @@ Phase 4.11: validar topología cerrada y orientación de mallas OBJ sintéticas 
 - `occlusion-cli --version` se alinea con la versión CMake 0.5.0. El workflow nativo incluye ahora los cambios en fixtures de pose, generación de barridos y OBJ.
 - Web: lint, typecheck, 94/94 Vitest, paridad, assets, build de producción, smoke HTTP de página/fixture y audit de producción (0 vulnerabilidades) PASS.
 - Native core Debug: configure/build y 34/34 CTest PASS. Native collision Debug: configure/build y 94/94 CTest PASS, con pruebas nuevas de rutas, symlinks, límites, parser, geometría y CLI. Native core y collision Release: configure/build PASS. ASan+UBSan: configure/build y 94/94 CTest PASS.
-- Se incorporó la inicialización de vcpkg por plataforma, triplets explícitos, cache y bootstraps separados de PR #16; la versión Eigen se comprueba después de encontrar el paquete para admitir 3.4 o superior. La CI remota Ubuntu/Windows/macOS permanece Unverified.
+- Se incorporó la inicialización de vcpkg por plataforma, triplets explícitos, cache y bootstraps separados de PR #16; la versión Eigen se comprueba después de encontrar el paquete para admitir 3.4 o superior. La tanda ASan+UBSan remota Ubuntu pasó; las matrices core/collision multiplataforma aún no terminan.
+- GitHub Actions web (`.github/workflows/ci.yml`) para los pushes de Phase 4.10 y la actualización de PLAN: PASS. En el workflow nativo remoto, el job ASan+UBSan Ubuntu terminó correctamente; jobs core/collision todavía en cola al revisar.
 - Los antiguos PR #15, #16 y #21 se compararon con `main`: sus ramas precedían funcionalidades posteriores. Se añadieron sus heads como padres de merge conservando el árbol verificado actual; GitHub muestra los tres PR como `MERGED`. El push a `main` y la lectura del HEAD remoto se comprobaron. Su historial quedó incluido sin aplicar sus versiones antiguas de los archivos.
 
 ### Verificación local de Phase 4.9 (2026-10-07)
