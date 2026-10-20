@@ -5,6 +5,7 @@
 #include <filesystem>
 #include <fstream>
 #include <gtest/gtest.h>
+#include <iterator>
 #include <string>
 
 namespace {
@@ -90,10 +91,35 @@ TEST_F(MeshFileTest, ReportsParserAndCollisionValidationFailures) {
   std::string error;
   EXPECT_FALSE(occlusion::cli::load_mesh_pair(directory, "fixed-box.obj", "moving-box.obj", error));
   EXPECT_NE(error.find("line 1, vertex"), std::string::npos);
+  // Preserve the closed face graph, but collapse a vertex onto its neighbor.
+  std::ifstream fixture(fs::path{OCCLUSION_MESH_FIXTURE_DIR} / "fixed-box.obj");
+  ASSERT_TRUE(fixture);
+  std::string contents{std::istreambuf_iterator<char>{fixture}, std::istreambuf_iterator<char>{}};
+  const auto vertex = contents.find("v 0.05 -0.05 -0.05");
+  ASSERT_NE(vertex, std::string::npos);
+  contents.replace(vertex, sizeof("v 0.05 -0.05 -0.05") - 1, "v -0.05 -0.05 -0.05");
   {
     std::ofstream degenerate(directory / "fixed-box.obj", std::ios::trunc);
-    degenerate << "v 0 0 0\nv 1 0 0\nv 2 0 0\nf 1 2 3\n";
+    degenerate << contents;
   }
   EXPECT_FALSE(occlusion::cli::load_mesh_pair(directory, "fixed-box.obj", "moving-box.obj", error));
   EXPECT_NE(error.find("fixed.triangles[0]"), std::string::npos);
+}
+
+TEST_F(MeshFileTest, RejectsOpenMeshBeforeCollisionCompilation) {
+  copy_boxes();
+  std::ifstream fixture(directory / "fixed-box.obj");
+  ASSERT_TRUE(fixture);
+  std::string contents{std::istreambuf_iterator<char>{fixture}, std::istreambuf_iterator<char>{}};
+  const auto face = contents.find("f 2 7 6\n");
+  ASSERT_NE(face, std::string::npos);
+  contents.erase(face, sizeof("f 2 7 6\n") - 1);
+  {
+    std::ofstream open(directory / "fixed-box.obj", std::ios::trunc);
+    open << contents;
+  }
+  std::string error;
+  EXPECT_FALSE(occlusion::cli::load_mesh_pair(directory, "fixed-box.obj", "moving-box.obj", error));
+  EXPECT_NE(error.find("fixed-box.obj: edges["), std::string::npos);
+  EXPECT_NE(error.find("two incident faces"), std::string::npos);
 }

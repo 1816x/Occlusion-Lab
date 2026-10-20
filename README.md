@@ -197,7 +197,7 @@ build/native/collision-debug/native/apps/occlusion-cli/occlusion-cli \
   --evaluate-meshes fixtures/mesh-io fixed-box.obj moving-box.obj sweep closing 11
 ```
 
-The first mesh is fixed; the second receives the validated mandibular pose. The directory is explicit, and each file argument must be a direct `.obj` filename. Symlinks, traversal, non-files, and inputs larger than 16 MiB are rejected before parsing. The Phase 4.9 OBJ parser still enforces its vertex and face limits, and collision compilation rejects degenerate triangles. The export's `fixtureId` is `synthetic-obj-pair-v1`, which identifies the input mode rather than the contents of a particular pair; preserve the input files with exported results for reproducibility. The directory must be trusted against concurrent modification. Only synthetic, non-patient geometry is supported, and collision results have no clinical meaning.
+The first mesh is fixed; the second receives the validated mandibular pose. The directory is explicit, and each file argument must be a direct `.obj` filename. Symlinks, traversal, non-files, and inputs larger than 16 MiB are rejected before parsing. The Phase 4.9 OBJ parser still enforces its vertex and face limits. Phase 4.11 checks that each synthetic mesh has paired, oppositely directed edges, a single face fan at each vertex, and positive signed volume for every shell before FCL compilation; collision compilation still rejects degenerate triangles. Topology errors identify the affected edge, vertex, or mesh. This validation does not detect self-intersections or repair geometry. The export's `fixtureId` is `synthetic-obj-pair-v1`, which identifies the input mode rather than the contents of a particular pair; preserve the input files with exported results for reproducibility. The directory must be trusted against concurrent modification. Only synthetic, non-patient geometry is supported, and collision results have no clinical meaning.
 
 The complete field contract, byte-level golden examples, rebaseline rules, and compatibility policy
 are documented in [`docs/native-evaluation-export-v1.md`](docs/native-evaluation-export-v1.md).
@@ -211,6 +211,6 @@ vertices. It rejects texture/normal indices, relative indices, polygons, unsuppo
 non-finite coordinates, malformed numbers, repeated triangle indices, and incomplete meshes.
 
 Parsing is bounded by default to 16 MiB, 1,000,000 vertices, and 2,000,000 triangles and returns a
-structured error code, line, field, and message without publishing a partial mesh. This phase does
-not read arbitrary filesystem paths, infer units, ingest patient data, repair geometry, or connect
-imported meshes to collision evaluation; that adapter is the next native boundary.
+structured error code, line, field, and message without publishing a partial mesh. The separate
+Phase 4.11 topology validator returns the same error type; its mesh-level errors have line 0.
+The parser does not read filesystem paths, infer units, ingest patient data, or repair geometry.

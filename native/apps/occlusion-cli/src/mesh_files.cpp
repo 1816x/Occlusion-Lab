@@ -64,6 +64,10 @@ std::optional<TriangleMesh> load_mesh(const std::filesystem::path& directory, st
             ": " + problem.message;
     return std::nullopt;
   }
+  if (const auto problem = occlusion::mesh_io::validate_closed_oriented_mesh(parsed.value())) {
+    error = std::string{name} + ": " + problem->field + ": " + problem->message;
+    return std::nullopt;
+  }
   TriangleMesh converted;
   converted.vertices_meters = parsed.value().vertices_meters;
   converted.triangles.reserve(parsed.value().triangles.size());

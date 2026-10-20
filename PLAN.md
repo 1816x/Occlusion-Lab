@@ -6,14 +6,14 @@ Occlusion Lab pretende convertirse en una aplicación científica de escritorio 
 
 ## 2. Estado actual
 
-- **Fase actual:** Phase 4.10: Synthetic OBJ File Evaluation
-- **Estado:** Implementada localmente; CI remota sin verificar
+- **Fase actual:** Phase 4.11: Synthetic OBJ Topology Validation
+- **Estado:** Implementada localmente; CI nativa multiplataforma pendiente
 - **Rama y commit iniciales:** `main` en `46ffc9524e781fe2e8d8c269027434f422c2abf7`
 - **Rama activa:** `work`
 - **Phase 4.3:** Completed mediante [PR #13](https://github.com/1816x/Occlusion-Lab/pull/13), merge `da055bc2067b6477eea9efe7abbad0422ed8e9f3`.
-- **Última actualización significativa:** 2026-10-20 — Phase 4.10 conectó dos ficheros OBJ sintéticos con la evaluación nativa de pose y barrido mediante una política de directorio acotada.
+- **Última actualización significativa:** 2026-10-20 — Phase 4.11 valida superficies sintéticas cerradas y orientadas antes de la compilación FCL.
 
-La aplicación web heredada continúa disponible y funcional como referencia. La base nativa ofrece unidades fuertes y validación; las capas opcionales de colisión/evaluación ejecutan poses y barridos deterministas. Phase 4.7 expone una fixture sintética por CLI; Phase 4.8 exporta resultados versionados; Phase 4.9 añade un parser OBJ estricto. Phase 4.10 une dos ficheros OBJ sintéticos con el evaluador existente sin trasladar filesystem ni FCL al parser. Las pruebas locales y los límites de esta fase se documentan más abajo; CI remota permanece sin verificar.
+La aplicación web heredada continúa disponible y funcional como referencia. La base nativa ofrece unidades fuertes y validación; las capas opcionales de colisión/evaluación ejecutan poses y barridos deterministas. Phase 4.7 expone una fixture sintética por CLI; Phase 4.8 exporta resultados versionados; Phase 4.9 añade un parser OBJ estricto. Phase 4.10 une dos ficheros OBJ sintéticos con el evaluador existente. Phase 4.11 verifica su topología y orientación antes de FCL. Las pruebas locales y los límites de esta fase se documentan más abajo.
 
 ## 3. Estado de arquitectura
 
@@ -21,7 +21,7 @@ La aplicación web heredada continúa disponible y funcional como referencia. La
 |---|---|---|---|---|
 | Contratos de dominio | TypeScript y nuevos contratos C++ | Biblioteca C++20 `occlusion-core` | Fundación implementada | Sin lógica clínica. |
 | Unidades y transformaciones | Tipos fuertes C++ | Tipos fuertes C++ con metros internos | Fundación implementada | Conversión de mm explícita. |
-| Ingestión de mallas | Parser OBJ acotado y adaptador CLI de ficheros | Entrada validada antes de CGAL | Fundación implementada | Parser puro; CLI limita rutas, tamaño y tipo de archivo. Sin reparación. |
+| Ingestión de mallas | Parser OBJ acotado, validador topológico y adaptador CLI | Entrada validada antes de CGAL | Fundación implementada | Cierre, orientación y fans de vértices; sin reparación ni detección de autointersecciones. |
 | Procesamiento geométrico | Flujo web existente | CGAL | Futuro | Aún no implementado. |
 | Detección de colisiones | Worker web/Rapier y biblioteca FCL opcional | FCL | Fundación implementada | Sin afirmar igualdad de manifolds entre motores. |
 | Análisis de barrido de movimiento | Web existente y evaluación C++ | Motor C++ | Barrido y resumen implementados | Paridad semántica del resumen cubierta por fixture versionada. |
@@ -29,7 +29,7 @@ La aplicación web heredada continúa disponible y funcional como referencia. La
 | UI de escritorio | No existe | Qt 6 | Futuro | Arquitectura desktop-first. |
 | CLI | `occlusion-cli` | `occlusion-cli` extensible | Evaluación OBJ sintética y export v1 implementados | Pose y barrido completo disponibles en builds con colisión. |
 | Pruebas | Vitest/web y GoogleTest nativo | GoogleTest + pruebas web | Fundación implementada | Se mantiene la suite heredada. |
-| CI | Web y workflow nativo | CI web y nativa multiplataforma | Implementado, pendiente ejecución remota | Sin debilitar CI existente. |
+| CI | Web y workflow nativo | CI web y nativa multiplataforma | Implementado; nativa multiplataforma pendiente | Jobs Ubuntu y macOS con colisión pasaron; otros jobs fueron cancelados por falta de runner alojado. |
 | Aplicación web heredada | Next.js/React/Three.js | Referencia temporal | Conservada | No eliminar antes de paridad y UI sustituta. |
 
 ## 4. Lista de comprobación de Phase 4
@@ -106,13 +106,13 @@ La aplicación web heredada continúa disponible y funcional como referencia. La
 - La primera ejecución del formato nativo detectó archivos sin formatear; se aplicó `clang-format` y la repetición pasó antes del commit final.
 - Riesgo: la paridad de resúmenes cubre solo la reducción de frames ya evaluados; no permite afirmar igualdad de manifolds Rapier/FCL ni paridad clínica.
 - Riesgo: la estabilidad semántica FCL se prueba localmente, pero los manifolds exactos no son portables ni se consideran contrato.
-- Riesgo: CI remota multiplataforma permanece Unverified hasta inspeccionar los jobs del draft PR.
+- Riesgo: CI nativa multiplataforma sigue incompleta. En la ejecución `39464105423`, los jobs Ubuntu core, Ubuntu collision, macOS collision y Ubuntu sanitizer pasaron; Windows core/collision y macOS core fueron cancelados porque GitHub no adquirió un runner alojado.
 - Diferidos: CGAL, UI desktop y validación clínica; no se añadieron fuerzas ni presiones. El directorio OBJ debe ser confiable frente a modificaciones concurrentes: los controles portables de filesystem no son una sandbox para procesos hostiles.
 - Los PR #15, #16 y #21 fueron reconciliados y figuran como `MERGED` en GitHub. Sus contenidos funcionales ya estaban integrados en `main` mediante PR #17 y trabajo posterior; se trasladaron los ajustes de CI/Eigen aún útiles de #16 y se fusionaron las tres ramas con conservación explícita del árbol actual para evitar retirar export v1 y Phase 4.9.
 
 ## 8. Próxima tarea recomendada
 
-Phase 4.11: validar topología cerrada y orientación de mallas OBJ sintéticas antes de la evaluación FCL, con errores estructurados y pruebas de mallas abiertas/no manifold. A continuación, diseñar procesamiento CGAL y presentación Qt 6/VTK sin retirar la referencia web antes de la paridad demostrada.
+Phase 4.12: implementar la primera frontera opcional de procesamiento CGAL descrita en [native-desktop-roadmap.md](docs/native-desktop-roadmap.md): conversión comprobada y detección de autointersecciones y caras degeneradas en mallas sintéticas, con pruebas y CI para builds con/sin geometría. La presentación Qt 6/VTK seguirá la frontera geométrica; conservar la referencia web hasta demostrar paridad de los flujos requeridos.
 
 ## 9. Hitos completados
 
@@ -128,7 +128,16 @@ Phase 4.11: validar topología cerrada y orientación de mallas OBJ sintéticas 
 | Phase 4.7 | Evaluación de pose y barrido sobre fixture sintética mediante CLI JSON | [PR #19](https://github.com/1816x/Occlusion-Lab/pull/19), merge `e226060` | Completada localmente; 74/74 CTest y 94/94 Vitest; CI remota Unverified. |
 | Phase 4.8 | Export JSON v1 completo, determinista y engine-neutral | Commit `24a4528` | Completada localmente; ejemplos dorados y política de compatibilidad incluidos; CI remota Unverified. |
 | Phase 4.9 | Ingestión OBJ sintética acotada y errores estructurados | Merge #22, `2fb68c9` | Completada localmente; 7 pruebas específicas, 34/34 CTest core y 85/85 CTest con colisión; CI remota nativa no verificada. |
-| Phase 4.10 | Adaptador CLI para dos ficheros OBJ sintéticos y evaluación existente | `7e22412` | Implementada y publicada en `main`; ver verificación actual. CI web remota y sanitizer Ubuntu PASS; matrices core/collision en cola. |
+| Phase 4.10 | Adaptador CLI para dos ficheros OBJ sintéticos y evaluación existente | `7e22412` | Implementada y publicada en `main`; CI web remota PASS. CI nativa parcialmente completada; tres jobs sin runner. |
+| Phase 4.11 | Validación topológica y orientación OBJ antes de FCL | Pendiente de publicar | Implementada localmente; 39/39 CTest core, 100/100 CTest colisión y 100/100 ASan+UBSan PASS; CI remota pendiente. |
+
+### Verificación local de Phase 4.11 (2026-10-20)
+
+- Se eliminaron las ocho ramas remotas `codex/*` después de comprobar que todos sus commits ya eran ancestros de `main`; la única rama remota restante es `main`.
+- El validador puro de `occlusion-mesh-io` exige dos caras con aristas de sentidos opuestos, un único fan por vértice y volumen positivo por cada shell. Los errores estructurados de topología indican arista, vértice o malla con línea 0. No detecta autointersecciones.
+- La CLI ejecuta esa validación antes de convertir índices y compilar los BVH FCL. Las pruebas cubren caja cerrada, malla abierta, arista no manifold, vertex fan desconectado, orientación inconsistente, shell invertido, vértice huérfano y rechazo CLI de malla abierta. La validación geométrica FCL sigue rechazando triángulos degenerados.
+- Native core Debug: 39/39 CTest PASS. Native collision Debug y ASan+UBSan: 100/100 CTest PASS cada uno. Native core/collision Release: build PASS. Formato C++ PASS.
+- Web: lint, typecheck, Vitest, assets, aislamiento Rapier, build y audit de producción PASS; 0 vulnerabilidades. La propuesta de arquitectura CGAL/Qt 6/VTK queda en `docs/native-desktop-roadmap.md`.
 
 ### Verificación local de Phase 4.10 (2026-10-20)
 
@@ -137,8 +146,8 @@ Phase 4.11: validar topología cerrada y orientación de mallas OBJ sintéticas 
 - `occlusion-cli --version` se alinea con la versión CMake 0.5.0. El workflow nativo incluye ahora los cambios en fixtures de pose, generación de barridos y OBJ.
 - Web: lint, typecheck, 94/94 Vitest, paridad, assets, build de producción, smoke HTTP de página/fixture y audit de producción (0 vulnerabilidades) PASS.
 - Native core Debug: configure/build y 34/34 CTest PASS. Native collision Debug: configure/build y 94/94 CTest PASS, con pruebas nuevas de rutas, symlinks, límites, parser, geometría y CLI. Native core y collision Release: configure/build PASS. ASan+UBSan: configure/build y 94/94 CTest PASS.
-- Se incorporó la inicialización de vcpkg por plataforma, triplets explícitos, cache y bootstraps separados de PR #16; la versión Eigen se comprueba después de encontrar el paquete para admitir 3.4 o superior. La tanda ASan+UBSan remota Ubuntu pasó; las matrices core/collision multiplataforma aún no terminan.
-- GitHub Actions web (`.github/workflows/ci.yml`) para los pushes de Phase 4.10 y la actualización de PLAN: PASS. En el workflow nativo remoto, el job ASan+UBSan Ubuntu terminó correctamente; jobs core/collision todavía en cola al revisar.
+- Se incorporó la inicialización de vcpkg por plataforma, triplets explícitos, cache y bootstraps separados de PR #16; la versión Eigen se comprueba después de encontrar el paquete para admitir 3.4 o superior. En CI nativa remota pasaron Ubuntu core/collision/sanitizer y macOS collision; Windows core/collision y macOS core no fueron adquiridos por runners alojados.
+- GitHub Actions web (`.github/workflows/ci.yml`) para los pushes de Phase 4.10 y la actualización de PLAN: PASS.
 - Los antiguos PR #15, #16 y #21 se compararon con `main`: sus ramas precedían funcionalidades posteriores. Se añadieron sus heads como padres de merge conservando el árbol verificado actual; GitHub muestra los tres PR como `MERGED`. El push a `main` y la lectura del HEAD remoto se comprobaron. Su historial quedó incluido sin aplicar sus versiones antiguas de los archivos.
 
 ### Verificación local de Phase 4.9 (2026-10-07)
@@ -155,7 +164,7 @@ Phase 4.11: validar topología cerrada y orientación de mallas OBJ sintéticas 
 ### Alineación de PR de Phase 4.5 (2026-10-05)
 
 - PR #15 fue la propuesta inicial de barridos nativos evaluados y PR #16 combinó correcciones de toolchain con ese trabajo.
-- Ambos quedaron superados por la integración final de Phase 4.5 en PR #17; no deben fusionarse sobre `work`.
+- Ambos quedaron superados funcionalmente por la integración final de Phase 4.5 en PR #17; posteriormente se reconciliaron en el historial de `main` sin sustituir el árbol moderno.
 - Phase 4.7 quedó integrada posteriormente mediante PR #19. La rama `work` ya contiene ambas líneas de trabajo.
 - El filtro de paths de CI nativa ahora incluye la fixture de resumen evaluado, corrigiendo la omisión que podía evitar la ejecución del workflow.
 

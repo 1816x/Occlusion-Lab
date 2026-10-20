@@ -34,7 +34,8 @@ enum class MeshIngestionErrorCode {
   non_finite_coordinate,
   invalid_face,
   index_out_of_range,
-  empty_mesh
+  empty_mesh,
+  invalid_topology
 };
 
 struct MeshIngestionError final {
@@ -69,4 +70,11 @@ private:
 // `f i j k` indices. Texture/normal indices, polygons, and relative indices fail.
 [[nodiscard]] MeshIngestionResult<TriangleMesh> parse_obj_mesh(std::string_view source,
                                                                MeshIngestionLimits limits = {});
+
+// Validate a parsed synthetic volume before collision evaluation. Every edge
+// must occur in two oppositely directed faces, every vertex must have one
+// connected face fan, and each connected shell must have positive signed
+// volume (outward winding). This does not test self-intersections.
+[[nodiscard]] std::optional<MeshIngestionError>
+validate_closed_oriented_mesh(const TriangleMesh& mesh);
 } // namespace occlusion::mesh_io
