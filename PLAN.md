@@ -108,7 +108,7 @@ La aplicación web heredada continúa disponible y funcional como referencia. La
 - Riesgo: la estabilidad semántica FCL se prueba localmente, pero los manifolds exactos no son portables ni se consideran contrato.
 - Riesgo: CI remota multiplataforma permanece Unverified hasta inspeccionar los jobs del draft PR.
 - Diferidos: CGAL, UI desktop y validación clínica; no se añadieron fuerzas ni presiones. El directorio OBJ debe ser confiable frente a modificaciones concurrentes: los controles portables de filesystem no son una sandbox para procesos hostiles.
-- Los PR #15, #16 y #21 siguen abiertos aunque sus funcionalidades ya están integradas en `main` mediante PR #17 y trabajo posterior. Sus heads son antiguos; una fusión de contenidos retiraría export v1 y Phase 4.9. Se trasladaron los ajustes de CI/Eigen aún útiles de #16. La API de GitHub no está autenticada en este entorno; reconciliar el estado remoto de los PR permanece pendiente.
+- Los PR #15, #16 y #21 fueron reconciliados y figuran como `MERGED` en GitHub. Sus contenidos funcionales ya estaban integrados en `main` mediante PR #17 y trabajo posterior; se trasladaron los ajustes de CI/Eigen aún útiles de #16 y se fusionaron las tres ramas con conservación explícita del árbol actual para evitar retirar export v1 y Phase 4.9.
 
 ## 8. Próxima tarea recomendada
 
@@ -138,7 +138,7 @@ Phase 4.11: validar topología cerrada y orientación de mallas OBJ sintéticas 
 - Web: lint, typecheck, 94/94 Vitest, paridad, assets, build de producción, smoke HTTP de página/fixture y audit de producción (0 vulnerabilidades) PASS.
 - Native core Debug: configure/build y 34/34 CTest PASS. Native collision Debug: configure/build y 94/94 CTest PASS, con pruebas nuevas de rutas, symlinks, límites, parser, geometría y CLI. Native core y collision Release: configure/build PASS. ASan+UBSan: configure/build y 94/94 CTest PASS.
 - Se incorporó la inicialización de vcpkg por plataforma, triplets explícitos, cache y bootstraps separados de PR #16; la versión Eigen se comprueba después de encontrar el paquete para admitir 3.4 o superior. La CI remota Ubuntu/Windows/macOS permanece Unverified.
-- Los PR abiertos #15, #16 y #21 se compararon con `main`: sus ramas preceden funcionalidades posteriores. El token `GH_TOKEN` disponible falla autenticación de GitHub API; se comprobó lectura Git HTTPS por el proxy. No se fusionaron sus contenidos antiguos para evitar regresiones.
+- Los antiguos PR #15, #16 y #21 se compararon con `main`: sus ramas precedían funcionalidades posteriores. Se añadieron sus heads como padres de merge conservando el árbol verificado actual; GitHub muestra los tres PR como `MERGED`. El push a `main` y la lectura del HEAD remoto se comprobaron. Su historial quedó incluido sin aplicar sus versiones antiguas de los archivos.
 
 ### Verificación local de Phase 4.9 (2026-10-07)
 
