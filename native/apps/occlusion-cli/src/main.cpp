@@ -11,16 +11,25 @@
 #include "occlusion/core/domain.hpp"
 #include "occlusion/core/length.hpp"
 #ifdef OCCLUSION_CLI_ENABLE_EVALUATION
+#include "mesh_files.hpp"
 #include "occlusion/evaluation/evaluation.hpp"
 #endif
 
 namespace {
 
-constexpr std::string_view version = "Occlusion Lab native 0.4.0";
+constexpr std::string_view version = "Occlusion Lab native 0.5.0";
+#ifdef OCCLUSION_CLI_ENABLE_EVALUATION
 constexpr std::string_view usage =
     "Usage: occlusion-cli (--version | --self-check | --evaluate-fixture pose "
     "<opening-mm> <protrusion-mm> <lateral-mm> | --evaluate-fixture sweep "
+    "<closing|protrusive|left-lateral|right-lateral> <frames> | "
+    "--evaluate-meshes <directory> <fixed.obj> <moving.obj> pose "
+    "<opening-mm> <protrusion-mm> <lateral-mm> | --evaluate-meshes "
+    "<directory> <fixed.obj> <moving.obj> sweep "
     "<closing|protrusive|left-lateral|right-lateral> <frames>)";
+#else
+constexpr std::string_view usage = "Usage: occlusion-cli (--version | --self-check)";
+#endif
 
 int self_check() {
   using namespace occlusion::core;
@@ -106,14 +115,15 @@ std::optional<PoseEvaluator> make_synthetic_evaluator() {
   return evaluator.value();
 }
 
-int evaluate_pose(int argc, char* argv[]) {
-  if (argc != 6) {
+int evaluate_pose(int argc, char* argv[], int first_value, PoseEvaluator evaluator,
+                  std::string_view fixture_id) {
+  if (argc != first_value + 3) {
     std::cerr << usage << '\n';
     return 2;
   }
-  const auto opening = parse_number<double>(argv[3]);
-  const auto protrusion = parse_number<double>(argv[4]);
-  const auto lateral = parse_number<double>(argv[5]);
+  const auto opening = parse_number<double>(argv[first_value]);
+  const auto protrusion = parse_number<double>(argv[first_value + 1]);
+  const auto lateral = parse_number<double>(argv[first_value + 2]);
   if (!opening || !protrusion || !lateral) {
     std::cerr << "Pose values must be finite decimal millimeters.\n";
     return 2;
@@ -121,50 +131,64 @@ int evaluate_pose(int argc, char* argv[]) {
   const MandibularPose pose{occlusion::core::to_meters(Millimeters{*opening}),
                             occlusion::core::to_meters(Millimeters{*protrusion}),
                             occlusion::core::to_meters(Millimeters{*lateral})};
-  auto evaluator = make_synthetic_evaluator();
-  if (!evaluator)
-    return 1;
-  const auto result = evaluator->evaluate(pose);
+  const auto result = evaluator.evaluate(pose);
   if (!result) {
     std::cerr << "Pose is outside the validated native domain.\n";
     return 2;
   }
-  std::cout << occlusion::evaluation::serialize_evaluation_json(result.value(),
-                                                                "synthetic-boxes-v1");
+  std::cout << occlusion::evaluation::serialize_evaluation_json(result.value(), fixture_id);
   return 0;
 }
 
-int evaluate_sweep(int argc, char* argv[]) {
-  if (argc != 5) {
+int evaluate_sweep(int argc, char* argv[], int first_value, PoseEvaluator evaluator,
+                   std::string_view fixture_id) {
+  if (argc != first_value + 2) {
     std::cerr << usage << '\n';
     return 2;
   }
-  const auto preset = parse_preset(argv[3]);
-  const auto frames = parse_number<std::size_t>(argv[4]);
+  const auto preset = parse_preset(argv[first_value]);
+  const auto frames = parse_number<std::size_t>(argv[first_value + 1]);
   if (!preset || !frames) {
     std::cerr << "Sweep preset or frame count is invalid.\n";
     return 2;
   }
-  auto evaluator = make_synthetic_evaluator();
-  if (!evaluator)
-    return 1;
-  const auto result = evaluator->evaluate_sweep(*preset, *frames);
+  const auto result = evaluator.evaluate_sweep(*preset, *frames);
   if (!result) {
     std::cerr << "Frame count must be within the validated range [2, 61].\n";
     return 2;
   }
-  std::cout << occlusion::evaluation::serialize_evaluation_json(result.value(),
-                                                                "synthetic-boxes-v1");
+  std::cout << occlusion::evaluation::serialize_evaluation_json(result.value(), fixture_id);
   return 0;
 }
 
 int evaluate_fixture(int argc, char* argv[]) {
-  if (argc >= 3 && std::string_view{argv[2]} == "pose")
-    return evaluate_pose(argc, argv);
-  if (argc >= 3 && std::string_view{argv[2]} == "sweep")
-    return evaluate_sweep(argc, argv);
+  if (argc >= 3 && (std::string_view{argv[2]} == "pose" || std::string_view{argv[2]} == "sweep")) {
+    auto evaluator = make_synthetic_evaluator();
+    if (!evaluator)
+      return 1;
+    if (std::string_view{argv[2]} == "pose")
+      return evaluate_pose(argc, argv, 3, *evaluator, "synthetic-boxes-v1");
+    return evaluate_sweep(argc, argv, 3, *evaluator, "synthetic-boxes-v1");
+  }
   std::cerr << usage << '\n';
   return 2;
+}
+
+int evaluate_meshes(int argc, char* argv[]) {
+  if (argc < 8 || (std::string_view{argv[5]} != "pose" && std::string_view{argv[5]} != "sweep")) {
+    std::cerr << usage << '\n';
+    return 2;
+  }
+  std::string error;
+  auto evaluator = occlusion::cli::load_mesh_pair(argv[2], argv[3], argv[4], error);
+  if (!evaluator) {
+    std::cerr << error << '\n';
+    return 2;
+  }
+  constexpr std::string_view input_id = "synthetic-obj-pair-v1";
+  if (std::string_view{argv[5]} == "pose")
+    return evaluate_pose(argc, argv, 6, *evaluator, input_id);
+  return evaluate_sweep(argc, argv, 6, *evaluator, input_id);
 }
 #endif
 
@@ -181,6 +205,8 @@ int main(int argc, char* argv[]) {
 #ifdef OCCLUSION_CLI_ENABLE_EVALUATION
   if (argc >= 2 && std::string_view{argv[1]} == "--evaluate-fixture")
     return evaluate_fixture(argc, argv);
+  if (argc >= 2 && std::string_view{argv[1]} == "--evaluate-meshes")
+    return evaluate_meshes(argc, argv);
 #endif
   std::cerr << usage << '\n';
   return 2;

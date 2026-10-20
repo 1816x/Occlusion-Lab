@@ -186,6 +186,19 @@ Collision-enabled builds now serialize complete pose and evaluated-sweep results
 
 The format is engine-neutral only at the normalized contract boundary. Every document sets `manifoldParityGuaranteed` to `false`: contact manifold details may differ between FCL, Rapier, versions, and platforms. Phase 4.8 does not add patient-mesh ingestion, clinical semantics, force, pressure, diagnosis, or treatment guidance. Remote multiplatform verification remains the final completion gate.
 
+## Phase 4.10: synthetic OBJ file evaluation
+
+Collision-enabled builds can evaluate two synthetic OBJ files with the same pose and sweep contracts as the built-in fixture:
+
+```sh
+build/native/collision-debug/native/apps/occlusion-cli/occlusion-cli \
+  --evaluate-meshes fixtures/mesh-io fixed-box.obj moving-box.obj pose 0 0 0
+build/native/collision-debug/native/apps/occlusion-cli/occlusion-cli \
+  --evaluate-meshes fixtures/mesh-io fixed-box.obj moving-box.obj sweep closing 11
+```
+
+The first mesh is fixed; the second receives the validated mandibular pose. The directory is explicit, and each file argument must be a direct `.obj` filename. Symlinks, traversal, non-files, and inputs larger than 16 MiB are rejected before parsing. The Phase 4.9 OBJ parser still enforces its vertex and face limits, and collision compilation rejects degenerate triangles. The export's `fixtureId` is `synthetic-obj-pair-v1`, which identifies the input mode rather than the contents of a particular pair; preserve the input files with exported results for reproducibility. The directory must be trusted against concurrent modification. Only synthetic, non-patient geometry is supported, and collision results have no clinical meaning.
+
 The complete field contract, byte-level golden examples, rebaseline rules, and compatibility policy
 are documented in [`docs/native-evaluation-export-v1.md`](docs/native-evaluation-export-v1.md).
 

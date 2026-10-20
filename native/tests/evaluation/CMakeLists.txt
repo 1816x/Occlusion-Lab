@@ -26,3 +26,26 @@ set_tests_properties(cli-rejects-non-finite-pose PROPERTIES WILL_FAIL TRUE)
 add_test(NAME cli-rejects-out-of-range-sweep
   COMMAND occlusion-cli --evaluate-fixture sweep closing 1)
 set_tests_properties(cli-rejects-out-of-range-sweep PROPERTIES WILL_FAIL TRUE)
+
+add_executable(occlusion-mesh-file-tests mesh_file_tests.cpp)
+target_link_libraries(occlusion-mesh-file-tests PRIVATE occlusion-mesh-files GTest::gtest_main occlusion_project_warnings)
+target_compile_definitions(occlusion-mesh-file-tests PRIVATE OCCLUSION_MESH_FIXTURE_DIR="${PROJECT_SOURCE_DIR}/fixtures/mesh-io")
+target_compile_features(occlusion-mesh-file-tests PRIVATE cxx_std_20)
+gtest_discover_tests(occlusion-mesh-file-tests DISCOVERY_MODE PRE_TEST)
+
+add_test(NAME cli-evaluate-obj-pose
+  COMMAND occlusion-cli --evaluate-meshes ${PROJECT_SOURCE_DIR}/fixtures/mesh-io
+  fixed-box.obj moving-box.obj pose 0 0 0)
+set_tests_properties(cli-evaluate-obj-pose PROPERTIES
+  PASS_REGULAR_EXPRESSION "\"fixtureId\":\"synthetic-obj-pair-v1\".*\"classification\":\"separated\"")
+
+add_test(NAME cli-evaluate-obj-sweep
+  COMMAND occlusion-cli --evaluate-meshes ${PROJECT_SOURCE_DIR}/fixtures/mesh-io
+  fixed-box.obj moving-box.obj sweep closing 11)
+set_tests_properties(cli-evaluate-obj-sweep PROPERTIES
+  PASS_REGULAR_EXPRESSION "\"requestedFrameCount\":11.*\"totalFrameCount\":11")
+
+add_test(NAME cli-rejects-obj-traversal
+  COMMAND occlusion-cli --evaluate-meshes ${PROJECT_SOURCE_DIR}/fixtures/mesh-io
+  ../fixed-box.obj moving-box.obj pose 70 0 0)
+set_tests_properties(cli-rejects-obj-traversal PROPERTIES WILL_FAIL TRUE)

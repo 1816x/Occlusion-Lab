@@ -33,11 +33,19 @@ if(OCCLUSION_FETCH_DEPENDENCIES)
     URL_HASH SHA256=8586084f71f9bde545ee7fa6d00288b264a2b7ac3607b974e54d13e7162c1c72
     SYSTEM EXCLUDE_FROM_ALL)
   FetchContent_MakeAvailable(Eigen3)
+  set(OCCLUSION_EIGEN_VERSION "3.4.0")
   if(OCCLUSION_BUILD_TESTS)
     set(BUILD_TESTING ON CACHE BOOL "" FORCE)
   endif()
 else()
-  find_package(Eigen3 3.4 CONFIG REQUIRED)
+  find_package(Eigen3 CONFIG REQUIRED)
+  set(OCCLUSION_EIGEN_VERSION "${Eigen3_VERSION}")
+endif()
+
+# Eigen's package compatibility rule can reject newer 3.x releases for a
+# versioned request. Check the actual version after locating the package.
+if(NOT OCCLUSION_EIGEN_VERSION OR OCCLUSION_EIGEN_VERSION VERSION_LESS "3.4.0")
+  message(FATAL_ERROR "Occlusion Lab requires Eigen 3.4.0 or newer (found ${OCCLUSION_EIGEN_VERSION})")
 endif()
 
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/native/libs/occlusion-core/CMakeLists.txt")
@@ -46,6 +54,7 @@ if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/native/libs/occlusion-core/CMakeLists.txt
 endif()
 
 if(OCCLUSION_ENABLE_COLLISION)
+  find_package(fcl CONFIG REQUIRED)
   add_subdirectory(native/libs/occlusion-collision)
   add_subdirectory(native/libs/occlusion-evaluation)
 endif()

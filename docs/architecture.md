@@ -153,3 +153,16 @@ Phase 4.9 adds `occlusion-mesh-io` beside, not inside, `occlusion-core`. It pars
 OBJ triangle subset with explicit meter units, resource ceilings, and structured failures. It has no
 FCL, CGAL, filesystem, or UI dependency and does not publish partial data. Conversion into the
 collision mesh type and CLI file handling remain a later adapter boundary.
+
+## Synthetic file adapter (Phase 4.10)
+
+The collision-enabled CLI has a separate `occlusion-mesh-files` adapter. It reads two direct `.obj`
+children of an explicit directory, rejects symlinks and non-files, and caps each read at the parser's
+16 MiB input limit. The parser retains its vertex and triangle limits and structured line errors.
+The adapter converts checked `size_t` indices to the collision boundary's `uint32_t` indices and
+passes the meshes to `PoseEvaluator::create`, which compiles exactly two BVHs. The existing pose,
+sweep, and export paths then apply without a second implementation of scientific calculations.
+The directory is a trusted operator-selected location: portable filesystem checks do not protect
+against another process modifying files in that directory during a read. This boundary does not
+accept patient meshes or perform geometry repair or clinical interpretation. `fixtureId` identifies
+the input mode, so reproducibility requires keeping the two input OBJ files alongside the result.

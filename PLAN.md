@@ -6,14 +6,14 @@ Occlusion Lab pretende convertirse en una aplicación científica de escritorio 
 
 ## 2. Estado actual
 
-- **Fase actual:** Phase 4.9: Bounded Synthetic Mesh Ingestion
-- **Estado:** Completed locally; remote CI unverified
+- **Fase actual:** Phase 4.10: Synthetic OBJ File Evaluation
+- **Estado:** Implementada localmente; CI remota sin verificar
 - **Rama y commit iniciales:** `main` en `46ffc9524e781fe2e8d8c269027434f422c2abf7`
 - **Rama activa:** `work`
 - **Phase 4.3:** Completed mediante [PR #13](https://github.com/1816x/Occlusion-Lab/pull/13), merge `da055bc2067b6477eea9efe7abbad0422ed8e9f3`.
-- **Última actualización significativa:** 2026-10-07 — Phase 4.9 añadió ingestión OBJ sintética acotada, sin filesystem, reparación geométrica ni datos clínicos.
+- **Última actualización significativa:** 2026-10-20 — Phase 4.10 conectó dos ficheros OBJ sintéticos con la evaluación nativa de pose y barrido mediante una política de directorio acotada.
 
-La aplicación web heredada continúa disponible y funcional como referencia. La base nativa configura y compila en Debug/Release, `occlusion-core` ofrece unidades fuertes y validación, y las capas opcionales de colisión/evaluación ejecutan poses y barridos deterministas. Phase 4.7 expone la fixture sintética mediante CLI. Phase 4.8 exporta el resultado nativo completo mediante un contrato versionado y engine-neutral. Phase 4.9 añade un parser OBJ triangular estricto con límites de recursos y errores estructurados; la tanda core local actual registra 34/34 CTest y la tanda con colisión 85/85 CTest. La CI remota de esta tanda permanece sin verificar.
+La aplicación web heredada continúa disponible y funcional como referencia. La base nativa ofrece unidades fuertes y validación; las capas opcionales de colisión/evaluación ejecutan poses y barridos deterministas. Phase 4.7 expone una fixture sintética por CLI; Phase 4.8 exporta resultados versionados; Phase 4.9 añade un parser OBJ estricto. Phase 4.10 une dos ficheros OBJ sintéticos con el evaluador existente sin trasladar filesystem ni FCL al parser. Las pruebas locales y los límites de esta fase se documentan más abajo; CI remota permanece sin verificar.
 
 ## 3. Estado de arquitectura
 
@@ -21,13 +21,13 @@ La aplicación web heredada continúa disponible y funcional como referencia. La
 |---|---|---|---|---|
 | Contratos de dominio | TypeScript y nuevos contratos C++ | Biblioteca C++20 `occlusion-core` | Fundación implementada | Sin lógica clínica. |
 | Unidades y transformaciones | Tipos fuertes C++ | Tipos fuertes C++ con metros internos | Fundación implementada | Conversión de mm explícita. |
-| Ingestión de mallas | Parser OBJ sintético acotado | Entrada validada antes de CGAL | Fundación implementada | Solo texto en memoria, triángulos y metros; sin filesystem ni reparación. |
+| Ingestión de mallas | Parser OBJ acotado y adaptador CLI de ficheros | Entrada validada antes de CGAL | Fundación implementada | Parser puro; CLI limita rutas, tamaño y tipo de archivo. Sin reparación. |
 | Procesamiento geométrico | Flujo web existente | CGAL | Futuro | Aún no implementado. |
 | Detección de colisiones | Worker web/Rapier y biblioteca FCL opcional | FCL | Fundación implementada | Sin afirmar igualdad de manifolds entre motores. |
 | Análisis de barrido de movimiento | Web existente y evaluación C++ | Motor C++ | Barrido y resumen implementados | Paridad semántica del resumen cubierta por fixture versionada. |
 | Renderer | Three.js | VTK | Futuro | No forma parte del core. |
 | UI de escritorio | No existe | Qt 6 | Futuro | Arquitectura desktop-first. |
-| CLI | `occlusion-cli` | `occlusion-cli` extensible | Evaluación y export v1 implementados | Pose y barrido completo disponibles en builds con colisión. |
+| CLI | `occlusion-cli` | `occlusion-cli` extensible | Evaluación OBJ sintética y export v1 implementados | Pose y barrido completo disponibles en builds con colisión. |
 | Pruebas | Vitest/web y GoogleTest nativo | GoogleTest + pruebas web | Fundación implementada | Se mantiene la suite heredada. |
 | CI | Web y workflow nativo | CI web y nativa multiplataforma | Implementado, pendiente ejecución remota | Sin debilitar CI existente. |
 | Aplicación web heredada | Next.js/React/Three.js | Referencia temporal | Conservada | No eliminar antes de paridad y UI sustituta. |
@@ -107,11 +107,12 @@ La aplicación web heredada continúa disponible y funcional como referencia. La
 - Riesgo: la paridad de resúmenes cubre solo la reducción de frames ya evaluados; no permite afirmar igualdad de manifolds Rapier/FCL ni paridad clínica.
 - Riesgo: la estabilidad semántica FCL se prueba localmente, pero los manifolds exactos no son portables ni se consideran contrato.
 - Riesgo: CI remota multiplataforma permanece Unverified hasta inspeccionar los jobs del draft PR.
-- Diferidos: adaptador de filesystem/colisión para mallas, UI desktop y validación clínica; no se añadieron fuerzas ni presiones.
+- Diferidos: CGAL, UI desktop y validación clínica; no se añadieron fuerzas ni presiones. El directorio OBJ debe ser confiable frente a modificaciones concurrentes: los controles portables de filesystem no son una sandbox para procesos hostiles.
+- Los PR #15, #16 y #21 siguen abiertos aunque sus funcionalidades ya están integradas en `main` mediante PR #17 y trabajo posterior. Sus heads son antiguos; una fusión de contenidos retiraría export v1 y Phase 4.9. Se trasladaron los ajustes de CI/Eigen aún útiles de #16. La API de GitHub no está autenticada en este entorno; reconciliar el estado remoto de los PR permanece pendiente.
 
 ## 8. Próxima tarea recomendada
 
-Phase 4.10: añadir un adaptador explícito desde `occlusion-mesh-io` hacia el modelo de colisión y exponer evaluación CLI de dos ficheros sintéticos bajo una política de filesystem acotada.
+Phase 4.11: validar topología cerrada y orientación de mallas OBJ sintéticas antes de la evaluación FCL, con errores estructurados y pruebas de mallas abiertas/no manifold. A continuación, diseñar procesamiento CGAL y presentación Qt 6/VTK sin retirar la referencia web antes de la paridad demostrada.
 
 ## 9. Hitos completados
 
@@ -127,6 +128,17 @@ Phase 4.10: añadir un adaptador explícito desde `occlusion-mesh-io` hacia el m
 | Phase 4.7 | Evaluación de pose y barrido sobre fixture sintética mediante CLI JSON | [PR #19](https://github.com/1816x/Occlusion-Lab/pull/19), merge `e226060` | Completada localmente; 74/74 CTest y 94/94 Vitest; CI remota Unverified. |
 | Phase 4.8 | Export JSON v1 completo, determinista y engine-neutral | Commit `24a4528` | Completada localmente; ejemplos dorados y política de compatibilidad incluidos; CI remota Unverified. |
 | Phase 4.9 | Ingestión OBJ sintética acotada y errores estructurados | Current PR | Completada localmente; 7 pruebas específicas, 34/34 CTest core y 85/85 CTest con colisión; CI remota Unverified. |
+| Phase 4.10 | Adaptador CLI para dos ficheros OBJ sintéticos y evaluación existente | Árbol de trabajo actual | Implementada localmente; ver verificación actual. CI remota Unverified. |
+
+### Verificación local de Phase 4.10 (2026-10-20)
+
+- El adaptador CLI recibe un directorio explícito y dos nombres `.obj` directos; rechaza traversal, enlaces simbólicos, archivos ausentes/no regulares y entradas superiores a 16 MiB antes del parser.
+- El parser mantiene sus límites de vértices/triángulos y mensajes de error por línea. La conversión a índices `uint32_t` es comprobada. `PoseEvaluator::create` valida geometría y compila dos BVH para poses y barridos.
+- `occlusion-cli --version` se alinea con la versión CMake 0.5.0. El workflow nativo incluye ahora los cambios en fixtures de pose, generación de barridos y OBJ.
+- Web: lint, typecheck, 94/94 Vitest, paridad, assets, build de producción, smoke HTTP de página/fixture y audit de producción (0 vulnerabilidades) PASS.
+- Native core Debug: configure/build y 34/34 CTest PASS. Native collision Debug: configure/build y 94/94 CTest PASS, con pruebas nuevas de rutas, symlinks, límites, parser, geometría y CLI. Native core y collision Release: configure/build PASS. ASan+UBSan: configure/build y 94/94 CTest PASS.
+- Se incorporó la inicialización de vcpkg por plataforma, triplets explícitos, cache y bootstraps separados de PR #16; la versión Eigen se comprueba después de encontrar el paquete para admitir 3.4 o superior. La CI remota Ubuntu/Windows/macOS permanece Unverified.
+- Los PR abiertos #15, #16 y #21 se compararon con `main`: sus ramas preceden funcionalidades posteriores. El token `GH_TOKEN` disponible falla autenticación de GitHub API; se comprobó lectura Git HTTPS por el proxy. No se fusionaron sus contenidos antiguos para evitar regresiones.
 
 ### Verificación local de Phase 4.9 (2026-10-07)
 
