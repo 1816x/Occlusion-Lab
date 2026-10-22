@@ -136,7 +136,7 @@ Phase 4.13: decidir cómo ofrecer la inspección CGAL opcional en la CLI y dise�
 
 - `occlusion-geometry` es una biblioteca independiente habilitada solo por `OCCLUSION_ENABLE_GEOMETRY` y la feature vcpkg `geometry`. CGAL queda privado; `occlusion-core`, `occlusion-mesh-io` y builds por defecto siguen libres de CGAL.
 - La API inspecciona finitud, topología cerrada y orientada, conversión a `CGAL::Surface_mesh`, caras de área nula y autointersecciones, sin modificar los datos. Devuelve código, campo y mensaje propios del proyecto.
-- Pruebas sintéticas: caja cerrada válida, caja abierta, cara degenerada, dos shells cerrados que se intersecan y coordenada no finita. `geometry-debug`: 44/44 CTest PASS. La CI nativa añade un job geometry Ubuntu con vcpkg fijado; su resultado remoto sigue pendiente.
+- Pruebas sintéticas: caja cerrada válida, caja abierta, cara degenerada, dos shells cerrados que se intersecan y coordenada no finita. `geometry-debug`: 44/44 CTest PASS. El primer job remoto de geometría falló durante la configuración mediante vcpkg; se sustituyó ese paso por la instalación de `libcgal-dev` en Ubuntu y queda pendiente la repetición remota. La feature vcpkg `geometry` sigue disponible para builds que la utilicen.
 - La CLI existente no llama aún a CGAL. El módulo detecta defectos geométricos cuando un consumidor invoca explícitamente la nueva API; no constituye validación clínica ni reparación.
 
 ### Verificación local de Phase 4.11 (2026-10-20)

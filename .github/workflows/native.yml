@@ -120,28 +120,14 @@ jobs:
   geometry:
     name: CGAL geometry / Ubuntu
     runs-on: ubuntu-latest
-    env:
-      VCPKG_TARGET_TRIPLET: x64-linux
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-      - name: Initialize runner-specific vcpkg paths
+      - name: Install CGAL development package
         run: |
-          echo "VCPKG_ROOT=$RUNNER_TEMP/vcpkg" >> "$GITHUB_ENV"
-          echo "VCPKG_DEFAULT_BINARY_CACHE=$RUNNER_TEMP/vcpkg-binary-cache" >> "$GITHUB_ENV"
-      - uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809
-        with:
-          path: |
-            ${{ runner.temp }}/vcpkg/downloads
-            ${{ runner.temp }}/vcpkg-binary-cache
-          key: vcpkg-geometry-x64-linux-gcc-f3457518-${{ hashFiles('vcpkg.json') }}
-      - name: Bootstrap pinned vcpkg
-        run: |
-          git clone https://github.com/microsoft/vcpkg.git "$VCPKG_ROOT"
-          git -C "$VCPKG_ROOT" checkout f3457518c19c4efdb3b9307a8bb4e27d4b989933
-          mkdir -p "$VCPKG_DEFAULT_BINARY_CACHE"
-          "$VCPKG_ROOT/bootstrap-vcpkg.sh" -disableMetrics
+          sudo apt-get update
+          sudo apt-get install -y libcgal-dev
       - name: Configure geometry Debug
-        run: cmake --preset geometry-debug -DOCCLUSION_FETCH_DEPENDENCIES=OFF -DVCPKG_TARGET_TRIPLET=x64-linux -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
+        run: cmake --preset geometry-debug
       - name: Build geometry Debug
         run: cmake --build --preset geometry-debug --parallel
       - name: Test geometry and core
