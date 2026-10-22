@@ -7,7 +7,7 @@ Occlusion Lab pretende convertirse en una aplicación científica de escritorio 
 ## 2. Estado actual
 
 - **Fase actual:** Phase 4.12: Optional CGAL Geometry Inspection
-- **Estado:** Implementada localmente; CI remota pendiente
+- **Estado:** Implementada y publicada en `main`; CI de geometría Ubuntu y web verificadas, matriz nativa restante en ejecución
 - **Rama y commit iniciales:** `main` en `46ffc9524e781fe2e8d8c269027434f422c2abf7`
 - **Rama activa:** `work`
 - **Phase 4.3:** Completed mediante [PR #13](https://github.com/1816x/Occlusion-Lab/pull/13), merge `da055bc2067b6477eea9efe7abbad0422ed8e9f3`.
@@ -130,13 +130,14 @@ Phase 4.13: decidir cómo ofrecer la inspección CGAL opcional en la CLI y dise�
 | Phase 4.9 | Ingestión OBJ sintética acotada y errores estructurados | Merge #22, `2fb68c9` | Completada localmente; 7 pruebas específicas, 34/34 CTest core y 85/85 CTest con colisión; CI remota nativa no verificada. |
 | Phase 4.10 | Adaptador CLI para dos ficheros OBJ sintéticos y evaluación existente | `7e22412` | Implementada y publicada en `main`; CI web remota PASS. CI nativa parcialmente completada; tres jobs sin runner. |
 | Phase 4.11 | Validación topológica y orientación OBJ antes de FCL | `5c98b0c` | Publicada en `main`; 39/39 CTest core, 100/100 CTest colisión y 100/100 ASan+UBSan PASS locales; CI remota pendiente. |
-| Phase 4.12 | Inspección CGAL optativa, conversión comprobada y predicados de mallas sintéticas | Pendiente de publicar | 44/44 CTest geometry locales; CI remota pendiente. |
+| Phase 4.12 | Inspección CGAL optativa, conversión comprobada y predicados de mallas sintéticas | `b2483d4`, ajuste CI `aec6975` | Publicada en `main`; 44/44 CTest geometry locales y job geometry Ubuntu remoto PASS. Matriz nativa restante en ejecución. |
 
 ### Verificación local de Phase 4.12 (2026-10-22)
 
 - `occlusion-geometry` es una biblioteca independiente habilitada solo por `OCCLUSION_ENABLE_GEOMETRY` y la feature vcpkg `geometry`. CGAL queda privado; `occlusion-core`, `occlusion-mesh-io` y builds por defecto siguen libres de CGAL.
 - La API inspecciona finitud, topología cerrada y orientada, conversión a `CGAL::Surface_mesh`, caras de área nula y autointersecciones, sin modificar los datos. Devuelve código, campo y mensaje propios del proyecto.
-- Pruebas sintéticas: caja cerrada válida, caja abierta, cara degenerada, dos shells cerrados que se intersecan y coordenada no finita. `geometry-debug`: 44/44 CTest PASS. El primer job remoto de geometría falló durante la configuración mediante vcpkg; se sustituyó ese paso por la instalación de `libcgal-dev` en Ubuntu y queda pendiente la repetición remota. La feature vcpkg `geometry` sigue disponible para builds que la utilicen.
+- Pruebas sintéticas: caja cerrada válida, caja abierta, cara degenerada, dos shells cerrados que se intersecan y coordenada no finita. `geometry-debug`: 44/44 CTest PASS. El primer job remoto de geometría falló durante la configuración mediante vcpkg; con `libcgal-dev` en Ubuntu, instalación, configuración, compilación y pruebas remotas pasaron en la ejecución `39817385244`. La feature vcpkg `geometry` sigue disponible para builds que la utilicen.
+- Builds locales sin CGAL: core Debug 39/39 CTest y collision Debug 100/100 CTest PASS. CI web del commit `aec6975`: PASS. La matriz nativa core/collision/sanitizer aún está en ejecución al actualizar este registro.
 - La CLI existente no llama aún a CGAL. El módulo detecta defectos geométricos cuando un consumidor invoca explícitamente la nueva API; no constituye validación clínica ni reparación.
 
 ### Verificación local de Phase 4.11 (2026-10-20)

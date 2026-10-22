@@ -19,7 +19,7 @@ degenerate triangles; topology validation is not geometry repair or clinical val
 - Tests cover a closed box, an open box, a self-intersecting synthetic example,
   a degenerate face, and a non-finite coordinate. CI configures both geometry-enabled
   and geometry-disabled builds; the Ubuntu geometry job installs `libcgal-dev` and
-  remains pending remote verification. The vcpkg feature remains available for
+  passed its remote configure, build, and test steps. The vcpkg feature remains available for
   toolchain-based builds.
 
 The current module is an explicit library API; the CLI continues to use its existing
