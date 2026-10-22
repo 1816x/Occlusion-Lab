@@ -16,7 +16,7 @@
   ],
   "features": {
     "geometry": {
-      "description": "Future robust mesh processing",
+      "description": "Optional CGAL synthetic mesh inspection",
       "dependencies": [
         "cgal"
       ]

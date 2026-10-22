@@ -202,6 +202,17 @@ The first mesh is fixed; the second receives the validated mandibular pose. The 
 The complete field contract, byte-level golden examples, rebaseline rules, and compatibility policy
 are documented in [`docs/native-evaluation-export-v1.md`](docs/native-evaluation-export-v1.md).
 
+## Phase 4.12: optional CGAL geometry inspection
+
+Configure `geometry-debug` with CGAL available (or the pinned vcpkg `geometry` feature), then build
+and run `ctest --preset geometry-debug`. The separate `occlusion-geometry` library accepts the
+project-owned synthetic `TriangleMesh`, checks finite coordinates and closed outward topology,
+converts checked indices into a private CGAL surface mesh, and reports degenerate faces and
+self-intersections as structured errors. Its public header contains no CGAL types. It is read-only:
+the input mesh is never repaired or changed. Default native and collision builds do not require
+CGAL. The CLI's existing OBJ evaluation path does not yet invoke this optional check; callers that
+need self-intersection screening must call `occlusion::geometry::inspect_mesh` explicitly.
+
 ## Phase 4.9: bounded synthetic mesh ingestion
 
 `occlusion-mesh-io` is a dependency-free boundary for untrusted synthetic mesh text. Its initial

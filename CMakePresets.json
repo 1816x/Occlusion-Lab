@@ -62,6 +62,16 @@
       "cacheVariables": {
         "OCCLUSION_ENABLE_SANITIZERS": "ON"
       }
+    },
+    {
+      "name": "geometry-debug",
+      "inherits": "native-base",
+      "displayName": "CGAL Geometry Debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "OCCLUSION_ENABLE_GEOMETRY": "ON",
+        "VCPKG_MANIFEST_FEATURES": "geometry"
+      }
     }
   ],
   "buildPresets": [
@@ -84,6 +94,10 @@
     {
       "name": "collision-sanitizers",
       "configurePreset": "collision-sanitizers"
+    },
+    {
+      "name": "geometry-debug",
+      "configurePreset": "geometry-debug"
     }
   ],
   "testPresets": [
@@ -104,6 +118,13 @@
     {
       "name": "collision-sanitizers",
       "configurePreset": "collision-sanitizers",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "geometry-debug",
+      "configurePreset": "geometry-debug",
       "output": {
         "outputOnFailure": true
       }

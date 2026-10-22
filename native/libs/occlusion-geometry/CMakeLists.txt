@@ -1,0 +1,5 @@
+add_library(occlusion-geometry STATIC src/geometry.cpp)
+add_library(occlusion::geometry ALIAS occlusion-geometry)
+target_include_directories(occlusion-geometry PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<INSTALL_INTERFACE:include>)
+target_link_libraries(occlusion-geometry PUBLIC occlusion::mesh-io PRIVATE CGAL::CGAL occlusion_project_warnings)
+target_compile_features(occlusion-geometry PUBLIC cxx_std_20)

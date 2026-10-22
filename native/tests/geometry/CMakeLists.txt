@@ -1,0 +1,5 @@
+add_executable(occlusion-geometry-tests geometry_tests.cpp public_headers.cpp)
+target_link_libraries(occlusion-geometry-tests PRIVATE occlusion::geometry GTest::gtest_main occlusion_project_warnings)
+target_compile_features(occlusion-geometry-tests PRIVATE cxx_std_20)
+include(GoogleTest)
+gtest_discover_tests(occlusion-geometry-tests DISCOVERY_MODE PRE_TEST)

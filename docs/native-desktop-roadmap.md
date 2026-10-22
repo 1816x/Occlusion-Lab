@@ -5,19 +5,24 @@ them without external dependencies, verifies closed outward-oriented topology, a
 them to the existing FCL evaluator. A closed surface can still self-intersect or contain
 degenerate triangles; topology validation is not geometry repair or clinical validation.
 
-## Phase 4.12: optional CGAL processing boundary
+## Phase 4.12: optional CGAL processing boundary (implemented)
 
-- Add a separate `occlusion-geometry` library behind a CMake option and the existing
-  vcpkg `geometry` feature. Keep CGAL private to this target; `occlusion-core`, OBJ
-  parsing, and default builds must remain independent of it.
-- Convert the validated project `TriangleMesh` into a CGAL surface mesh with explicit
-  `double` meter coordinates and checked indices. Return project-owned structured
-  errors when conversion or geometric validation fails.
-- First expose read-only checks for self-intersection and degenerate faces. A repair
+- `occlusion-geometry` is a separate library behind a CMake option and the existing
+  vcpkg `geometry` feature. CGAL is private to this target; `occlusion-core`, OBJ
+  parsing, and default builds remain independent of it.
+- The library converts a validated project `TriangleMesh` into a CGAL surface mesh
+  with explicit `double` meter coordinates and checked indices. It returns
+  project-owned structured errors when conversion or geometric validation fails.
+- The first read-only checks now cover self-intersection and degenerate faces. A repair
   operation, if later needed, must be opt-in and return a new mesh plus a report of
   every topology or position change. Do not silently alter the input used in a result.
-- Cover a closed box, an open box, a self-intersecting synthetic example, and a
-  degenerate face. Run both geometry-enabled and geometry-disabled builds in CI.
+- Tests cover a closed box, an open box, a self-intersecting synthetic example,
+  a degenerate face, and a non-finite coordinate. CI configures both geometry-enabled
+  and geometry-disabled builds; the remote geometry job remains unverified.
+
+The current module is an explicit library API; the CLI continues to use its existing
+topology and FCL path. A later phase must decide where optional CGAL screening belongs
+in the end-user workflow and how to expose its structured errors.
 
 ## Desktop integration after the geometry boundary
 

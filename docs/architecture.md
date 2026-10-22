@@ -166,3 +166,13 @@ The directory is a trusted operator-selected location: portable filesystem check
 against another process modifying files in that directory during a read. This boundary does not
 accept patient meshes, detect self-intersections, or perform geometry repair or clinical interpretation. `fixtureId` identifies
 the input mode, so reproducibility requires keeping the two input OBJ files alongside the result.
+
+## Optional CGAL inspection (Phase 4.12)
+
+`occlusion-geometry` depends on `occlusion-mesh-io` and privately on CGAL. Its public API takes a
+project-owned triangle mesh and returns a structured error or success without changing the mesh.
+It validates finite coordinates and the Phase 4.11 topology contract before checked conversion to
+`CGAL::Surface_mesh`; CGAL predicates then detect degenerate faces and self-intersections. The
+module is gated by `OCCLUSION_ENABLE_GEOMETRY` and the vcpkg `geometry` feature. Neither the
+default native build nor the FCL evaluation path acquires CGAL. The check is not yet invoked by
+the CLI, does not repair geometry, and does not establish clinical validity.
