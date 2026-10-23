@@ -14,6 +14,7 @@ on:
       - 'fixtures/export/**'
       - 'fixtures/mesh-io/**'
       - 'schemas/native-evaluation-v1.schema.json'
+      - 'schemas/native-mesh-inspection-v1.schema.json'
       - 'scripts/parity/evaluated-sweep-summary-fixture.ts'
       - 'scripts/parity/cli.mjs'
       - 'package.json'
@@ -34,6 +35,7 @@ on:
       - 'fixtures/export/**'
       - 'fixtures/mesh-io/**'
       - 'schemas/native-evaluation-v1.schema.json'
+      - 'schemas/native-mesh-inspection-v1.schema.json'
       - 'scripts/parity/evaluated-sweep-summary-fixture.ts'
       - 'scripts/parity/cli.mjs'
       - 'package.json'
@@ -113,7 +115,22 @@ jobs:
       - name: Configure collision Debug
         run: cmake --preset collision-debug -DOCCLUSION_FETCH_DEPENDENCIES=OFF -DVCPKG_TARGET_TRIPLET=${{ matrix.triplet }} -DCMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake
       - name: Build collision Debug
+        if: runner.os != 'Windows'
         run: cmake --build --preset collision-debug --parallel
+      - name: Build collision Debug (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          & cmake --build --preset collision-debug --parallel 2 2>&1 | Tee-Object -FilePath "$env:RUNNER_TEMP\occlusion-build.log"
+          $buildExit = $LASTEXITCODE
+          if ($buildExit -ne 0) {
+            $errors = Select-String -Path "$env:RUNNER_TEMP\occlusion-build.log" -Pattern 'error C[0-9]+|fatal error|LNK[0-9]+|FAILED:|error:'
+            foreach ($match in ($errors | Select-Object -First 12)) {
+              $line = $match.Line.Replace('%', '%25').Replace("`r", '%0D').Replace("`n", '%0A')
+              Write-Output "::error title=Windows native build::$line"
+            }
+            exit $buildExit
+          }
       - name: Test collision semantics and normalization fixture
         run: ctest --preset collision-debug --output-on-failure
 

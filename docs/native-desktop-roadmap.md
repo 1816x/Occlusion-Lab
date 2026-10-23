@@ -22,11 +22,14 @@ degenerate triangles; topology validation is not geometry repair or clinical val
   passed its remote configure, build, and test steps. The vcpkg feature remains available for
   toolchain-based builds.
 
-The current module is an explicit library API; the CLI continues to use its existing
-topology and FCL path. A later phase must decide where optional CGAL screening belongs
-in the end-user workflow and how to expose its structured errors.
+Phase 4.13 adds an explicit `--inspect-mesh` CLI command with versioned JSON errors.
+The CLI continues to use its existing topology and FCL path for evaluation; CGAL
+screening is requested separately and does not silently change evaluation results.
 
 ## Desktop integration after the geometry boundary
+
+The first viewer's data flow, error presentation, threading, and parity gates are
+specified in [desktop-viewer-phase-4.13.md](desktop-viewer-phase-4.13.md).
 
 - Put Qt 6 application state, file selection, error presentation, and cancellation in
   `occlusion-desktop`; call public project APIs rather than FCL or CGAL directly.

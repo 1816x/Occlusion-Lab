@@ -6,14 +6,14 @@ Occlusion Lab pretende convertirse en una aplicación científica de escritorio 
 
 ## 2. Estado actual
 
-- **Fase actual:** Phase 4.12: Optional CGAL Geometry Inspection
-- **Estado:** Implementada y publicada en `main`; CI de geometría Ubuntu y web verificadas, matriz nativa restante en ejecución
+- **Fase actual:** Phase 4.13: Explicit Mesh Inspection and Desktop Viewer Contract
+- **Estado:** Implementada localmente; publicación y CI remota pendientes
 - **Rama y commit iniciales:** `main` en `46ffc9524e781fe2e8d8c269027434f422c2abf7`
 - **Rama activa:** `work`
 - **Phase 4.3:** Completed mediante [PR #13](https://github.com/1816x/Occlusion-Lab/pull/13), merge `da055bc2067b6477eea9efe7abbad0422ed8e9f3`.
-- **Última actualización significativa:** 2026-10-22 — Phase 4.12 añade una biblioteca CGAL opcional para detectar caras degeneradas y autointersecciones en mallas sintéticas.
+- **Última actualización significativa:** 2026-10-23 — Phase 4.13 expone inspección CGAL sintética por CLI JSON v1 y especifica el primer visor Qt 6/VTK.
 
-La aplicación web heredada continúa disponible y funcional como referencia. La base nativa ofrece unidades fuertes y validación; las capas opcionales de colisión/evaluación ejecutan poses y barridos deterministas. Phase 4.7 expone una fixture sintética por CLI; Phase 4.8 exporta resultados versionados; Phase 4.9 añade un parser OBJ estricto. Phase 4.10 une dos ficheros OBJ sintéticos con el evaluador existente. Phase 4.11 verifica su topología y orientación antes de FCL. Phase 4.12 añade inspección geométrica CGAL optativa como API independiente, aún no conectada a la CLI.
+La aplicación web heredada continúa disponible y funcional como referencia. La base nativa ofrece unidades fuertes y validación; las capas opcionales de colisión/evaluación ejecutan poses y barridos deterministas. Phase 4.7 expone una fixture sintética por CLI; Phase 4.8 exporta resultados versionados; Phase 4.9 añade un parser OBJ estricto. Phase 4.10 une dos ficheros OBJ sintéticos con el evaluador existente. Phase 4.11 verifica su topología y orientación antes de FCL. Phase 4.12 añade inspección geométrica CGAL optativa y Phase 4.13 la expone por un comando CLI explícito, sin alterar la evaluación FCL existente.
 
 ## 3. Estado de arquitectura
 
@@ -22,14 +22,14 @@ La aplicación web heredada continúa disponible y funcional como referencia. La
 | Contratos de dominio | TypeScript y nuevos contratos C++ | Biblioteca C++20 `occlusion-core` | Fundación implementada | Sin lógica clínica. |
 | Unidades y transformaciones | Tipos fuertes C++ | Tipos fuertes C++ con metros internos | Fundación implementada | Conversión de mm explícita. |
 | Ingestión de mallas | Parser OBJ acotado, validador topológico y adaptador CLI | Entrada validada antes de CGAL | Fundación implementada | Cierre, orientación y fans de vértices; sin reparación ni detección de autointersecciones. |
-| Procesamiento geométrico | Inspección sintética CGAL opcional | CGAL | Primera frontera implementada | Detecta autointersecciones y caras degeneradas; no repara ni participa aún en la CLI. |
+| Procesamiento geométrico | Inspección sintética CGAL opcional | CGAL | Primera frontera y CLI implementadas | `--inspect-mesh` detecta autointersecciones y caras degeneradas; no repara. |
 | Detección de colisiones | Worker web/Rapier y biblioteca FCL opcional | FCL | Fundación implementada | Sin afirmar igualdad de manifolds entre motores. |
 | Análisis de barrido de movimiento | Web existente y evaluación C++ | Motor C++ | Barrido y resumen implementados | Paridad semántica del resumen cubierta por fixture versionada. |
-| Renderer | Three.js | VTK | Futuro | No forma parte del core. |
-| UI de escritorio | No existe | Qt 6 | Futuro | Arquitectura desktop-first. |
-| CLI | `occlusion-cli` | `occlusion-cli` extensible | Evaluación OBJ sintética y export v1 implementados | Pose y barrido completo disponibles en builds con colisión. |
+| Renderer | Three.js | VTK | Contrato de visor diseñado | No forma parte del core; implementación posterior. |
+| UI de escritorio | No existe | Qt 6 | Contrato de visor diseñado | Importación sintética, errores, pose, barrido y export especificados. |
+| CLI | `occlusion-cli` | `occlusion-cli` extensible | Evaluación OBJ e inspección optativa implementadas | Evaluación requiere FCL; inspección CGAL puede compilarse sin FCL. |
 | Pruebas | Vitest/web y GoogleTest nativo | GoogleTest + pruebas web | Fundación implementada | Se mantiene la suite heredada. |
-| CI | Web y workflow nativo | CI web y nativa multiplataforma | Implementado; nativa multiplataforma pendiente | Jobs Ubuntu y macOS con colisión pasaron; otros jobs fueron cancelados por falta de runner alojado. |
+| CI | Web y workflow nativo | CI web y nativa multiplataforma | Implementado; Windows collision pendiente de corregir | En `39817385244` todos los jobs excepto Windows collision pasaron; Windows falló al compilar. |
 | Aplicación web heredada | Next.js/React/Three.js | Referencia temporal | Conservada | No eliminar antes de paridad y UI sustituta. |
 
 ## 4. Lista de comprobación de Phase 4
@@ -106,13 +106,13 @@ La aplicación web heredada continúa disponible y funcional como referencia. La
 - La primera ejecución del formato nativo detectó archivos sin formatear; se aplicó `clang-format` y la repetición pasó antes del commit final.
 - Riesgo: la paridad de resúmenes cubre solo la reducción de frames ya evaluados; no permite afirmar igualdad de manifolds Rapier/FCL ni paridad clínica.
 - Riesgo: la estabilidad semántica FCL se prueba localmente, pero los manifolds exactos no son portables ni se consideran contrato.
-- Riesgo: CI nativa multiplataforma sigue incompleta. En la ejecución `39464105423`, los jobs Ubuntu core, Ubuntu collision, macOS collision y Ubuntu sanitizer pasaron; Windows core/collision y macOS core fueron cancelados porque GitHub no adquirió un runner alojado.
-- Diferidos: integración de inspección CGAL en flujos de usuario, UI desktop y validación clínica; no se añadieron fuerzas ni presiones. El directorio OBJ debe ser confiable frente a modificaciones concurrentes: los controles portables de filesystem no son una sandbox para procesos hostiles.
+- Riesgo: CI nativa multiplataforma sigue incompleta. En `39817385244` pasaron los tres jobs core, Ubuntu/macOS collision, Ubuntu sanitizer y Ubuntu geometry. Windows collision falló en `Build collision Debug`; la página pública no expone el diagnóstico del compilador. Phase 4.13 acota su paralelismo y publicará errores como anotaciones si vuelve a fallar.
+- Diferidos: implementación de UI desktop y validación clínica; no se añadieron fuerzas ni presiones. El directorio OBJ debe ser confiable frente a modificaciones concurrentes: los controles portables de filesystem no son una sandbox para procesos hostiles. La inspección CGAL en la evaluación FCL sigue siendo explícita y optativa.
 - Los PR #15, #16 y #21 fueron reconciliados y figuran como `MERGED` en GitHub. Sus contenidos funcionales ya estaban integrados en `main` mediante PR #17 y trabajo posterior; se trasladaron los ajustes de CI/Eigen aún útiles de #16 y se fusionaron las tres ramas con conservación explícita del árbol actual para evitar retirar export v1 y Phase 4.9.
 
 ## 8. Próxima tarea recomendada
 
-Phase 4.13: decidir cómo ofrecer la inspección CGAL opcional en la CLI y diseñar un primer visor Qt 6/VTK que consuma exclusivamente resultados públicos del motor; cubrir flujos sintéticos y errores sin reemplazar todavía la referencia web. Confirmar los jobs remotos de Phase 4.12 y documentar cualquier fallo multiplataforma antes de dar por terminada la CI nativa.
+Phase 4.14: extraer la política de lectura OBJ acotada del árbol de la CLI a un adaptador reutilizable para escritorio e implementar un primer visor Qt 6/VTK opcional según [desktop-viewer-phase-4.13.md](docs/desktop-viewer-phase-4.13.md). Resolver el fallo de compilación Windows collision con el diagnóstico del siguiente workflow antes de afirmar CI nativa multiplataforma completa. Conservar la referencia web hasta demostrar paridad de los flujos requeridos.
 
 ## 9. Hitos completados
 
@@ -130,14 +130,22 @@ Phase 4.13: decidir cómo ofrecer la inspección CGAL opcional en la CLI y dise�
 | Phase 4.9 | Ingestión OBJ sintética acotada y errores estructurados | Merge #22, `2fb68c9` | Completada localmente; 7 pruebas específicas, 34/34 CTest core y 85/85 CTest con colisión; CI remota nativa no verificada. |
 | Phase 4.10 | Adaptador CLI para dos ficheros OBJ sintéticos y evaluación existente | `7e22412` | Implementada y publicada en `main`; CI web remota PASS. CI nativa parcialmente completada; tres jobs sin runner. |
 | Phase 4.11 | Validación topológica y orientación OBJ antes de FCL | `5c98b0c` | Publicada en `main`; 39/39 CTest core, 100/100 CTest colisión y 100/100 ASan+UBSan PASS locales; CI remota pendiente. |
-| Phase 4.12 | Inspección CGAL optativa, conversión comprobada y predicados de mallas sintéticas | `b2483d4`, ajuste CI `aec6975` | Publicada en `main`; 44/44 CTest geometry locales y job geometry Ubuntu remoto PASS. Matriz nativa restante en ejecución. |
+| Phase 4.12 | Inspección CGAL optativa, conversión comprobada y predicados de mallas sintéticas | `b2483d4`, ajuste CI `aec6975` | Publicada en `main`; geometry Ubuntu y los tres core PASS; Ubuntu/macOS collision y Ubuntu sanitizer PASS; Windows collision build FAIL. |
+| Phase 4.13 | CLI de inspección JSON v1 y contrato de visor Qt 6/VTK | Pendiente de publicar | 39/39 core, 50/50 geometry, 100/100 collision y 111/111 combinado CTest locales PASS; CI remota pendiente. |
+
+### Verificación local de Phase 4.13 (2026-10-23)
+
+- `--inspect-mesh <directory> <mesh.obj>` está disponible en builds con geometría sin requerir FCL. Devuelve JSON v1 de éxito o error estructurado con código, campo, línea y mensaje; usa los mismos límites, rechazo de symlink/traversal, parser y validación topológica que la evaluación existente. Su contrato está en [native-mesh-inspection-v1.md](docs/native-mesh-inspection-v1.md).
+- Fixture nueva de dos cajas cerradas que se intersecan; pruebas del comando y su adaptador cubren caja válida, autointersección, OBJ malformado, malla abierta, traversal y fichero ausente. El adaptador no modifica el OBJ ni conecta CGAL implícitamente a `--evaluate-meshes`.
+- El visor Qt 6/VTK todavía no se compila; su frontera de datos, errores, threading, pose, barrido, export y criterios de paridad se especifican en [desktop-viewer-phase-4.13.md](docs/desktop-viewer-phase-4.13.md).
+- Core Debug 39/39, Geometry Debug 50/50, Collision Debug 100/100 y Geometry+Collision Debug 111/111 CTest PASS locales. El fallo remoto Windows collision de Phase 4.12 se confirmó; los demás jobs nativos y web de ese head pasaron.
 
 ### Verificación local de Phase 4.12 (2026-10-22)
 
 - `occlusion-geometry` es una biblioteca independiente habilitada solo por `OCCLUSION_ENABLE_GEOMETRY` y la feature vcpkg `geometry`. CGAL queda privado; `occlusion-core`, `occlusion-mesh-io` y builds por defecto siguen libres de CGAL.
 - La API inspecciona finitud, topología cerrada y orientada, conversión a `CGAL::Surface_mesh`, caras de área nula y autointersecciones, sin modificar los datos. Devuelve código, campo y mensaje propios del proyecto.
 - Pruebas sintéticas: caja cerrada válida, caja abierta, cara degenerada, dos shells cerrados que se intersecan y coordenada no finita. `geometry-debug`: 44/44 CTest PASS. El primer job remoto de geometría falló durante la configuración mediante vcpkg; con `libcgal-dev` en Ubuntu, instalación, configuración, compilación y pruebas remotas pasaron en la ejecución `39817385244`. La feature vcpkg `geometry` sigue disponible para builds que la utilicen.
-- Builds locales sin CGAL: core Debug 39/39 CTest y collision Debug 100/100 CTest PASS. CI web del commit `aec6975`: PASS. La matriz nativa core/collision/sanitizer aún está en ejecución al actualizar este registro.
+- Builds locales sin CGAL: core Debug 39/39 CTest y collision Debug 100/100 CTest PASS. CI web del commit `aec6975`: PASS. En la matriz nativa, todos los jobs salvo Windows collision pasaron; Windows falló en build.
 - La CLI existente no llama aún a CGAL. El módulo detecta defectos geométricos cuando un consumidor invoca explícitamente la nueva API; no constituye validación clínica ni reparación.
 
 ### Verificación local de Phase 4.11 (2026-10-20)

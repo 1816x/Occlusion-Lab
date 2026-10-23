@@ -72,6 +72,15 @@
         "OCCLUSION_ENABLE_GEOMETRY": "ON",
         "VCPKG_MANIFEST_FEATURES": "geometry"
       }
+    },
+    {
+      "name": "geometry-collision-debug",
+      "inherits": "collision-debug",
+      "displayName": "CGAL and FCL Debug",
+      "cacheVariables": {
+        "OCCLUSION_ENABLE_GEOMETRY": "ON",
+        "VCPKG_MANIFEST_FEATURES": "collision;geometry"
+      }
     }
   ],
   "buildPresets": [
@@ -98,6 +107,10 @@
     {
       "name": "geometry-debug",
       "configurePreset": "geometry-debug"
+    },
+    {
+      "name": "geometry-collision-debug",
+      "configurePreset": "geometry-collision-debug"
     }
   ],
   "testPresets": [
@@ -125,6 +138,13 @@
     {
       "name": "geometry-debug",
       "configurePreset": "geometry-debug",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "geometry-collision-debug",
+      "configurePreset": "geometry-collision-debug",
       "output": {
         "outputOnFailure": true
       }

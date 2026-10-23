@@ -210,8 +210,24 @@ project-owned synthetic `TriangleMesh`, checks finite coordinates and closed out
 converts checked indices into a private CGAL surface mesh, and reports degenerate faces and
 self-intersections as structured errors. Its public header contains no CGAL types. It is read-only:
 the input mesh is never repaired or changed. Default native and collision builds do not require
-CGAL. The CLI's existing OBJ evaluation path does not yet invoke this optional check; callers that
-need self-intersection screening must call `occlusion::geometry::inspect_mesh` explicitly.
+CGAL.
+
+## Phase 4.13: explicit inspection CLI and desktop viewer contract
+
+Geometry-enabled builds can inspect a synthetic OBJ without FCL:
+
+```sh
+build/native/geometry-debug/native/apps/occlusion-cli/occlusion-cli \
+  --inspect-mesh fixtures/mesh-io fixed-box.obj
+```
+
+The command shares the bounded file policy with `--evaluate-meshes`. It emits versioned JSON for
+both a valid mesh and a structured error, with exit code 0 or 2 respectively. Its v1 schema and
+examples are in [the inspection contract](docs/native-mesh-inspection-v1.md). The optional
+`geometry-collision-debug` preset provides both inspection and evaluation commands. Evaluation
+does not silently invoke CGAL; inspect each input explicitly when self-intersection screening is
+needed. The [desktop viewer contract](docs/desktop-viewer-phase-4.13.md) defines how a later Qt 6/VTK
+application will consume these public results while keeping the web reference.
 
 ## Phase 4.9: bounded synthetic mesh ingestion
 

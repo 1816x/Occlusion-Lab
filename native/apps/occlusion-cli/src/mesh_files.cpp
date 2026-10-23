@@ -1,77 +1,28 @@
 #include "mesh_files.hpp"
 
+#include "obj_files.hpp"
 #include "occlusion/collision/collision.hpp"
-#include "occlusion/mesh_io/mesh_io.hpp"
+
 #include <cstdint>
-#include <fstream>
-#include <iterator>
 #include <limits>
 #include <utility>
 
 namespace occlusion::cli {
 namespace {
 using occlusion::collision::TriangleMesh;
-using occlusion::mesh_io::default_maximum_input_bytes;
-
-bool valid_name(std::string_view name) {
-  if (name.empty() || name == "." || name == ".." || name.find('/') != name.npos ||
-      name.find('\\') != name.npos || name.find(':') != name.npos || name.find('\0') != name.npos)
-    return false;
-  const std::filesystem::path path{std::string{name}};
-  return path.filename() == path && path.extension() == ".obj";
-}
 
 std::optional<TriangleMesh> load_mesh(const std::filesystem::path& directory, std::string_view name,
                                       std::string& error) {
-  if (!valid_name(name)) {
-    error = "mesh names must be direct .obj filenames without path separators";
-    return std::nullopt;
-  }
-  const auto path = directory / std::string{name};
-  std::error_code status_error;
-  const auto status = std::filesystem::symlink_status(path, status_error);
-  if (status_error || !std::filesystem::is_regular_file(status)) {
-    error = "mesh must be an existing regular file, not a symlink: " + std::string{name};
-    return std::nullopt;
-  }
-  const auto size = std::filesystem::file_size(path, status_error);
-  if (status_error || size > default_maximum_input_bytes) {
-    error = "mesh exceeds the 16 MiB input limit or cannot be sized: " + std::string{name};
-    return std::nullopt;
-  }
-  std::ifstream stream(path, std::ios::binary);
-  if (!stream) {
-    error = "cannot open mesh: " + std::string{name};
-    return std::nullopt;
-  }
-  std::string bytes;
-  bytes.resize(default_maximum_input_bytes + 1);
-  stream.read(bytes.data(), static_cast<std::streamsize>(bytes.size()));
-  const auto count = stream.gcount();
-  if (stream.bad() || (stream.fail() && !stream.eof())) {
-    error = "cannot read mesh: " + std::string{name};
-    return std::nullopt;
-  }
-  if (count > static_cast<std::streamsize>(default_maximum_input_bytes)) {
-    error = "mesh exceeds the 16 MiB input limit: " + std::string{name};
-    return std::nullopt;
-  }
-  bytes.resize(static_cast<std::size_t>(count));
-  const auto parsed = occlusion::mesh_io::parse_obj_mesh(bytes);
+  ObjFileError problem;
+  const auto parsed = load_synthetic_obj(directory, name, problem);
   if (!parsed) {
-    const auto& problem = parsed.error();
-    error = std::string{name} + ": line " + std::to_string(problem.line) + ", " + problem.field +
-            ": " + problem.message;
-    return std::nullopt;
-  }
-  if (const auto problem = occlusion::mesh_io::validate_closed_oriented_mesh(parsed.value())) {
-    error = std::string{name} + ": " + problem->field + ": " + problem->message;
+    error = describe_obj_file_error(problem);
     return std::nullopt;
   }
   TriangleMesh converted;
-  converted.vertices_meters = parsed.value().vertices_meters;
-  converted.triangles.reserve(parsed.value().triangles.size());
-  for (const auto& triangle : parsed.value().triangles) {
+  converted.vertices_meters = parsed->vertices_meters;
+  converted.triangles.reserve(parsed->triangles.size());
+  for (const auto& triangle : parsed->triangles) {
     // FCL stores indices as uint32_t; never narrow a parser-owned size_t.
     if (triangle[0] > std::numeric_limits<std::uint32_t>::max() ||
         triangle[1] > std::numeric_limits<std::uint32_t>::max() ||
@@ -90,11 +41,6 @@ std::optional<TriangleMesh> load_mesh(const std::filesystem::path& directory, st
 std::optional<occlusion::evaluation::PoseEvaluator>
 load_mesh_pair(const std::filesystem::path& directory, std::string_view fixed_name,
                std::string_view moving_name, std::string& error) {
-  std::error_code status_error;
-  if (!std::filesystem::is_directory(directory, status_error) || status_error) {
-    error = "mesh directory does not exist or is not a directory";
-    return std::nullopt;
-  }
   auto fixed = load_mesh(directory, fixed_name, error);
   if (!fixed)
     return std::nullopt;

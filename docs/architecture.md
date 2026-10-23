@@ -174,5 +174,18 @@ project-owned triangle mesh and returns a structured error or success without ch
 It validates finite coordinates and the Phase 4.11 topology contract before checked conversion to
 `CGAL::Surface_mesh`; CGAL predicates then detect degenerate faces and self-intersections. The
 module is gated by `OCCLUSION_ENABLE_GEOMETRY` and the vcpkg `geometry` feature. Neither the
-default native build nor the FCL evaluation path acquires CGAL. The check is not yet invoked by
-the CLI, does not repair geometry, and does not establish clinical validity.
+default native build nor the FCL evaluation path acquires CGAL. The check does not repair geometry
+or establish clinical validity.
+
+## Explicit inspection and desktop contract (Phase 4.13)
+
+The CLI's `occlusion-obj-files` adapter centralizes direct-name, regular-file, size, parser, and
+topology checks for both evaluation and inspection. With geometry enabled,
+`--inspect-mesh <directory> <mesh.obj>` calls the public CGAL inspection API and publishes one
+versioned JSON document containing a valid status or a structured code, field, line, and message.
+It does not evaluate the mesh. The existing `--evaluate-meshes` path remains independent of CGAL;
+users request inspection explicitly. See [the v1 inspection contract](native-mesh-inspection-v1.md).
+
+The proposed Qt 6/VTK client is specified in [the desktop viewer contract](desktop-viewer-phase-4.13.md).
+Its scene adapter consumes project-owned mesh and evaluation values and does not calculate contacts
+or clinical metrics. Qt and VTK remain absent from the native engine and CLI in this phase.

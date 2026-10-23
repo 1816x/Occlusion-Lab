@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://occlusion-lab.local/schemas/native-mesh-inspection-v1.schema.json",
+  "title": "Occlusion Lab synthetic mesh inspection v1",
+  "oneOf": [
+    {
+      "type": "object",
+      "properties": {
+        "schema": { "const": "occlusion-mesh-inspection" },
+        "schemaVersion": { "const": 1 },
+        "status": { "const": "valid" }
+      },
+      "required": ["schema", "schemaVersion", "status"],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "schema": { "const": "occlusion-mesh-inspection" },
+        "schemaVersion": { "const": 1 },
+        "status": { "const": "invalid" },
+        "error": {
+          "type": "object",
+          "properties": {
+            "code": {
+              "enum": [
+                "invalid_directory", "invalid_name", "invalid_file", "read_error",
+                "empty_input", "resource_limit", "unsupported_statement",
+                "invalid_number", "non_finite_coordinate", "invalid_face",
+                "index_out_of_range", "empty_mesh", "invalid_topology",
+                "invalid_mesh", "conversion_failed", "degenerate_face",
+                "self_intersection"
+              ]
+            },
+            "field": { "type": "string", "minLength": 1 },
+            "line": { "type": "integer", "minimum": 0 },
+            "message": { "type": "string", "minLength": 1 }
+          },
+          "required": ["code", "field", "line", "message"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["schema", "schemaVersion", "status", "error"],
+      "additionalProperties": false
+    }
+  ]
+}

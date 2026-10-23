@@ -14,22 +14,28 @@
 #include "mesh_files.hpp"
 #include "occlusion/evaluation/evaluation.hpp"
 #endif
+#ifdef OCCLUSION_CLI_ENABLE_GEOMETRY
+#include "mesh_inspection.hpp"
+#endif
 
 namespace {
 
 constexpr std::string_view version = "Occlusion Lab native 0.5.0";
+void print_usage() {
+  std::cerr << "Usage: occlusion-cli (--version | --self-check";
 #ifdef OCCLUSION_CLI_ENABLE_EVALUATION
-constexpr std::string_view usage =
-    "Usage: occlusion-cli (--version | --self-check | --evaluate-fixture pose "
-    "<opening-mm> <protrusion-mm> <lateral-mm> | --evaluate-fixture sweep "
-    "<closing|protrusive|left-lateral|right-lateral> <frames> | "
-    "--evaluate-meshes <directory> <fixed.obj> <moving.obj> pose "
-    "<opening-mm> <protrusion-mm> <lateral-mm> | --evaluate-meshes "
-    "<directory> <fixed.obj> <moving.obj> sweep "
-    "<closing|protrusive|left-lateral|right-lateral> <frames>)";
-#else
-constexpr std::string_view usage = "Usage: occlusion-cli (--version | --self-check)";
+  std::cerr << " | --evaluate-fixture pose <opening-mm> <protrusion-mm> <lateral-mm>"
+               " | --evaluate-fixture sweep <closing|protrusive|left-lateral|right-lateral>"
+               " <frames> | --evaluate-meshes <directory> <fixed.obj> <moving.obj> pose"
+               " <opening-mm> <protrusion-mm> <lateral-mm> | --evaluate-meshes <directory>"
+               " <fixed.obj> <moving.obj> sweep"
+               " <closing|protrusive|left-lateral|right-lateral> <frames>";
 #endif
+#ifdef OCCLUSION_CLI_ENABLE_GEOMETRY
+  std::cerr << " | --inspect-mesh <directory> <mesh.obj>";
+#endif
+  std::cerr << ")\n";
+}
 
 int self_check() {
   using namespace occlusion::core;
@@ -118,7 +124,7 @@ std::optional<PoseEvaluator> make_synthetic_evaluator() {
 int evaluate_pose(int argc, char* argv[], int first_value, PoseEvaluator evaluator,
                   std::string_view fixture_id) {
   if (argc != first_value + 3) {
-    std::cerr << usage << '\n';
+    print_usage();
     return 2;
   }
   const auto opening = parse_number<double>(argv[first_value]);
@@ -143,7 +149,7 @@ int evaluate_pose(int argc, char* argv[], int first_value, PoseEvaluator evaluat
 int evaluate_sweep(int argc, char* argv[], int first_value, PoseEvaluator evaluator,
                    std::string_view fixture_id) {
   if (argc != first_value + 2) {
-    std::cerr << usage << '\n';
+    print_usage();
     return 2;
   }
   const auto preset = parse_preset(argv[first_value]);
@@ -170,13 +176,13 @@ int evaluate_fixture(int argc, char* argv[]) {
       return evaluate_pose(argc, argv, 3, *evaluator, "synthetic-boxes-v1");
     return evaluate_sweep(argc, argv, 3, *evaluator, "synthetic-boxes-v1");
   }
-  std::cerr << usage << '\n';
+  print_usage();
   return 2;
 }
 
 int evaluate_meshes(int argc, char* argv[]) {
   if (argc < 8 || (std::string_view{argv[5]} != "pose" && std::string_view{argv[5]} != "sweep")) {
-    std::cerr << usage << '\n';
+    print_usage();
     return 2;
   }
   std::string error;
@@ -208,6 +214,18 @@ int main(int argc, char* argv[]) {
   if (argc >= 2 && std::string_view{argv[1]} == "--evaluate-meshes")
     return evaluate_meshes(argc, argv);
 #endif
-  std::cerr << usage << '\n';
+
+#ifdef OCCLUSION_CLI_ENABLE_GEOMETRY
+  if (argc >= 2 && std::string_view{argv[1]} == "--inspect-mesh") {
+    if (argc != 4) {
+      print_usage();
+      return 2;
+    }
+    const auto response = occlusion::cli::inspect_synthetic_obj(argv[2], argv[3]);
+    std::cout << response.json;
+    return response.valid ? 0 : 2;
+  }
+#endif
+  print_usage();
   return 2;
 }
