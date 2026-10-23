@@ -5,11 +5,8 @@ target_compile_features(occlusion-geometry-tests PRIVATE cxx_std_20)
 include(GoogleTest)
 gtest_discover_tests(occlusion-geometry-tests DISCOVERY_MODE PRE_TEST)
 
-add_test(NAME cli-inspect-valid-box
-  COMMAND occlusion-cli --inspect-mesh ${PROJECT_SOURCE_DIR}/fixtures/mesh-io fixed-box.obj)
-set_tests_properties(cli-inspect-valid-box PROPERTIES
-  PASS_REGULAR_EXPRESSION "\"schema\":\"occlusion-mesh-inspection\".*\"status\":\"valid\"")
-
-add_test(NAME cli-inspect-rejects-intersection
-  COMMAND occlusion-cli --inspect-mesh ${PROJECT_SOURCE_DIR}/fixtures/mesh-io intersecting-boxes.obj)
-set_tests_properties(cli-inspect-rejects-intersection PROPERTIES WILL_FAIL TRUE)
+add_test(NAME cli-inspection-contract
+  COMMAND ${CMAKE_COMMAND}
+    -DCLI=$<TARGET_FILE:occlusion-cli>
+    -DMESH_DIR=${PROJECT_SOURCE_DIR}/fixtures/mesh-io
+    -P ${CMAKE_CURRENT_SOURCE_DIR}/cli_inspection_contract.cmake)
