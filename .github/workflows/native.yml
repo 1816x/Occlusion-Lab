@@ -129,7 +129,11 @@ jobs:
           New-Item -ItemType Directory -Force $env:VCPKG_DEFAULT_BINARY_CACHE | Out-Null
           & "$env:VCPKG_ROOT\bootstrap-vcpkg.bat" -disableMetrics
       - name: Configure collision Debug
+        if: runner.os != 'Windows'
         run: cmake --preset collision-debug -DOCCLUSION_FETCH_DEPENDENCIES=OFF -DVCPKG_TARGET_TRIPLET=${{ matrix.triplet }} -DCMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake
+      - name: Configure collision Debug with MSVC
+        if: runner.os == 'Windows'
+        run: cmake --preset collision-windows-debug -DOCCLUSION_FETCH_DEPENDENCIES=OFF -DVCPKG_TARGET_TRIPLET=x64-windows -DCMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake
       - name: Build collision Debug
         if: runner.os != 'Windows'
         run: cmake --build --preset collision-debug --parallel
@@ -137,7 +141,7 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          & cmake --build --preset collision-debug --parallel 2 2>&1 | Tee-Object -FilePath "$env:RUNNER_TEMP\occlusion-build.log"
+          & cmake --build --preset collision-windows-debug --config Debug --parallel 2 2>&1 | Tee-Object -FilePath "$env:RUNNER_TEMP\occlusion-build.log"
           $buildExit = $LASTEXITCODE
           if ($buildExit -ne 0) {
             $errors = Select-String -Path "$env:RUNNER_TEMP\occlusion-build.log" -Pattern 'error C[0-9]+|fatal error|LNK[0-9]+|FAILED:|error:'
@@ -148,7 +152,11 @@ jobs:
             exit $buildExit
           }
       - name: Test collision semantics and normalization fixture
+        if: runner.os != 'Windows'
         run: ctest --preset collision-debug --output-on-failure
+      - name: Test collision semantics and normalization fixture (Windows)
+        if: runner.os == 'Windows'
+        run: ctest --preset collision-windows-debug -C Debug --output-on-failure
 
   geometry:
     name: CGAL geometry / Ubuntu
