@@ -177,10 +177,9 @@ jobs:
           & ctest --preset collision-debug --output-on-failure 2>&1 | Tee-Object -FilePath "$env:RUNNER_TEMP\occlusion-ctest.log"
           $testExit = $LASTEXITCODE
           if ($testExit -ne 0) {
-            foreach ($entry in (Get-Content "$env:RUNNER_TEMP\occlusion-ctest.log" -Tail 35)) {
-              $line = $entry.Replace('%', '%25').Replace("`r", '%0D').Replace("`n", '%0A')
-              Write-Output "::error title=Windows native test::$line"
-            }
+            $tail = (Get-Content "$env:RUNNER_TEMP\occlusion-ctest.log" -Tail 100) -join "`n"
+            $details = $tail.Replace('%', '%25').Replace("`r", '%0D').Replace("`n", '%0A')
+            Write-Output "::error title=Windows native CTest output::$details"
             exit $testExit
           }
 
