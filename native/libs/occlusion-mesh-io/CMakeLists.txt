@@ -1,4 +1,4 @@
-add_library(occlusion-mesh-io STATIC src/obj.cpp src/topology.cpp)
+add_library(occlusion-mesh-io STATIC src/obj.cpp src/topology.cpp src/obj_files.cpp)
 add_library(occlusion::mesh-io ALIAS occlusion-mesh-io)
 target_include_directories(occlusion-mesh-io PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<INSTALL_INTERFACE:include>)
 target_link_libraries(occlusion-mesh-io PUBLIC occlusion::core PRIVATE occlusion_project_warnings)

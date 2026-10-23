@@ -179,8 +179,8 @@ or establish clinical validity.
 
 ## Explicit inspection and desktop contract (Phase 4.13)
 
-The CLI's `occlusion-obj-files` adapter centralizes direct-name, regular-file, size, parser, and
-topology checks for both evaluation and inspection. With geometry enabled,
+The public `occlusion-mesh-io` file adapter centralizes direct-name, regular-file, size, parser, and
+topology checks for the CLI and future desktop clients. With geometry enabled,
 `--inspect-mesh <directory> <mesh.obj>` calls the public CGAL inspection API and publishes one
 versioned JSON document containing a valid status or a structured code, field, line, and message.
 It does not evaluate the mesh. The existing `--evaluate-meshes` path remains independent of CGAL;

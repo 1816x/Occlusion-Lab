@@ -7,7 +7,7 @@
 #include <string>
 #include <string_view>
 
-namespace occlusion::cli {
+namespace occlusion::mesh_io {
 struct ObjFileError final {
   std::string code;
   std::string field;
@@ -18,8 +18,8 @@ struct ObjFileError final {
 
 // Reads a direct synthetic .obj child of a trusted directory with the same
 // path, size, parser, and topology checks for evaluation and inspection.
-[[nodiscard]] std::optional<mesh_io::TriangleMesh>
-load_synthetic_obj(const std::filesystem::path& directory, std::string_view name,
-                   ObjFileError& error);
+[[nodiscard]] std::optional<TriangleMesh> load_synthetic_obj(const std::filesystem::path& directory,
+                                                             std::string_view name,
+                                                             ObjFileError& error);
 [[nodiscard]] std::string describe_obj_file_error(const ObjFileError& error);
-} // namespace occlusion::cli
+} // namespace occlusion::mesh_io

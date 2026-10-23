@@ -6,12 +6,12 @@ Occlusion Lab pretende convertirse en una aplicación científica de escritorio 
 
 ## 2. Estado actual
 
-- **Fase actual:** Phase 4.13: Explicit Mesh Inspection and Desktop Viewer Contract
-- **Estado:** Publicada en `main`; CI remota de Phase 4.13 en verificación
+- **Fase actual:** Phase 4.14: Shared Mesh File Adapter and Optional Desktop Viewer
+- **Estado:** Phase 4.13 verificada en CI; adaptador compartido de Phase 4.14 implementado localmente, visor pendiente
 - **Rama y commit iniciales:** `main` en `46ffc9524e781fe2e8d8c269027434f422c2abf7`
 - **Rama activa:** `work`
 - **Phase 4.3:** Completed mediante [PR #13](https://github.com/1816x/Occlusion-Lab/pull/13), merge `da055bc2067b6477eea9efe7abbad0422ed8e9f3`.
-- **Última actualización significativa:** 2026-10-23 — Phase 4.13 expone inspección CGAL sintética por CLI JSON v1 y especifica el primer visor Qt 6/VTK.
+- **Última actualización significativa:** 2026-10-23 — Phase 4.13 verificada en CI multiplataforma; Phase 4.14 mueve la lectura OBJ acotada a `occlusion-mesh-io` para CLI y escritorio.
 
 La aplicación web heredada continúa disponible y funcional como referencia. La base nativa ofrece unidades fuertes y validación; las capas opcionales de colisión/evaluación ejecutan poses y barridos deterministas. Phase 4.7 expone una fixture sintética por CLI; Phase 4.8 exporta resultados versionados; Phase 4.9 añade un parser OBJ estricto. Phase 4.10 une dos ficheros OBJ sintéticos con el evaluador existente. Phase 4.11 verifica su topología y orientación antes de FCL. Phase 4.12 añade inspección geométrica CGAL optativa y Phase 4.13 la expone por un comando CLI explícito, sin alterar la evaluación FCL existente.
 
@@ -21,7 +21,7 @@ La aplicación web heredada continúa disponible y funcional como referencia. La
 |---|---|---|---|---|
 | Contratos de dominio | TypeScript y nuevos contratos C++ | Biblioteca C++20 `occlusion-core` | Fundación implementada | Sin lógica clínica. |
 | Unidades y transformaciones | Tipos fuertes C++ | Tipos fuertes C++ con metros internos | Fundación implementada | Conversión de mm explícita. |
-| Ingestión de mallas | Parser OBJ acotado, validador topológico y adaptador CLI | Entrada validada antes de CGAL | Fundación implementada | Cierre, orientación y fans de vértices; sin reparación ni detección de autointersecciones. |
+| Ingestión de mallas | Parser OBJ acotado, validador topológico y adaptador público de fichero | Entrada validada antes de CGAL | Fundación implementada | Cierre, orientación y fans de vértices; sin reparación ni detección de autointersecciones. |
 | Procesamiento geométrico | Inspección sintética CGAL opcional | CGAL | Primera frontera y CLI implementadas | `--inspect-mesh` detecta autointersecciones y caras degeneradas; no repara. |
 | Detección de colisiones | Worker web/Rapier y biblioteca FCL opcional | FCL | Fundación implementada | Sin afirmar igualdad de manifolds entre motores. |
 | Análisis de barrido de movimiento | Web existente y evaluación C++ | Motor C++ | Barrido y resumen implementados | Paridad semántica del resumen cubierta por fixture versionada. |
@@ -106,13 +106,13 @@ La aplicación web heredada continúa disponible y funcional como referencia. La
 - La primera ejecución del formato nativo detectó archivos sin formatear; se aplicó `clang-format` y la repetición pasó antes del commit final.
 - Riesgo: la paridad de resúmenes cubre solo la reducción de frames ya evaluados; no permite afirmar igualdad de manifolds Rapier/FCL ni paridad clínica.
 - Riesgo: la estabilidad semántica FCL se prueba localmente, pero los manifolds exactos no son portables ni se consideran contrato.
-- Riesgo: CI nativa multiplataforma sigue incompleta. En `39817385244` pasaron los tres jobs core, Ubuntu/macOS collision, Ubuntu sanitizer y Ubuntu geometry. Windows collision falló en build. La primera ejecución de Phase 4.13 (`39993524643`) también falló al clonar vcpkg en los jobs Unix por un error de transporte externo 128; se reemplazó el clone completo por fetch acotado del commit fijado sobre HTTP/1.1 con reintentos. Sus anotaciones Windows mostraron que Ninja eligió MinGW (`collect2.exe`) para enlazar con bibliotecas vcpkg `x64-windows` construidas con MSVC. La ejecución `40001154897` confirmó que ese runner carece de Visual Studio. Con MinGW, `40002195226` reveló objetos Debug de FCL demasiado grandes para su ensamblador. El triplet Release-dependencies de `40003064999` permitió configurar y compilar el proyecto Debug en Windows. La ejecución `40004857801` llegó a CTest y reveló fallos en las dos pruebas de export JSON por la conversión CRLF de los fixtures durante checkout; `.gitattributes` ahora fija LF para sus bytes versionados. La verificación remota del arreglo sigue pendiente.
+- CI de Phase 4.13: web `40005882371` y matriz nativa `40005882067` completadas correctamente en `43c2213`, incluidos Windows collision, CGAL Ubuntu y ASan+UBSan. Los fallos anteriores de toolchain, FCL Debug y CRLF quedaron resueltos. El nuevo adaptador de Phase 4.14 aún requiere su propia ejecución remota.
 - Diferidos: implementación de UI desktop y validación clínica; no se añadieron fuerzas ni presiones. El directorio OBJ debe ser confiable frente a modificaciones concurrentes: los controles portables de filesystem no son una sandbox para procesos hostiles. La inspección CGAL en la evaluación FCL sigue siendo explícita y optativa.
 - Los PR #15, #16 y #21 fueron reconciliados y figuran como `MERGED` en GitHub. Sus contenidos funcionales ya estaban integrados en `main` mediante PR #17 y trabajo posterior; se trasladaron los ajustes de CI/Eigen aún útiles de #16 y se fusionaron las tres ramas con conservación explícita del árbol actual para evitar retirar export v1 y Phase 4.9.
 
 ## 8. Próxima tarea recomendada
 
-Phase 4.14: extraer la política de lectura OBJ acotada del árbol de la CLI a un adaptador reutilizable para escritorio e implementar un primer visor Qt 6/VTK opcional según [desktop-viewer-phase-4.13.md](docs/desktop-viewer-phase-4.13.md). Resolver el fallo de compilación Windows collision con el diagnóstico del siguiente workflow antes de afirmar CI nativa multiplataforma completa. Conservar la referencia web hasta demostrar paridad de los flujos requeridos.
+Phase 4.14: verificar en CI el adaptador OBJ compartido de `occlusion-mesh-io` e implementar un primer visor Qt 6/VTK opcional según [desktop-viewer-phase-4.13.md](docs/desktop-viewer-phase-4.13.md). Añadir un entorno con Qt 6 y VTK para compilar y probar el visor; no están instalados en este workspace. Conservar la referencia web hasta demostrar paridad de los flujos requeridos.
 
 ## 9. Hitos completados
 
@@ -131,7 +131,8 @@ Phase 4.14: extraer la política de lectura OBJ acotada del árbol de la CLI a u
 | Phase 4.10 | Adaptador CLI para dos ficheros OBJ sintéticos y evaluación existente | `7e22412` | Implementada y publicada en `main`; CI web remota PASS. CI nativa parcialmente completada; tres jobs sin runner. |
 | Phase 4.11 | Validación topológica y orientación OBJ antes de FCL | `5c98b0c` | Publicada en `main`; 39/39 CTest core, 100/100 CTest colisión y 100/100 ASan+UBSan PASS locales; CI remota pendiente. |
 | Phase 4.12 | Inspección CGAL optativa, conversión comprobada y predicados de mallas sintéticas | `b2483d4`, ajuste CI `aec6975` | Publicada en `main`; geometry Ubuntu y los tres core PASS; Ubuntu/macOS collision y Ubuntu sanitizer PASS; Windows collision build FAIL. |
-| Phase 4.13 | CLI de inspección JSON v1 y contrato de visor Qt 6/VTK | `a7aaba4` | Publicada en `main`; 39/39 core, 49/49 geometry, 100/100 collision, 110/110 combinado y 100/100 sanitizer CTest locales PASS; CI remota en verificación. |
+| Phase 4.13 | CLI de inspección JSON v1 y contrato de visor Qt 6/VTK | `a7aaba4`–`43c2213` | Completada; 39/39 core, 49/49 geometry, 100/100 collision, 110/110 combinado y 100/100 sanitizer CTest locales PASS; web y matriz nativa CI remota PASS. |
+| Phase 4.14 | Adaptador OBJ compartido y primer visor opcional | En curso | Adaptador público implementado; 42/42 core, 113/113 geometría+colisión y 103/103 sanitizer CTest locales PASS. Visor Qt 6/VTK y CI de este cambio pendientes. |
 
 ### Verificación local de Phase 4.13 (2026-10-23)
 
@@ -139,7 +140,12 @@ Phase 4.14: extraer la política de lectura OBJ acotada del árbol de la CLI a u
 - Fixture nueva de dos cajas cerradas que se intersecan; pruebas del comando y su adaptador cubren caja válida, autointersección, OBJ malformado, malla abierta, traversal y fichero ausente. Una prueba integral adicional confirma stdout JSON, códigos de salida y stderr de la CLI para éxito, errores de malla y argumentos incorrectos. El adaptador no modifica el OBJ ni conecta CGAL implícitamente a `--evaluate-meshes`.
 - El visor Qt 6/VTK todavía no se compila; su frontera de datos, errores, threading, pose, barrido, export y criterios de paridad se especifican en [desktop-viewer-phase-4.13.md](docs/desktop-viewer-phase-4.13.md).
 - Core Debug 39/39, Geometry Debug 49/49, Collision Debug 100/100, Geometry+Collision Debug 110/110 y Collision ASan+UBSan 100/100 CTest PASS locales; builds core/collision Release PASS. Web: `npm ci`, lint, typecheck, paridad, 94/94 Vitest, assets, build y smoke HTTP de producción PASS. Las actualizaciones compatibles de Next.js 16.4.3, Vitest 4.1.12 y DOMPurify 3.4.17 dejaron `npm audit` completo en 0 vulnerabilidades. El fallo remoto Windows collision de Phase 4.12 se confirmó; los demás jobs nativos y web de ese head pasaron.
-- La primera CI de Phase 4.13 (`39993524643`) encontró fallo 128 en `Bootstrap pinned vcpkg (Unix)` antes de compilar el proyecto. Un fetch shallow del mismo SHA con Git HTTP/1.1 y `vcpkg install --dry-run` resolvieron el manifiesto localmente; el workflow ahora usa ese mecanismo con tres intentos también en Windows. Las anotaciones Windows identificaron un enlace MinGW/MSVC incompatible; Visual Studio no está instalado en el runner. El primer triplet MinGW alcanzó la compilación de FCL, pero su Debug produjo objetos demasiado grandes. El overlay `x64-mingw-dynamic-release-deps` mantiene el proyecto Debug con dependencias Release. El manifiesto confirma que GTest y nlohmann-json se instalan para el target MinGW, no para el host MSVC. `40004857801` confirmó configure/build Windows PASS y localizó el fallo CTest en la comparación binaria de dos fixtures JSON: el serializador emite LF y Git les aplicó CRLF al checkout de Windows. `.gitattributes` fuerza LF para ambos fixtures; falta verificar la siguiente CI.
+- La primera CI de Phase 4.13 (`39993524643`) encontró fallo 128 en `Bootstrap pinned vcpkg (Unix)` antes de compilar el proyecto. Un fetch shallow del mismo SHA con Git HTTP/1.1 y `vcpkg install --dry-run` resolvieron el manifiesto localmente; el workflow ahora usa ese mecanismo con tres intentos también en Windows. Las anotaciones Windows identificaron un enlace MinGW/MSVC incompatible; Visual Studio no está instalado en el runner. El primer triplet MinGW alcanzó la compilación de FCL, pero su Debug produjo objetos demasiado grandes. El overlay `x64-mingw-dynamic-release-deps` mantiene el proyecto Debug con dependencias Release. El manifiesto confirma que GTest y nlohmann-json se instalan para el target MinGW, no para el host MSVC. `40004857801` localizó fallos CTest en la comparación binaria de fixtures JSON: el serializador emite LF y Git les aplicó CRLF en Windows. `.gitattributes` fija LF. La siguiente CI nativa `40005882067` y web `40005882371` pasaron completas.
+
+### Verificación local de Phase 4.14 (2026-10-23)
+
+- `load_synthetic_obj` y su error estructurado son públicos en `occlusion-mesh-io`, sin enlazar FCL ni CGAL. Los consumidores CLI de evaluación e inspección comparten la misma política de fichero.
+- Tres pruebas directas cubren caja cerrada, nombre inválido/fichero ausente y topología abierta en un build core-only. Core Debug 42/42, Geometry+Collision Debug 113/113 y Collision ASan+UBSan 103/103 CTest PASS. La verificación remota y el visor opcional quedan pendientes.
 
 ### Verificación local de Phase 4.12 (2026-10-22)
 

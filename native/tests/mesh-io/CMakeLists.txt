@@ -1,5 +1,6 @@
-add_executable(occlusion-mesh-io-tests mesh_io_tests.cpp public_headers.cpp)
+add_executable(occlusion-mesh-io-tests mesh_io_tests.cpp obj_file_tests.cpp public_headers.cpp)
 target_link_libraries(occlusion-mesh-io-tests PRIVATE occlusion::mesh-io GTest::gtest_main occlusion_project_warnings)
+target_compile_definitions(occlusion-mesh-io-tests PRIVATE OCCLUSION_MESH_FIXTURE_DIR="${PROJECT_SOURCE_DIR}/fixtures/mesh-io")
 target_compile_features(occlusion-mesh-io-tests PRIVATE cxx_std_20)
 include(GoogleTest)
 gtest_discover_tests(occlusion-mesh-io-tests DISCOVERY_MODE PRE_TEST)

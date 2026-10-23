@@ -1,9 +1,9 @@
-#include "obj_files.hpp"
+#include "occlusion/mesh_io/obj_files.hpp"
 
 #include <fstream>
 #include <utility>
 
-namespace occlusion::cli {
+namespace occlusion::mesh_io {
 namespace {
 bool valid_name(std::string_view name) {
   if (name.empty() || name == "." || name == ".." || name.find('/') != name.npos ||
@@ -13,8 +13,7 @@ bool valid_name(std::string_view name) {
   return path.filename() == path && path.extension() == ".obj";
 }
 
-std::string_view ingestion_code(mesh_io::MeshIngestionErrorCode code) {
-  using mesh_io::MeshIngestionErrorCode;
+std::string_view ingestion_code(MeshIngestionErrorCode code) {
   switch (code) {
   case MeshIngestionErrorCode::empty_input:
     return "empty_input";
@@ -39,9 +38,8 @@ std::string_view ingestion_code(mesh_io::MeshIngestionErrorCode code) {
 }
 } // namespace
 
-std::optional<mesh_io::TriangleMesh> load_synthetic_obj(const std::filesystem::path& directory,
-                                                        std::string_view name,
-                                                        ObjFileError& error) {
+std::optional<TriangleMesh> load_synthetic_obj(const std::filesystem::path& directory,
+                                               std::string_view name, ObjFileError& error) {
   std::error_code status_error;
   if (!std::filesystem::is_directory(directory, status_error) || status_error) {
     error = {"invalid_directory",
@@ -67,7 +65,7 @@ std::optional<mesh_io::TriangleMesh> load_synthetic_obj(const std::filesystem::p
     return std::nullopt;
   }
   const auto size = std::filesystem::file_size(path, status_error);
-  if (status_error || size > mesh_io::default_maximum_input_bytes) {
+  if (status_error || size > default_maximum_input_bytes) {
     error = {"resource_limit", "file", "mesh exceeds the 16 MiB input limit or cannot be sized", 0,
              std::string{name}};
     return std::nullopt;
@@ -78,26 +76,26 @@ std::optional<mesh_io::TriangleMesh> load_synthetic_obj(const std::filesystem::p
     return std::nullopt;
   }
   std::string bytes;
-  bytes.resize(mesh_io::default_maximum_input_bytes + 1);
+  bytes.resize(default_maximum_input_bytes + 1);
   stream.read(bytes.data(), static_cast<std::streamsize>(bytes.size()));
   const auto count = stream.gcount();
   if (stream.bad() || (stream.fail() && !stream.eof())) {
     error = {"read_error", "file", "cannot read mesh", 0, std::string{name}};
     return std::nullopt;
   }
-  if (count > static_cast<std::streamsize>(mesh_io::default_maximum_input_bytes)) {
+  if (count > static_cast<std::streamsize>(default_maximum_input_bytes)) {
     error = {"resource_limit", "file", "mesh exceeds the 16 MiB input limit", 0, std::string{name}};
     return std::nullopt;
   }
   bytes.resize(static_cast<std::size_t>(count));
-  const auto parsed = mesh_io::parse_obj_mesh(bytes);
+  const auto parsed = parse_obj_mesh(bytes);
   if (!parsed) {
     const auto& problem = parsed.error();
     error = {std::string{ingestion_code(problem.code)}, problem.field, problem.message,
              problem.line, std::string{name}};
     return std::nullopt;
   }
-  if (const auto problem = mesh_io::validate_closed_oriented_mesh(parsed.value())) {
+  if (const auto problem = validate_closed_oriented_mesh(parsed.value())) {
     error = {std::string{ingestion_code(problem->code)}, problem->field, problem->message,
              problem->line, std::string{name}};
     return std::nullopt;
@@ -113,4 +111,4 @@ std::string describe_obj_file_error(const ObjFileError& error) {
     result += "line " + std::to_string(error.line) + ", ";
   return result + error.field + ": " + error.message;
 }
-} // namespace occlusion::cli
+} // namespace occlusion::mesh_io

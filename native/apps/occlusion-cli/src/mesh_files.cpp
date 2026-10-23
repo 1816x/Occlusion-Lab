@@ -1,7 +1,7 @@
 #include "mesh_files.hpp"
 
-#include "obj_files.hpp"
 #include "occlusion/collision/collision.hpp"
+#include "occlusion/mesh_io/obj_files.hpp"
 
 #include <cstdint>
 #include <limits>
@@ -13,10 +13,10 @@ using occlusion::collision::TriangleMesh;
 
 std::optional<TriangleMesh> load_mesh(const std::filesystem::path& directory, std::string_view name,
                                       std::string& error) {
-  ObjFileError problem;
-  const auto parsed = load_synthetic_obj(directory, name, problem);
+  mesh_io::ObjFileError problem;
+  const auto parsed = mesh_io::load_synthetic_obj(directory, name, problem);
   if (!parsed) {
-    error = describe_obj_file_error(problem);
+    error = mesh_io::describe_obj_file_error(problem);
     return std::nullopt;
   }
   TriangleMesh converted;

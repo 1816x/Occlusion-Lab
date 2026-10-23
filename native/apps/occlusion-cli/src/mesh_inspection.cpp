@@ -1,7 +1,7 @@
 #include "mesh_inspection.hpp"
 
-#include "obj_files.hpp"
 #include "occlusion/geometry/geometry.hpp"
+#include "occlusion/mesh_io/obj_files.hpp"
 
 #include <cstddef>
 #include <utility>
@@ -81,8 +81,8 @@ std::string_view geometry_code(geometry::GeometryErrorCode code) {
 
 InspectionResponse inspect_synthetic_obj(const std::filesystem::path& directory,
                                          std::string_view name) {
-  ObjFileError input_error;
-  const auto mesh = load_synthetic_obj(directory, name, input_error);
+  mesh_io::ObjFileError input_error;
+  const auto mesh = mesh_io::load_synthetic_obj(directory, name, input_error);
   if (!mesh)
     return invalid_response(input_error.code, input_error.field, input_error.line,
                             input_error.message);
