@@ -19,6 +19,7 @@ on:
       - 'scripts/parity/cli.mjs'
       - 'package.json'
       - 'vcpkg.json'
+      - '.gitattributes'
       - '.github/workflows/native.yml'
   push:
     branches: [main]
@@ -40,7 +41,8 @@ on:
       - 'scripts/parity/cli.mjs'
       - 'package.json'
       - 'vcpkg.json'
-      - '.github/workflows/native.yml' 
+      - '.gitattributes'
+      - '.github/workflows/native.yml'
 permissions:
   contents: read
 jobs:
