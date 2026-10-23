@@ -45,13 +45,6 @@
       }
     },
     {
-      "name": "collision-windows-debug",
-      "inherits": "collision-debug",
-      "displayName": "Collision Debug with MSVC",
-      "generator": "Visual Studio 17 2022",
-      "architecture": "x64"
-    },
-    {
       "name": "collision-release",
       "inherits": "native-base",
       "displayName": "Collision Release",
@@ -104,10 +97,6 @@
       "configurePreset": "collision-debug"
     },
     {
-      "name": "collision-windows-debug",
-      "configurePreset": "collision-windows-debug"
-    },
-    {
       "name": "collision-release",
       "configurePreset": "collision-release"
     },
@@ -135,13 +124,6 @@
     {
       "name": "collision-debug",
       "configurePreset": "collision-debug",
-      "output": {
-        "outputOnFailure": true
-      }
-    },
-    {
-      "name": "collision-windows-debug",
-      "configurePreset": "collision-windows-debug",
       "output": {
         "outputOnFailure": true
       }

@@ -71,8 +71,8 @@ jobs:
             triplet: x64-linux
             compiler: gcc
           - os: windows-latest
-            triplet: x64-windows
-            compiler: msvc
+            triplet: x64-mingw-dynamic
+            compiler: mingw
           - os: macos-latest
             triplet: arm64-osx
             compiler: appleclang
@@ -131,11 +131,11 @@ jobs:
       - name: Configure collision Debug
         if: runner.os != 'Windows'
         run: cmake --preset collision-debug -DOCCLUSION_FETCH_DEPENDENCIES=OFF -DVCPKG_TARGET_TRIPLET=${{ matrix.triplet }} -DCMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake
-      - name: Configure collision Debug with MSVC
+      - name: Configure collision Debug with MinGW
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          & cmake --preset collision-windows-debug -DOCCLUSION_FETCH_DEPENDENCIES=OFF -DVCPKG_TARGET_TRIPLET=x64-windows -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" 2>&1 | Tee-Object -FilePath "$env:RUNNER_TEMP\occlusion-configure.log"
+          & cmake --preset collision-debug -DOCCLUSION_FETCH_DEPENDENCIES=OFF -DVCPKG_TARGET_TRIPLET=x64-mingw-dynamic -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" 2>&1 | Tee-Object -FilePath "$env:RUNNER_TEMP\occlusion-configure.log"
           $configureExit = $LASTEXITCODE
           if ($configureExit -ne 0) {
             $errors = Select-String -Path "$env:RUNNER_TEMP\occlusion-configure.log" -Pattern 'CMake Error|error C[0-9]+|fatal error|error:|Could not find|FAILED:'
@@ -155,7 +155,7 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          & cmake --build --preset collision-windows-debug --config Debug --parallel 2 2>&1 | Tee-Object -FilePath "$env:RUNNER_TEMP\occlusion-build.log"
+          & cmake --build --preset collision-debug --parallel 2 2>&1 | Tee-Object -FilePath "$env:RUNNER_TEMP\occlusion-build.log"
           $buildExit = $LASTEXITCODE
           if ($buildExit -ne 0) {
             $errors = Select-String -Path "$env:RUNNER_TEMP\occlusion-build.log" -Pattern 'error C[0-9]+|fatal error|LNK[0-9]+|FAILED:|error:'
@@ -170,7 +170,7 @@ jobs:
         run: ctest --preset collision-debug --output-on-failure
       - name: Test collision semantics and normalization fixture (Windows)
         if: runner.os == 'Windows'
-        run: ctest --preset collision-windows-debug -C Debug --output-on-failure
+        run: ctest --preset collision-debug --output-on-failure
 
   geometry:
     name: CGAL geometry / Ubuntu
