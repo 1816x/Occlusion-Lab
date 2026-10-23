@@ -7,7 +7,7 @@ Occlusion Lab pretende convertirse en una aplicación científica de escritorio 
 ## 2. Estado actual
 
 - **Fase actual:** Phase 4.14: Shared Mesh File Adapter and Optional Desktop Viewer
-- **Estado:** Phase 4.13 verificada en CI; adaptador compartido de Phase 4.14 implementado localmente, visor pendiente
+- **Estado:** Phase 4.13 verificada en CI; adaptador compartido de Phase 4.14 verificado en CI, visor pendiente
 - **Rama y commit iniciales:** `main` en `46ffc9524e781fe2e8d8c269027434f422c2abf7`
 - **Rama activa:** `work`
 - **Phase 4.3:** Completed mediante [PR #13](https://github.com/1816x/Occlusion-Lab/pull/13), merge `da055bc2067b6477eea9efe7abbad0422ed8e9f3`.
@@ -106,13 +106,13 @@ La aplicación web heredada continúa disponible y funcional como referencia. La
 - La primera ejecución del formato nativo detectó archivos sin formatear; se aplicó `clang-format` y la repetición pasó antes del commit final.
 - Riesgo: la paridad de resúmenes cubre solo la reducción de frames ya evaluados; no permite afirmar igualdad de manifolds Rapier/FCL ni paridad clínica.
 - Riesgo: la estabilidad semántica FCL se prueba localmente, pero los manifolds exactos no son portables ni se consideran contrato.
-- CI de Phase 4.13: web `40005882371` y matriz nativa `40005882067` completadas correctamente en `43c2213`, incluidos Windows collision, CGAL Ubuntu y ASan+UBSan. Los fallos anteriores de toolchain, FCL Debug y CRLF quedaron resueltos. El nuevo adaptador de Phase 4.14 aún requiere su propia ejecución remota.
+- CI de Phase 4.13: web `40005882371` y matriz nativa `40005882067` completadas correctamente en `43c2213`, incluidos Windows collision, CGAL Ubuntu y ASan+UBSan. Los fallos anteriores de toolchain, FCL Debug y CRLF quedaron resueltos. El adaptador de Phase 4.14 también pasó web `40007105819` y matriz nativa `40007106060` completos en `0fe8d4e`; el último ajuste de espera de red CGAL pasó web `40008247367` y matriz nativa `40008247380` en `18e04d0`.
 - Diferidos: implementación de UI desktop y validación clínica; no se añadieron fuerzas ni presiones. El directorio OBJ debe ser confiable frente a modificaciones concurrentes: los controles portables de filesystem no son una sandbox para procesos hostiles. La inspección CGAL en la evaluación FCL sigue siendo explícita y optativa.
 - Los PR #15, #16 y #21 fueron reconciliados y figuran como `MERGED` en GitHub. Sus contenidos funcionales ya estaban integrados en `main` mediante PR #17 y trabajo posterior; se trasladaron los ajustes de CI/Eigen aún útiles de #16 y se fusionaron las tres ramas con conservación explícita del árbol actual para evitar retirar export v1 y Phase 4.9.
 
 ## 8. Próxima tarea recomendada
 
-Phase 4.14: verificar en CI el adaptador OBJ compartido de `occlusion-mesh-io` e implementar un primer visor Qt 6/VTK opcional según [desktop-viewer-phase-4.13.md](docs/desktop-viewer-phase-4.13.md). Añadir un entorno con Qt 6 y VTK para compilar y probar el visor; no están instalados en este workspace. Conservar la referencia web hasta demostrar paridad de los flujos requeridos.
+Phase 4.14: implementar un primer visor Qt 6/VTK opcional según [desktop-viewer-phase-4.13.md](docs/desktop-viewer-phase-4.13.md). Añadir un entorno con Qt 6 y VTK para compilar y probar el visor; no están instalados en este workspace. Conservar la referencia web hasta demostrar paridad de los flujos requeridos.
 
 ## 9. Hitos completados
 
@@ -132,7 +132,7 @@ Phase 4.14: verificar en CI el adaptador OBJ compartido de `occlusion-mesh-io` e
 | Phase 4.11 | Validación topológica y orientación OBJ antes de FCL | `5c98b0c` | Publicada en `main`; 39/39 CTest core, 100/100 CTest colisión y 100/100 ASan+UBSan PASS locales; CI remota pendiente. |
 | Phase 4.12 | Inspección CGAL optativa, conversión comprobada y predicados de mallas sintéticas | `b2483d4`, ajuste CI `aec6975` | Publicada en `main`; geometry Ubuntu y los tres core PASS; Ubuntu/macOS collision y Ubuntu sanitizer PASS; Windows collision build FAIL. |
 | Phase 4.13 | CLI de inspección JSON v1 y contrato de visor Qt 6/VTK | `a7aaba4`–`43c2213` | Completada; 39/39 core, 49/49 geometry, 100/100 collision, 110/110 combinado y 100/100 sanitizer CTest locales PASS; web y matriz nativa CI remota PASS. |
-| Phase 4.14 | Adaptador OBJ compartido y primer visor opcional | En curso | Adaptador público implementado; 42/42 core, 113/113 geometría+colisión y 103/103 sanitizer CTest locales PASS. Visor Qt 6/VTK y CI de este cambio pendientes. |
+| Phase 4.14 | Adaptador OBJ compartido y primer visor opcional | `0fe8d4e` (en curso) | Adaptador público implementado; 42/42 core, 113/113 geometría+colisión y 103/103 sanitizer CTest locales PASS; web y matriz nativa CI remota PASS. Visor Qt 6/VTK pendiente. |
 
 ### Verificación local de Phase 4.13 (2026-10-23)
 
@@ -145,7 +145,7 @@ Phase 4.14: verificar en CI el adaptador OBJ compartido de `occlusion-mesh-io` e
 ### Verificación local de Phase 4.14 (2026-10-23)
 
 - `load_synthetic_obj` y su error estructurado son públicos en `occlusion-mesh-io`, sin enlazar FCL ni CGAL. Los consumidores CLI de evaluación e inspección comparten la misma política de fichero.
-- Tres pruebas directas cubren caja cerrada, nombre inválido/fichero ausente y topología abierta en un build core-only. Core Debug 42/42, Geometry+Collision Debug 113/113 y Collision ASan+UBSan 103/103 CTest PASS. La verificación remota y el visor opcional quedan pendientes.
+- Tres pruebas directas cubren caja cerrada, nombre inválido/fichero ausente y topología abierta en un build core-only. Core Debug 42/42, Geometry+Collision Debug 113/113 y Collision ASan+UBSan 103/103 CTest PASS; builds core y collision Release PASS. Web `40007105819` y los ocho jobs de la matriz nativa `40007106060` PASS en `0fe8d4e`; la ejecución final en `18e04d0` también pasó web `40008247367` y los ocho jobs nativos `40008247380`. El visor opcional queda pendiente.
 
 ### Verificación local de Phase 4.12 (2026-10-22)
 
