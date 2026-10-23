@@ -100,16 +100,32 @@ jobs:
         if: runner.os != 'Windows'
         shell: bash
         run: |
-          git clone https://github.com/microsoft/vcpkg.git "$VCPKG_ROOT"
-          git -C "$VCPKG_ROOT" checkout f3457518c19c4efdb3b9307a8bb4e27d4b989933
+          git init "$VCPKG_ROOT"
+          git -C "$VCPKG_ROOT" remote add origin https://github.com/microsoft/vcpkg.git
+          for attempt in 1 2 3; do
+            if git -c http.version=HTTP/1.1 -C "$VCPKG_ROOT" fetch --depth 1 origin f3457518c19c4efdb3b9307a8bb4e27d4b989933; then
+              break
+            fi
+            if [ "$attempt" -eq 3 ]; then exit 1; fi
+            sleep 5
+          done
+          git -C "$VCPKG_ROOT" checkout --detach FETCH_HEAD
           mkdir -p "$VCPKG_DEFAULT_BINARY_CACHE"
           "$VCPKG_ROOT/bootstrap-vcpkg.sh" -disableMetrics
       - name: Bootstrap pinned vcpkg (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          git clone https://github.com/microsoft/vcpkg.git $env:VCPKG_ROOT
-          git -C $env:VCPKG_ROOT checkout f3457518c19c4efdb3b9307a8bb4e27d4b989933
+          git init $env:VCPKG_ROOT
+          git -C $env:VCPKG_ROOT remote add origin https://github.com/microsoft/vcpkg.git
+          $fetched = $false
+          for ($attempt = 1; $attempt -le 3; $attempt++) {
+            git -c http.version=HTTP/1.1 -C $env:VCPKG_ROOT fetch --depth 1 origin f3457518c19c4efdb3b9307a8bb4e27d4b989933
+            if ($LASTEXITCODE -eq 0) { $fetched = $true; break }
+            Start-Sleep -Seconds 5
+          }
+          if (-not $fetched) { throw 'Cannot fetch pinned vcpkg commit' }
+          git -C $env:VCPKG_ROOT checkout --detach FETCH_HEAD
           New-Item -ItemType Directory -Force $env:VCPKG_DEFAULT_BINARY_CACHE | Out-Null
           & "$env:VCPKG_ROOT\bootstrap-vcpkg.bat" -disableMetrics
       - name: Configure collision Debug
@@ -169,8 +185,16 @@ jobs:
           key: vcpkg-x64-linux-gcc-f3457518-${{ hashFiles('vcpkg.json') }}
       - name: Bootstrap pinned vcpkg
         run: |
-          git clone https://github.com/microsoft/vcpkg.git "$VCPKG_ROOT"
-          git -C "$VCPKG_ROOT" checkout f3457518c19c4efdb3b9307a8bb4e27d4b989933
+          git init "$VCPKG_ROOT"
+          git -C "$VCPKG_ROOT" remote add origin https://github.com/microsoft/vcpkg.git
+          for attempt in 1 2 3; do
+            if git -c http.version=HTTP/1.1 -C "$VCPKG_ROOT" fetch --depth 1 origin f3457518c19c4efdb3b9307a8bb4e27d4b989933; then
+              break
+            fi
+            if [ "$attempt" -eq 3 ]; then exit 1; fi
+            sleep 5
+          done
+          git -C "$VCPKG_ROOT" checkout --detach FETCH_HEAD
           mkdir -p "$VCPKG_DEFAULT_BINARY_CACHE"
           "$VCPKG_ROOT/bootstrap-vcpkg.sh" -disableMetrics
       - name: Configure sanitizers
