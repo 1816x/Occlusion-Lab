@@ -133,7 +133,21 @@ jobs:
         run: cmake --preset collision-debug -DOCCLUSION_FETCH_DEPENDENCIES=OFF -DVCPKG_TARGET_TRIPLET=${{ matrix.triplet }} -DCMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake
       - name: Configure collision Debug with MSVC
         if: runner.os == 'Windows'
-        run: cmake --preset collision-windows-debug -DOCCLUSION_FETCH_DEPENDENCIES=OFF -DVCPKG_TARGET_TRIPLET=x64-windows -DCMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake
+        shell: pwsh
+        run: |
+          & cmake --preset collision-windows-debug -DOCCLUSION_FETCH_DEPENDENCIES=OFF -DVCPKG_TARGET_TRIPLET=x64-windows -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" 2>&1 | Tee-Object -FilePath "$env:RUNNER_TEMP\occlusion-configure.log"
+          $configureExit = $LASTEXITCODE
+          if ($configureExit -ne 0) {
+            $errors = Select-String -Path "$env:RUNNER_TEMP\occlusion-configure.log" -Pattern 'CMake Error|error C[0-9]+|fatal error|error:|Could not find|FAILED:'
+            $details = @($errors | Select-Object -Last 12)
+            if ($details.Count -eq 0) { $details = @(Get-Content "$env:RUNNER_TEMP\occlusion-configure.log" -Tail 12) }
+            foreach ($detail in $details) {
+              $line = if ($detail -is [string]) { $detail } else { $detail.Line }
+              $line = $line.Replace('%', '%25').Replace("`r", '%0D').Replace("`n", '%0A')
+              Write-Output "::error title=Windows native configure::$line"
+            }
+            exit $configureExit
+          }
       - name: Build collision Debug
         if: runner.os != 'Windows'
         run: cmake --build --preset collision-debug --parallel
