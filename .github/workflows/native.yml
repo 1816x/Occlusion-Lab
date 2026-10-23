@@ -170,7 +170,19 @@ jobs:
         run: ctest --preset collision-debug --output-on-failure
       - name: Test collision semantics and normalization fixture (Windows)
         if: runner.os == 'Windows'
-        run: ctest --preset collision-debug --output-on-failure
+        shell: pwsh
+        run: |
+          $dependencyBin = Join-Path $env:GITHUB_WORKSPACE 'build/native/collision-debug/vcpkg_installed/x64-mingw-dynamic-release-deps/bin'
+          $env:PATH = "$dependencyBin;$env:PATH"
+          & ctest --preset collision-debug --output-on-failure 2>&1 | Tee-Object -FilePath "$env:RUNNER_TEMP\occlusion-ctest.log"
+          $testExit = $LASTEXITCODE
+          if ($testExit -ne 0) {
+            foreach ($entry in (Get-Content "$env:RUNNER_TEMP\occlusion-ctest.log" -Tail 35)) {
+              $line = $entry.Replace('%', '%25').Replace("`r", '%0D').Replace("`n", '%0A')
+              Write-Output "::error title=Windows native test::$line"
+            }
+            exit $testExit
+          }
 
   geometry:
     name: CGAL geometry / Ubuntu
