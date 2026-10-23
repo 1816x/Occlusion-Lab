@@ -5,14 +5,8 @@
   "builtin-baseline": "f3457518c19c4efdb3b9307a8bb4e27d4b989933",
   "dependencies": [
     "eigen3",
-    {
-      "name": "gtest",
-      "host": true
-    },
-    {
-      "name": "nlohmann-json",
-      "host": true
-    }
+    "gtest",
+    "nlohmann-json"
   ],
   "features": {
     "geometry": {

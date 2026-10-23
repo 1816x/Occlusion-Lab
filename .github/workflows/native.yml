@@ -71,7 +71,7 @@ jobs:
             triplet: x64-linux
             compiler: gcc
           - os: windows-latest
-            triplet: x64-mingw-dynamic
+            triplet: x64-mingw-dynamic-release-deps
             compiler: mingw
           - os: macos-latest
             triplet: arm64-osx
@@ -95,7 +95,7 @@ jobs:
           path: |
             ${{ runner.temp }}/vcpkg/downloads
             ${{ runner.temp }}/vcpkg-binary-cache
-          key: vcpkg-${{ matrix.triplet }}-${{ matrix.compiler }}-f3457518-${{ hashFiles('vcpkg.json') }}
+          key: vcpkg-${{ matrix.triplet }}-${{ matrix.compiler }}-f3457518-${{ hashFiles('vcpkg.json', 'cmake/vcpkg-triplets/**') }}
       - name: Bootstrap pinned vcpkg (Unix)
         if: runner.os != 'Windows'
         shell: bash
@@ -135,7 +135,7 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          & cmake --preset collision-debug -DOCCLUSION_FETCH_DEPENDENCIES=OFF -DVCPKG_TARGET_TRIPLET=x64-mingw-dynamic -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" 2>&1 | Tee-Object -FilePath "$env:RUNNER_TEMP\occlusion-configure.log"
+          & cmake --preset collision-debug -DOCCLUSION_FETCH_DEPENDENCIES=OFF -DVCPKG_TARGET_TRIPLET=x64-mingw-dynamic-release-deps -DVCPKG_OVERLAY_TRIPLETS="$env:GITHUB_WORKSPACE/cmake/vcpkg-triplets" -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" 2>&1 | Tee-Object -FilePath "$env:RUNNER_TEMP\occlusion-configure.log"
           $configureExit = $LASTEXITCODE
           if ($configureExit -ne 0) {
             $errors = Select-String -Path "$env:RUNNER_TEMP\occlusion-configure.log" -Pattern 'CMake Error|error C[0-9]+|fatal error|error:|Could not find|FAILED:'
