@@ -7,7 +7,7 @@ Occlusion Lab pretende convertirse en una aplicación científica de escritorio 
 ## 2. Estado actual
 
 - **Fase actual:** Phase 4.13: Explicit Mesh Inspection and Desktop Viewer Contract
-- **Estado:** Implementada localmente; publicación y CI remota pendientes
+- **Estado:** Publicada en `main`; CI remota de Phase 4.13 en ejecución
 - **Rama y commit iniciales:** `main` en `46ffc9524e781fe2e8d8c269027434f422c2abf7`
 - **Rama activa:** `work`
 - **Phase 4.3:** Completed mediante [PR #13](https://github.com/1816x/Occlusion-Lab/pull/13), merge `da055bc2067b6477eea9efe7abbad0422ed8e9f3`.
@@ -131,14 +131,14 @@ Phase 4.14: extraer la política de lectura OBJ acotada del árbol de la CLI a u
 | Phase 4.10 | Adaptador CLI para dos ficheros OBJ sintéticos y evaluación existente | `7e22412` | Implementada y publicada en `main`; CI web remota PASS. CI nativa parcialmente completada; tres jobs sin runner. |
 | Phase 4.11 | Validación topológica y orientación OBJ antes de FCL | `5c98b0c` | Publicada en `main`; 39/39 CTest core, 100/100 CTest colisión y 100/100 ASan+UBSan PASS locales; CI remota pendiente. |
 | Phase 4.12 | Inspección CGAL optativa, conversión comprobada y predicados de mallas sintéticas | `b2483d4`, ajuste CI `aec6975` | Publicada en `main`; geometry Ubuntu y los tres core PASS; Ubuntu/macOS collision y Ubuntu sanitizer PASS; Windows collision build FAIL. |
-| Phase 4.13 | CLI de inspección JSON v1 y contrato de visor Qt 6/VTK | Pendiente de publicar | 39/39 core, 50/50 geometry, 100/100 collision y 111/111 combinado CTest locales PASS; CI remota pendiente. |
+| Phase 4.13 | CLI de inspección JSON v1 y contrato de visor Qt 6/VTK | `a7aaba4` | Publicada en `main`; 39/39 core, 50/50 geometry, 100/100 collision, 111/111 combinado y 100/100 sanitizer CTest locales PASS; CI remota en ejecución. |
 
 ### Verificación local de Phase 4.13 (2026-10-23)
 
 - `--inspect-mesh <directory> <mesh.obj>` está disponible en builds con geometría sin requerir FCL. Devuelve JSON v1 de éxito o error estructurado con código, campo, línea y mensaje; usa los mismos límites, rechazo de symlink/traversal, parser y validación topológica que la evaluación existente. Su contrato está en [native-mesh-inspection-v1.md](docs/native-mesh-inspection-v1.md).
 - Fixture nueva de dos cajas cerradas que se intersecan; pruebas del comando y su adaptador cubren caja válida, autointersección, OBJ malformado, malla abierta, traversal y fichero ausente. El adaptador no modifica el OBJ ni conecta CGAL implícitamente a `--evaluate-meshes`.
 - El visor Qt 6/VTK todavía no se compila; su frontera de datos, errores, threading, pose, barrido, export y criterios de paridad se especifican en [desktop-viewer-phase-4.13.md](docs/desktop-viewer-phase-4.13.md).
-- Core Debug 39/39, Geometry Debug 50/50, Collision Debug 100/100 y Geometry+Collision Debug 111/111 CTest PASS locales. El fallo remoto Windows collision de Phase 4.12 se confirmó; los demás jobs nativos y web de ese head pasaron.
+- Core Debug 39/39, Geometry Debug 50/50, Collision Debug 100/100, Geometry+Collision Debug 111/111 y Collision ASan+UBSan 100/100 CTest PASS locales. El fallo remoto Windows collision de Phase 4.12 se confirmó; los demás jobs nativos y web de ese head pasaron.
 
 ### Verificación local de Phase 4.12 (2026-10-22)
 
