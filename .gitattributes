@@ -1,0 +1,2 @@
+# Versioned export fixtures are compared byte-for-byte with serializer output.
+fixtures/export/*.json text eol=lf
