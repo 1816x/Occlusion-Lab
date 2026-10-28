@@ -17,6 +17,7 @@ on:
       - 'schemas/native-mesh-inspection-v1.schema.json'
       - 'scripts/parity/evaluated-sweep-summary-fixture.ts'
       - 'scripts/parity/cli.mjs'
+      - 'scripts/package-macos-desktop.sh'
       - 'package.json'
       - 'vcpkg.json'
       - '.gitattributes'
@@ -39,6 +40,7 @@ on:
       - 'schemas/native-mesh-inspection-v1.schema.json'
       - 'scripts/parity/evaluated-sweep-summary-fixture.ts'
       - 'scripts/parity/cli.mjs'
+      - 'scripts/package-macos-desktop.sh'
       - 'package.json'
       - 'vcpkg.json'
       - '.gitattributes'
@@ -221,6 +223,21 @@ jobs:
         env:
           QT_QPA_PLATFORM: offscreen
         run: build/native/desktop-debug/native/apps/occlusion-desktop/occlusion-desktop.app/Contents/MacOS/occlusion-desktop --smoke fixtures/mesh-io
+      - name: Package app and audit bundled libraries
+        run: |
+          brew install dylibbundler
+          bash scripts/package-macos-desktop.sh \
+            build/native/desktop-debug/native/apps/occlusion-desktop/occlusion-desktop.app \
+            "$RUNNER_TEMP/occlusion-desktop-package"
+          env -i PATH="/usr/bin:/bin:/usr/sbin:/sbin" HOME="$HOME" QT_QPA_PLATFORM=offscreen \
+            "$RUNNER_TEMP/occlusion-desktop-package/Occlusion Lab.app/Contents/MacOS/occlusion-desktop" \
+            --smoke fixtures/mesh-io
+      - name: Upload macOS development preview
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: occlusion-lab-macos-preview
+          path: ${{ runner.temp }}/occlusion-desktop-package/occlusion-lab-macos.zip
+          if-no-files-found: error
 
   sanitizers:
     name: Collision + evaluation / Ubuntu / ASan+UBSan
