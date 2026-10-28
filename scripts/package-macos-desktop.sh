@@ -18,6 +18,7 @@ fi
 mkdir -p "$output_directory"
 ditto "$source_app" "$app"
 "$(brew --prefix qtbase)/bin/macdeployqt" "$app" -verbose=1
+python3 "$(dirname "$0")/relocate-macos-libraries.py" "$app"
 
 # macdeployqt copies native libraries but can retain build-machine search paths.
 # Remove those paths before signing and checking the relocated bundle.
