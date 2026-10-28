@@ -19,7 +19,8 @@ mkdir -p "$output_directory"
 ditto "$source_app" "$app"
 "$(brew --prefix qtbase)/bin/macdeployqt" "$app" -verbose=1
 
-# Check every bundled Mach-O object, including Qt plugins and copied libraries.
+# macdeployqt copies native libraries but can retain build-machine search paths.
+# Remove those paths before signing and checking the relocated bundle.
 while IFS= read -r -d '' item; do
   if ! file -b "$item" | grep -q 'Mach-O'; then
     continue
@@ -35,8 +36,7 @@ while IFS= read -r -d '' item; do
   while IFS= read -r search_path; do
     case "$search_path" in
       /opt/homebrew/*|/usr/local/*)
-        echo "Homebrew runtime search path in $item: $search_path" >&2
-        exit 1
+        install_name_tool -delete_rpath "$search_path" "$item"
         ;;
     esac
   done < <(otool -l "$item" | awk '
@@ -45,6 +45,12 @@ while IFS= read -r -d '' item; do
   ')
 done < <(find "$app" -type f -print0)
 
+while IFS= read -r -d '' item; do
+  if file -b "$item" | grep -q 'Mach-O'; then
+    codesign --force --sign - "$item"
+  fi
+done < <(find "$app" -type f -print0)
 codesign --force --deep --sign - "$app"
+codesign --verify --deep --strict --verbose=2 "$app"
 ditto -c -k --keepParent "$app" "$output_directory/occlusion-lab-macos.zip"
 echo "Packaged $output_directory/occlusion-lab-macos.zip"
