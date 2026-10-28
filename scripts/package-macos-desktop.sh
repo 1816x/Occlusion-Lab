@@ -18,6 +18,13 @@ fi
 mkdir -p "$output_directory"
 ditto "$source_app" "$app"
 "$(brew --prefix qtbase)/bin/macdeployqt" "$app" -verbose=1
+offscreen_plugin="$(find "$(realpath "$(brew --prefix qtbase)")" -name libqoffscreen.dylib -print -quit)"
+if [[ -z "$offscreen_plugin" ]]; then
+  echo "Qt offscreen platform plugin was not found" >&2
+  exit 1
+fi
+mkdir -p "$app/Contents/PlugIns/platforms"
+ditto "$offscreen_plugin" "$app/Contents/PlugIns/platforms/libqoffscreen.dylib"
 python3 "$(dirname "$0")/relocate-macos-libraries.py" "$app"
 
 # macdeployqt copies native libraries but can retain build-machine search paths.
