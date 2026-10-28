@@ -7,7 +7,7 @@ Occlusion Lab pretende convertirse en una aplicación científica de escritorio 
 ## 2. Estado actual
 
 - **Fase actual:** Phase 4.14: Shared Mesh File Adapter and Optional Desktop Viewer
-- **Estado:** Phase 4.13 verificada en CI; Phase 4.14 tiene un primer visor Qt 6/VTK funcional en Linux, con CI y paquete macOS pendientes
+- **Estado:** Phase 4.13 verificada en CI; Phase 4.14 tiene un visor Qt 6/VTK funcional en Linux y macOS CI, con paquete autocontenido pendiente
 - **Rama y commit iniciales:** `main` en `46ffc9524e781fe2e8d8c269027434f422c2abf7`
 - **Rama activa:** `work`
 - **Phase 4.3:** Completed mediante [PR #13](https://github.com/1816x/Occlusion-Lab/pull/13), merge `da055bc2067b6477eea9efe7abbad0422ed8e9f3`.
@@ -26,7 +26,7 @@ La aplicación web heredada continúa disponible y funcional como referencia. La
 | Detección de colisiones | Worker web/Rapier y biblioteca FCL opcional | FCL | Fundación implementada | Sin afirmar igualdad de manifolds entre motores. |
 | Análisis de barrido de movimiento | Web existente y evaluación C++ | Motor C++ | Barrido y resumen implementados | Paridad semántica del resumen cubierta por fixture versionada. |
 | Renderer | Three.js y primer visor VTK | VTK | Visor sintético implementado localmente | Renderiza mallas, ejes y contactos normalizados; no forma parte del core. |
-| UI de escritorio | Primer visor Qt 6 | Qt 6 | Implementada localmente; CI macOS pendiente | Importación sintética, errores, pose y barrido asíncronos, selección de frame y export JSON v1. |
+| UI de escritorio | Primer visor Qt 6 | Qt 6 | Build, CTest y smoke macOS PASS; paquete pendiente | Importación sintética, errores, pose y barrido asíncronos, selección de frame y export JSON v1. |
 | CLI | `occlusion-cli` | `occlusion-cli` extensible | Evaluación OBJ e inspección optativa implementadas | Evaluación requiere FCL; inspección CGAL puede compilarse sin FCL. |
 | Pruebas | Vitest/web y GoogleTest nativo | GoogleTest + pruebas web | Fundación implementada | Se mantiene la suite heredada. |
 | CI | Web y workflow nativo | CI web y nativa multiplataforma | Implementado y verificado | Web `40009148955` y matriz nativa `40008247380` pasaron; los cambios posteriores requieren su propia CI. |
@@ -153,6 +153,7 @@ Para la beta macOS sintética, los gates pendientes son: (1) audit de dependenci
 - Web `40711050926` y matriz nativa `40711050847` PASS en `df87f18`. Un primer visor opcional Qt 6/VTK compila en Linux con dependencias locales extraídas a `/workspace/occlusion-tools/sysroot`: importación de dos OBJ, escena VTK, pose/barrido asíncronos, selección de frame, cámara y export con el serializador existente. Smoke de render y rechazo de directorio ausente PASS; preset `desktop-debug` 107/107 CTest PASS bajo Xvfb. Se inspeccionó la captura local: las dos mallas y ejes son visibles. El job macOS todavía no se ha verificado.
 - El visor se amplió con importación asíncrona, resumen de barrido, navegación de cámara, export probado byte a byte y flujo de error/recuperación. La captura de ventana detectó una composición alfa que oscurecía las mallas; la captura VTK ahora usa RGB opaco. Preset `desktop-debug` 107/107 CTest PASS bajo Xvfb después de estos cambios. La prueba macOS sigue en curso.
 - Los jobs `Desktop viewer / macOS` de `a049c90` y `9bc544d` pasaron instalación, compilación del `.app`, CTest y smoke de render/evaluación. Un nuevo smoke local simula una importación más reciente mientras queda un resultado de pose pendiente y confirma que se descarta; también compara la transformación VTK del frame seleccionado con el resultado del motor. 107/107 CTest y 25/25 repeticiones del smoke PASS bajo Xvfb. El primer empaquetado autocontenido de `8f61c96` falló en el paso de bundling, tras pasar build y smoke; la CI ahora publica el error específico para corregirlo.
+- La ejecución `b72a522` confirmó que `macdeployqt` ya había reescrito las dependencias VTK a rutas empaquetadas `@executable_path`; el segundo bundler no podía resolverlas y hacía fallar el paso. Se retiró ese bundler redundante. Se mantiene el audit de todas las librerías Mach-O y sus RPATH, más el smoke de la copia empaquetada con entorno mínimo. La captura local redimensionada confirma que la escena ocupa el espacio disponible.
 
 ### Verificación local de Phase 4.12 (2026-10-22)
 

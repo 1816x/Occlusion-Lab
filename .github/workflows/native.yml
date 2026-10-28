@@ -226,7 +226,6 @@ jobs:
       - name: Package app and audit bundled libraries
         run: |
           if ! {
-            brew install dylibbundler &&
             bash scripts/package-macos-desktop.sh \
               build/native/desktop-debug/native/apps/occlusion-desktop/occlusion-desktop.app \
               "$RUNNER_TEMP/occlusion-desktop-package" &&
@@ -234,9 +233,13 @@ jobs:
               "$RUNNER_TEMP/occlusion-desktop-package/Occlusion Lab.app/Contents/MacOS/occlusion-desktop" \
               --smoke fixtures/mesh-io
           } > "$RUNNER_TEMP/occlusion-package.log" 2>&1; then
-            tail -n 30 "$RUNNER_TEMP/occlusion-package.log" | while IFS= read -r line; do
-              echo "::error::$line"
-            done
+            echo "::error title=macOS bundle failed::$(tail -n 12 "$RUNNER_TEMP/occlusion-package.log" | tr '\n' ' ' | cut -c 1-3000)"
+            {
+              echo '### macOS packaging failure'
+              echo '```'
+              tail -n 30 "$RUNNER_TEMP/occlusion-package.log"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
             exit 1
           fi
       - name: Upload macOS development preview

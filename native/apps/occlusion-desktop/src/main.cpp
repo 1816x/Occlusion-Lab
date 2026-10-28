@@ -18,6 +18,7 @@
 #include <QMessageBox>
 #include <QPixmap>
 #include <QPushButton>
+#include <QResizeEvent>
 #include <QSaveFile>
 #include <QSlider>
 #include <QSpinBox>
@@ -53,6 +54,7 @@
 #include <optional>
 #include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace {
@@ -106,6 +108,29 @@ struct LoadedPair final {
   mesh_io::ObjFileError error;
 };
 
+class SceneLabel final : public QLabel {
+public:
+  void set_image(QImage image) {
+    image_ = std::move(image);
+    update_pixmap();
+  }
+
+protected:
+  void resizeEvent(QResizeEvent* event) override {
+    QLabel::resizeEvent(event);
+    update_pixmap();
+  }
+
+private:
+  void update_pixmap() {
+    if (!image_.isNull())
+      setPixmap(
+          QPixmap::fromImage(image_).scaled(size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
+  }
+
+  QImage image_;
+};
+
 class MainWindow final : public QWidget {
 public:
   explicit MainWindow(QString initial_directory = {}) {
@@ -139,7 +164,7 @@ public:
     export_->setEnabled(false);
     status_ = new QLabel("Import two synthetic, closed OBJ meshes to begin.");
     status_->setWordWrap(true);
-    scene_ = new QLabel;
+    scene_ = new SceneLabel;
     scene_->setMinimumSize(640, 480);
     scene_->setAlignment(Qt::AlignCenter);
     scene_->setStyleSheet("background: #101820; color: white;");
@@ -281,6 +306,7 @@ public:
     const auto window_screenshot = qEnvironmentVariable("OCCLUSION_DESKTOP_SMOKE_WINDOW");
     if (!window_screenshot.isEmpty()) {
       show();
+      resize(1360, 840);
       QCoreApplication::processEvents();
       if (!grab().save(window_screenshot))
         return false;
@@ -511,8 +537,7 @@ private:
                           QImage::Format_RGB888)
                        .copy()
                        .mirrored();
-    scene_->setPixmap(QPixmap::fromImage(scene_image_)
-                          .scaled(scene_->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    scene_->set_image(scene_image_);
   }
 
   void rotate_camera(double degrees) {
@@ -576,7 +601,7 @@ private:
   QLabel* status_ = nullptr;
   QLabel* frame_label_ = nullptr;
   QLabel* summary_ = nullptr;
-  QLabel* scene_ = nullptr;
+  SceneLabel* scene_ = nullptr;
   QImage scene_image_;
   std::uint64_t generation_ = 0;
   std::optional<evaluation::MeshEvaluationSession> session_;

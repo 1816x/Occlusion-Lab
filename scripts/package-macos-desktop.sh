@@ -9,7 +9,6 @@ fi
 source_app="$1"
 output_directory="$2"
 app="$output_directory/Occlusion Lab.app"
-executable="$app/Contents/MacOS/occlusion-desktop"
 
 if [[ ! -x "$source_app/Contents/MacOS/occlusion-desktop" ]]; then
   echo "Built desktop executable is missing: $source_app" >&2
@@ -19,8 +18,6 @@ fi
 mkdir -p "$output_directory"
 ditto "$source_app" "$app"
 "$(brew --prefix qtbase)/bin/macdeployqt" "$app" -verbose=1
-dylibbundler -cd -b -ns -x "$executable" \
-  -d "$app/Contents/Frameworks" -p '@executable_path/../Frameworks/'
 
 # Check every bundled Mach-O object, including Qt plugins and copied libraries.
 while IFS= read -r -d '' item; do
