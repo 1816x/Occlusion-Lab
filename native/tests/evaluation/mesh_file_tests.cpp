@@ -1,4 +1,5 @@
 #include "mesh_files.hpp"
+#include "occlusion/evaluation/mesh_session.hpp"
 #include "occlusion/mesh_io/mesh_io.hpp"
 
 #include <chrono>
@@ -43,6 +44,34 @@ TEST_F(MeshFileTest, LoadsTwoClosedMeshesAndEvaluatesPoseAndSweep) {
   EXPECT_EQ(sweep.value().frames.size(), 11);
   EXPECT_EQ(evaluator->compilation_count(), 2);
   EXPECT_EQ(evaluator->query_count(), 12);
+}
+
+TEST_F(MeshFileTest, SharedSessionOwnsExactMeshesAfterSourceFilesDisappear) {
+  copy_boxes();
+  occlusion::mesh_io::ObjFileError error;
+  auto session = occlusion::evaluation::load_mesh_evaluation_session(directory, "fixed-box.obj",
+                                                                     "moving-box.obj", error);
+  ASSERT_TRUE(session) << error.message;
+  EXPECT_EQ(session->fixed_mesh.vertices_meters.size(), 8);
+  EXPECT_EQ(session->fixed_mesh.triangles.size(), 12);
+  EXPECT_EQ(session->moving_mesh.vertices_meters.size(), 8);
+  fs::remove_all(directory);
+  const auto pose = session->evaluator.evaluate(
+      {occlusion::core::Meters{0}, occlusion::core::Meters{0}, occlusion::core::Meters{0}});
+  ASSERT_TRUE(pose);
+  EXPECT_EQ(pose.value().classification, occlusion::core::ContactClassification::separated);
+  const auto sweep = session->evaluator.evaluate_sweep(occlusion::core::SweepPreset::closing, 11);
+  ASSERT_TRUE(sweep);
+  EXPECT_EQ(sweep.value().frames.size(), 11);
+  EXPECT_EQ(session->evaluator.compilation_count(), 2);
+}
+
+TEST_F(MeshFileTest, SharedSessionReportsStructuredLoadError) {
+  occlusion::mesh_io::ObjFileError error;
+  EXPECT_FALSE(occlusion::evaluation::load_mesh_evaluation_session(directory, "../fixed-box.obj",
+                                                                   "moving-box.obj", error));
+  EXPECT_EQ(error.code, "invalid_name");
+  EXPECT_EQ(error.field, "filename");
 }
 
 TEST_F(MeshFileTest, RejectsMissingDirectoryAndFiles) {

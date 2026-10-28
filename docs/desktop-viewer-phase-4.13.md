@@ -12,7 +12,7 @@ remains the behavior reference until its required workflows have desktop parity.
 |---|---|---|
 | `occlusion-mesh-io` | Meter-valued OBJ text | Project `TriangleMesh` or structured parse/topology error. |
 | `occlusion-geometry` (optional) | Project `TriangleMesh` | Read-only defect report. No repair or VTK types. |
-| `occlusion-evaluation` | Two validated project meshes and a pose or sweep request | `PoseEvaluationResult` or `EvaluatedSweepResult`; unchanged v1 JSON export. |
+| `occlusion-evaluation` | Two validated project meshes and a pose or sweep request | `MeshEvaluationSession` owns the imported mesh pair and compiled evaluator; queries return `PoseEvaluationResult` or `EvaluatedSweepResult` with unchanged v1 JSON export. |
 | Shared mesh file adapter | Two direct `.obj` names in an operator-selected directory | Bounded read and structured file error, using the same rules as the CLI. Exported by `occlusion-mesh-io` for desktop clients. |
 | Future VTK adapter | Copies of project meshes plus a published evaluation result | Fixed/moving actors and contact markers. It performs no collision or classification. |
 | Future Qt application | File selection, pose and sweep requests, and engine results | Controls, error display, frame selection, and export action. |
