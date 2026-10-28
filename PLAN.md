@@ -7,7 +7,7 @@ Occlusion Lab pretende convertirse en una aplicación científica de escritorio 
 ## 2. Estado actual
 
 - **Fase actual:** Phase 4.14: Shared Mesh File Adapter and Optional Desktop Viewer
-- **Estado:** Phase 4.13 verificada en CI; Phase 4.14 tiene un visor Qt 6/VTK funcional en Linux y macOS CI, con paquete autocontenido pendiente
+- **Estado:** Phase 4.13 verificada en CI; Phase 4.14 tiene un visor Qt 6/VTK funcional y un preview macOS Apple Silicon empaquetado en CI; prueba visual en otro Mac pendiente
 - **Rama y commit iniciales:** `main` en `46ffc9524e781fe2e8d8c269027434f422c2abf7`
 - **Rama activa:** `work`
 - **Phase 4.3:** Completed mediante [PR #13](https://github.com/1816x/Occlusion-Lab/pull/13), merge `da055bc2067b6477eea9efe7abbad0422ed8e9f3`.
@@ -25,11 +25,11 @@ La aplicación web heredada continúa disponible y funcional como referencia. La
 | Procesamiento geométrico | Inspección sintética CGAL opcional | CGAL | Primera frontera y CLI implementadas | `--inspect-mesh` detecta autointersecciones y caras degeneradas; no repara. |
 | Detección de colisiones | Worker web/Rapier y biblioteca FCL opcional | FCL | Fundación implementada | Sin afirmar igualdad de manifolds entre motores. |
 | Análisis de barrido de movimiento | Web existente y evaluación C++ | Motor C++ | Barrido y resumen implementados | Paridad semántica del resumen cubierta por fixture versionada. |
-| Renderer | Three.js y primer visor VTK | VTK | Visor sintético implementado localmente | Renderiza mallas, ejes y contactos normalizados; no forma parte del core. |
-| UI de escritorio | Primer visor Qt 6 | Qt 6 | Build, CTest y smoke macOS PASS; paquete pendiente | Importación sintética, errores, pose y barrido asíncronos, selección de frame y export JSON v1. |
+| Renderer | Three.js y primer visor VTK | VTK | Visor sintético verificado en Linux y CI macOS | Renderiza mallas, ejes y contactos normalizados; no forma parte del core. |
+| UI de escritorio | Primer visor Qt 6 | Qt 6 | Build, CTest, smoke y paquete Apple Silicon macOS PASS en CI; prueba visual pendiente | Importación sintética, errores, pose y barrido asíncronos, selección de frame y export JSON v1. |
 | CLI | `occlusion-cli` | `occlusion-cli` extensible | Evaluación OBJ e inspección optativa implementadas | Evaluación requiere FCL; inspección CGAL puede compilarse sin FCL. |
 | Pruebas | Vitest/web y GoogleTest nativo | GoogleTest + pruebas web | Fundación implementada | Se mantiene la suite heredada. |
-| CI | Web y workflow nativo | CI web y nativa multiplataforma | Implementado y verificado | Web `40009148955` y matriz nativa `40008247380` pasaron; los cambios posteriores requieren su propia CI. |
+| CI | Web y workflow nativo | CI web y nativa multiplataforma | Implementado y verificado | Web `40713815428` y matriz nativa con paquete macOS `40749999630` pasaron en los cambios del visor. |
 | Aplicación web heredada | Next.js/React/Three.js | Referencia temporal | Conservada | No eliminar antes de paridad y UI sustituta. |
 
 ## 4. Lista de comprobación de Phase 4
@@ -107,14 +107,14 @@ La aplicación web heredada continúa disponible y funcional como referencia. La
 - Riesgo: la paridad de resúmenes cubre solo la reducción de frames ya evaluados; no permite afirmar igualdad de manifolds Rapier/FCL ni paridad clínica.
 - Riesgo: la estabilidad semántica FCL se prueba localmente, pero los manifolds exactos no son portables ni se consideran contrato.
 - CI de Phase 4.13: web `40005882371` y matriz nativa `40005882067` completadas correctamente en `43c2213`, incluidos Windows collision, CGAL Ubuntu y ASan+UBSan. Los fallos anteriores de toolchain, FCL Debug y CRLF quedaron resueltos. El adaptador de Phase 4.14 también pasó web `40007105819` y matriz nativa `40007106060` completos en `0fe8d4e`; el último ajuste de espera de red CGAL pasó web `40008247367` y matriz nativa `40008247380` en `18e04d0`.
-- Diferidos: implementación de UI desktop y validación clínica; no se añadieron fuerzas ni presiones. El directorio OBJ debe ser confiable frente a modificaciones concurrentes: los controles portables de filesystem no son una sandbox para procesos hostiles. La inspección CGAL en la evaluación FCL sigue siendo explícita y optativa.
+- Diferidos: prueba visual del paquete en otro Mac y validación clínica; no se añadieron fuerzas ni presiones. El directorio OBJ debe ser confiable frente a modificaciones concurrentes: los controles portables de filesystem no son una sandbox para procesos hostiles. La inspección CGAL en la evaluación FCL sigue siendo explícita y optativa.
 - Los PR #15, #16 y #21 fueron reconciliados y figuran como `MERGED` en GitHub. Sus contenidos funcionales ya estaban integrados en `main` mediante PR #17 y trabajo posterior; se trasladaron los ajustes de CI/Eigen aún útiles de #16 y se fusionaron las tres ramas con conservación explícita del árbol actual para evitar retirar export v1 y Phase 4.9.
 
 ## 8. Próxima tarea recomendada
 
-Phase 4.14: empaquetar el nuevo visor Qt 6/VTK como `.app` autocontenido y probarlo como usuario final. El visor local ya importa OBJ, renderiza mallas y contactos, evalúa pose y barrido sin bloquear la UI y exporta JSON v1. El smoke local cubre importación fallida y recuperación, descarte de resultados asíncronos obsoletos, controles de pose/barrido, frame seleccionado, render y bytes de export. El build, CTest y smoke macOS iniciales pasaron; faltan el audit del paquete y una comprobación visual en macOS antes de distribuir la beta. Conservar la referencia web hasta demostrar paridad de los flujos requeridos.
+Phase 4.14: probar el `.app` autocontenido como usuario final en otro Mac y resolver los hallazgos de esa prueba. El visor importa OBJ, renderiza mallas y contactos, evalúa pose y barrido sin bloquear la UI y exporta JSON v1. El smoke local cubre importación fallida y recuperación, descarte de resultados asíncronos obsoletos, controles de pose/barrido, frame seleccionado, render y bytes de export. El build, CTest, smoke, audit y paquete Apple Silicon macOS pasaron en CI. Conservar la referencia web hasta demostrar paridad de los flujos requeridos.
 
-Para la beta macOS sintética, los gates pendientes son: (1) audit de dependencias y smoke del paquete `.app` en CI; (2) comprobación visual y arranque del `.app` en otro Mac; (3) distribución firmada/notarizada o instrucciones explícitas de preview para macOS. Objetivo provisional: 20 de noviembre de 2026, sujeto al resultado del empaquetado. No se considera una beta distribuible hasta pasar estos gates.
+Para la beta macOS sintética, el gate pendiente es una comprobación visual y arranque del `.app` en otro Mac, seguida de correcciones si aparecen. El preview Apple Silicon no está notarizado; las instrucciones para abrirlo están en README. No existe todavía paquete Intel. Objetivo provisional para cerrar la beta: 20 de noviembre de 2026, sujeto a esa prueba. El preview para pruebas tempranas ya está disponible en la CI.
 
 ## 9. Hitos completados
 
@@ -134,7 +134,7 @@ Para la beta macOS sintética, los gates pendientes son: (1) audit de dependenci
 | Phase 4.11 | Validación topológica y orientación OBJ antes de FCL | `5c98b0c` | Publicada en `main`; 39/39 CTest core, 100/100 CTest colisión y 100/100 ASan+UBSan PASS locales; CI remota pendiente. |
 | Phase 4.12 | Inspección CGAL optativa, conversión comprobada y predicados de mallas sintéticas | `b2483d4`, ajuste CI `aec6975` | Publicada en `main`; geometry Ubuntu y los tres core PASS; Ubuntu/macOS collision y Ubuntu sanitizer PASS; Windows collision build FAIL. |
 | Phase 4.13 | CLI de inspección JSON v1 y contrato de visor Qt 6/VTK | `a7aaba4`–`43c2213` | Completada; 39/39 core, 49/49 geometry, 100/100 collision, 110/110 combinado y 100/100 sanitizer CTest locales PASS; web y matriz nativa CI remota PASS. |
-| Phase 4.14 | Adaptador OBJ compartido y primer visor opcional | `0fe8d4e`, `df87f18`, `a049c90` (en curso) | Adaptador y sesión verificados en CI multiplataforma. Primer visor Qt 6/VTK: 107/107 CTest locales PASS con render bajo Xvfb; CI macOS y paquete pendientes. |
+| Phase 4.14 | Adaptador OBJ compartido y primer visor opcional | `0fe8d4e`–`384d729` (en curso) | Adaptador y sesión verificados en CI multiplataforma. Primer visor Qt 6/VTK: 107/107 CTest locales PASS con render bajo Xvfb; CI macOS y paquete Apple Silicon PASS. Prueba visual en otro Mac pendiente. |
 
 ### Verificación local de Phase 4.13 (2026-10-23)
 
@@ -157,6 +157,7 @@ Para la beta macOS sintética, los gates pendientes son: (1) audit de dependenci
 - La ejecución `d3d1a49` pasó build, CTest y smoke macOS, pero el paquete retuvo un RPATH de Homebrew FCL y `macdeployqt` notificó una firma inválida de una biblioteca VTK relocalizada. El script elimina RPATH externos, vuelve a firmar los binarios y verifica la firma del `.app` antes de crear el ZIP. Queda pendiente la CI de esta corrección.
 - La ejecución `5453fac` detectó otra referencia absoluta de Homebrew en una biblioteca VTK copiada. El empaquetador ahora reescribe recursivamente los identificadores y dependencias nativas que `macdeployqt` deja fuera, antes de quitar los RPATH externos y volver a firmar el paquete. La CI y el smoke con entorno mínimo decidirán si el ZIP es autocontenido.
 - La ejecución `a42245e` ya pasó relocación, auditoría de enlaces, firma y creación del ZIP. El smoke de la copia falló porque `macdeployqt` distribuyó solo el plugin Qt Cocoa, mientras la CI usa el plugin offscreen. El empaquetador ahora añade este plugin explícitamente y repetirá el smoke con el entorno mínimo.
+- La ejecución `40749999630` de `384d729` pasó build, CTest, smoke, relocación, audit, firma, smoke del `.app` empaquetado con entorno mínimo y upload del artifact `occlusion-lab-macos-preview` (38.8 MB; SHA-256 del artifact `a92771ed6c177798a19d344d05e2f452dfe62662f3e70897a7be44ad6ddf4a1f`). El preview Apple Silicon está listo para pruebas manuales, con alcance sintético y sin notarización.
 
 ### Verificación local de Phase 4.12 (2026-10-22)
 

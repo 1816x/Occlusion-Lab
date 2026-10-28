@@ -232,9 +232,17 @@ application consumes these public results while keeping the web reference.
 ## Phase 4.14: desktop development preview
 
 The optional viewer imports two direct synthetic OBJ names from a selected directory on a worker
-thread, renders them with VTK, evaluates poses and sweeps on worker threads, selects stored frames, and exports
-the native JSON v1 result. The current target is a macOS beta; this source build is for developers
-until the app bundle has been tested and packaged with its dependencies.
+thread, renders them with VTK, evaluates poses and sweeps on worker threads, selects stored frames,
+and exports the native JSON v1 result. The Apple Silicon macOS development preview passed its
+bundle dependency audit, signature verification, and a clean-environment launch in CI. Its
+first visual check on another Mac remains the beta gate.
+
+To try that preview, download the `occlusion-lab-macos-preview` artifact from
+[the passing macOS workflow run](https://github.com/1816x/Occlusion-Lab/actions/runs/40749999630).
+Unzip the downloaded artifact, then unzip `occlusion-lab-macos.zip` to get `Occlusion Lab.app`.
+The bundle is signed locally by CI but is not notarized; if macOS blocks it, use Finder's **Open**
+context menu or **Open Anyway** in Privacy & Security. It runs on Apple Silicon and accepts only
+the bounded synthetic OBJ format described above. An Intel package has not been built.
 
 On a macOS development machine with Homebrew:
 
@@ -247,8 +255,7 @@ open build/native/desktop-debug/native/apps/occlusion-desktop/occlusion-desktop.
   --args --open "$(pwd)/fixtures/mesh-io"
 ```
 
-This preview uses synthetic meshes only. Follow [PLAN.md](PLAN.md) for the macOS CI and packaged
-beta gates.
+This preview uses synthetic meshes only. Follow [PLAN.md](PLAN.md) for the remaining beta gate.
 
 ## Phase 4.9: bounded synthetic mesh ingestion
 
