@@ -112,9 +112,9 @@ La aplicación web heredada continúa disponible y funcional como referencia. La
 
 ## 8. Próxima tarea recomendada
 
-Phase 4.14: verificar el nuevo visor Qt 6/VTK en CI macOS, empaquetar un `.app` autocontenido y probarlo como usuario final. El visor local ya importa OBJ, renderiza mallas y contactos, evalúa pose y barrido sin bloquear la UI y exporta JSON v1. El smoke local cubre importación fallida y recuperación, controles de pose/barrido, frame seleccionado, render y bytes de export; faltan pruebas de resultados asíncronos obsoletos y una comprobación visual en macOS antes de distribuir la beta. Conservar la referencia web hasta demostrar paridad de los flujos requeridos.
+Phase 4.14: empaquetar el nuevo visor Qt 6/VTK como `.app` autocontenido y probarlo como usuario final. El visor local ya importa OBJ, renderiza mallas y contactos, evalúa pose y barrido sin bloquear la UI y exporta JSON v1. El smoke local cubre importación fallida y recuperación, descarte de resultados asíncronos obsoletos, controles de pose/barrido, frame seleccionado, render y bytes de export. El build, CTest y smoke macOS iniciales pasaron; faltan el audit del paquete y una comprobación visual en macOS antes de distribuir la beta. Conservar la referencia web hasta demostrar paridad de los flujos requeridos.
 
-Para la beta macOS sintética, los gates pendientes son: (1) compilación y smoke de render en CI macOS; (2) pruebas de interacción, errores, resultados asíncronos obsoletos y paridad de export; (3) `.app` autocontenido probado en otro Mac. Objetivo provisional: 20 de noviembre de 2026, sujeto al resultado del primer build macOS y del empaquetado. No se considera una beta distribuible hasta pasar estos gates.
+Para la beta macOS sintética, los gates pendientes son: (1) audit de dependencias y smoke del paquete `.app` en CI; (2) comprobación visual y arranque del `.app` en otro Mac; (3) distribución firmada/notarizada o instrucciones explícitas de preview para macOS. Objetivo provisional: 20 de noviembre de 2026, sujeto al resultado del empaquetado. No se considera una beta distribuible hasta pasar estos gates.
 
 ## 9. Hitos completados
 
@@ -152,6 +152,7 @@ Para la beta macOS sintética, los gates pendientes son: (1) compilación y smok
 - La sesión y CLI compilan en Release; Collision Debug 105/105, Geometry+Collision Debug 115/115 y Collision ASan+UBSan 105/105 CTest PASS el 2026-10-28.
 - Web `40711050926` y matriz nativa `40711050847` PASS en `df87f18`. Un primer visor opcional Qt 6/VTK compila en Linux con dependencias locales extraídas a `/workspace/occlusion-tools/sysroot`: importación de dos OBJ, escena VTK, pose/barrido asíncronos, selección de frame, cámara y export con el serializador existente. Smoke de render y rechazo de directorio ausente PASS; preset `desktop-debug` 107/107 CTest PASS bajo Xvfb. Se inspeccionó la captura local: las dos mallas y ejes son visibles. El job macOS todavía no se ha verificado.
 - El visor se amplió con importación asíncrona, resumen de barrido, navegación de cámara, export probado byte a byte y flujo de error/recuperación. La captura de ventana detectó una composición alfa que oscurecía las mallas; la captura VTK ahora usa RGB opaco. Preset `desktop-debug` 107/107 CTest PASS bajo Xvfb después de estos cambios. La prueba macOS sigue en curso.
+- Los jobs `Desktop viewer / macOS` de `a049c90` y `9bc544d` pasaron instalación, compilación del `.app`, CTest y smoke de render/evaluación. Un nuevo smoke local simula una importación más reciente mientras queda un resultado de pose pendiente y confirma que se descarta; también compara la transformación VTK del frame seleccionado con el resultado del motor. 107/107 CTest y 25/25 repeticiones del smoke PASS bajo Xvfb. El primer empaquetado autocontenido de `8f61c96` falló en el paso de bundling, tras pasar build y smoke; la CI ahora publica el error específico para corregirlo.
 
 ### Verificación local de Phase 4.12 (2026-10-22)
 

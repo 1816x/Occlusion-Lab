@@ -35,6 +35,17 @@ while IFS= read -r -d '' item; do
         ;;
     esac
   done < <(otool -L "$item" | awk 'NR > 1 { print $1 }')
+  while IFS= read -r search_path; do
+    case "$search_path" in
+      /opt/homebrew/*|/usr/local/*)
+        echo "Homebrew runtime search path in $item: $search_path" >&2
+        exit 1
+        ;;
+    esac
+  done < <(otool -l "$item" | awk '
+    $1 == "cmd" && $2 == "LC_RPATH" { rpath = 1; next }
+    rpath && $1 == "path" { print $2; rpath = 0 }
+  ')
 done < <(find "$app" -type f -print0)
 
 codesign --force --deep --sign - "$app"

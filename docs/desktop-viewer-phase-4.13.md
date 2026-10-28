@@ -3,8 +3,9 @@
 Phase 4.14 now has a first Qt 6/VTK development viewer. It uses a VTK offscreen
 render window captured into a Qt image, with Qt controls for import, pose, sweep,
 frame selection, camera rotation, and export. The Linux display smoke covers
-import, failed import and recovery, pose, sweep selection, rendering, and exact
-JSON export bytes. macOS build and a self-contained bundle remain beta gates.
+import, failed import and recovery, stale worker result rejection, pose, sweep
+selection, rendering, and exact JSON export bytes. A self-contained macOS
+bundle remains a beta gate.
 
 The first desktop application will be a synthetic-mesh viewer and evaluation client,
 not a second scientific engine. Qt 6 owns windows, commands, and state. VTK owns

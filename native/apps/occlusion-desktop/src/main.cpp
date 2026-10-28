@@ -22,6 +22,7 @@
 #include <QSlider>
 #include <QSpinBox>
 #include <QTemporaryDir>
+#include <QThreadPool>
 #include <QVBoxLayout>
 #include <QWidget>
 #include <QtConcurrent>
@@ -236,6 +237,13 @@ public:
     if (!wait_until_ready(import_) || !session_)
       return false;
     evaluate_->click();
+    import_pair(); // Simulate a newer selection before the earlier worker result is published.
+    if (!wait_until_ready(import_) || !QThreadPool::globalInstance()->waitForDone(5000))
+      return false;
+    QCoreApplication::processEvents();
+    if (pose_ || !evaluate_->isEnabled())
+      return false;
+    evaluate_->click();
     if (!wait_until_ready(evaluate_) || !pose_ ||
         pose_->classification != core::ContactClassification::separated)
       return false;
@@ -245,6 +253,19 @@ public:
       return false;
     frame_slider_->setValue(10);
     if (frame_label_->text() != "Frame 11/11")
+      return false;
+    const auto& selected_transform = sweep_->frames[10].evaluation.applied_transform;
+    const auto* selected_matrix = moving_actor_->GetUserMatrix();
+    for (int row = 0; row < 3; ++row) {
+      for (int column = 0; column < 3; ++column) {
+        if (selected_matrix->GetElement(row, column) !=
+            selected_transform.rotation[static_cast<std::size_t>(row * 3 + column)])
+          return false;
+      }
+    }
+    if (selected_matrix->GetElement(0, 3) != selected_transform.translation_meters.x ||
+        selected_matrix->GetElement(1, 3) != selected_transform.translation_meters.y ||
+        selected_matrix->GetElement(2, 3) != selected_transform.translation_meters.z)
       return false;
     const auto json = evaluation::serialize_evaluation_json(*sweep_, "desktop-obj-pair-v1");
     QTemporaryDir temporary;
@@ -315,6 +336,7 @@ private:
     summary_->clear();
     frame_slider_->setEnabled(false);
     renderer_->RemoveAllViewProps();
+    contact_actors_.clear();
     add_axes();
     fixed_actor_ = mesh_actor(session_->fixed_mesh, {0.25, 0.65, 0.95});
     moving_actor_ = mesh_actor(session_->moving_mesh, {0.95, 0.58, 0.25});
