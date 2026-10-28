@@ -7,11 +7,11 @@ Occlusion Lab pretende convertirse en una aplicación científica de escritorio 
 ## 2. Estado actual
 
 - **Fase actual:** Phase 4.14: Shared Mesh File Adapter and Optional Desktop Viewer
-- **Estado:** Phase 4.13 verificada en CI; adaptador OBJ de Phase 4.14 verificado, sesión de evaluación implementada localmente, visor pendiente
+- **Estado:** Phase 4.13 verificada en CI; Phase 4.14 tiene un primer visor Qt 6/VTK funcional en Linux, con CI y paquete macOS pendientes
 - **Rama y commit iniciales:** `main` en `46ffc9524e781fe2e8d8c269027434f422c2abf7`
 - **Rama activa:** `work`
 - **Phase 4.3:** Completed mediante [PR #13](https://github.com/1816x/Occlusion-Lab/pull/13), merge `da055bc2067b6477eea9efe7abbad0422ed8e9f3`.
-- **Última actualización significativa:** 2026-10-28 — Phase 4.14 añade una sesión que conserva las mallas importadas y el evaluador FCL para la futura UI desktop.
+- **Última actualización significativa:** 2026-10-28 — Phase 4.14 añade una sesión compartida y un primer visor Qt 6/VTK con importación OBJ, pose, barrido, cámara y export JSON v1.
 
 La aplicación web heredada continúa disponible y funcional como referencia. La base nativa ofrece unidades fuertes y validación; las capas opcionales de colisión/evaluación ejecutan poses y barridos deterministas. Phase 4.7 expone una fixture sintética por CLI; Phase 4.8 exporta resultados versionados; Phase 4.9 añade un parser OBJ estricto. Phase 4.10 une dos ficheros OBJ sintéticos con el evaluador existente. Phase 4.11 verifica su topología y orientación antes de FCL. Phase 4.12 añade inspección geométrica CGAL optativa y Phase 4.13 la expone por un comando CLI explícito, sin alterar la evaluación FCL existente.
 
@@ -25,8 +25,8 @@ La aplicación web heredada continúa disponible y funcional como referencia. La
 | Procesamiento geométrico | Inspección sintética CGAL opcional | CGAL | Primera frontera y CLI implementadas | `--inspect-mesh` detecta autointersecciones y caras degeneradas; no repara. |
 | Detección de colisiones | Worker web/Rapier y biblioteca FCL opcional | FCL | Fundación implementada | Sin afirmar igualdad de manifolds entre motores. |
 | Análisis de barrido de movimiento | Web existente y evaluación C++ | Motor C++ | Barrido y resumen implementados | Paridad semántica del resumen cubierta por fixture versionada. |
-| Renderer | Three.js | VTK | Contrato de visor diseñado | No forma parte del core; implementación posterior. |
-| UI de escritorio | No existe | Qt 6 | Contrato de visor diseñado | Importación sintética, errores, pose, barrido y export especificados. |
+| Renderer | Three.js y primer visor VTK | VTK | Visor sintético implementado localmente | Renderiza mallas, ejes y contactos normalizados; no forma parte del core. |
+| UI de escritorio | Primer visor Qt 6 | Qt 6 | Implementada localmente; CI macOS pendiente | Importación sintética, errores, pose y barrido asíncronos, selección de frame y export JSON v1. |
 | CLI | `occlusion-cli` | `occlusion-cli` extensible | Evaluación OBJ e inspección optativa implementadas | Evaluación requiere FCL; inspección CGAL puede compilarse sin FCL. |
 | Pruebas | Vitest/web y GoogleTest nativo | GoogleTest + pruebas web | Fundación implementada | Se mantiene la suite heredada. |
 | CI | Web y workflow nativo | CI web y nativa multiplataforma | Implementado y verificado | Web `40009148955` y matriz nativa `40008247380` pasaron; los cambios posteriores requieren su propia CI. |
@@ -112,9 +112,9 @@ La aplicación web heredada continúa disponible y funcional como referencia. La
 
 ## 8. Próxima tarea recomendada
 
-Phase 4.14: implementar un primer visor Qt 6/VTK opcional según [desktop-viewer-phase-4.13.md](docs/desktop-viewer-phase-4.13.md). El primer paso siguiente es hacer reproducible el toolchain Qt 6/VTK y compilar el visor en CI; esas bibliotecas no están instaladas en este workspace. Después completar importación, pose, barrido, exportación y pruebas de UI antes de distribuir una beta desktop. Conservar la referencia web hasta demostrar paridad de los flujos requeridos.
+Phase 4.14: verificar el nuevo visor Qt 6/VTK en CI macOS, empaquetar un `.app` autocontenido y probarlo como usuario final. El visor local ya importa OBJ, renderiza mallas y contactos, evalúa pose y barrido sin bloquear la UI y exporta JSON v1. Faltan pruebas de interacción, de resultados asíncronos obsoletos y de paridad visual/export antes de distribuir la beta. Conservar la referencia web hasta demostrar paridad de los flujos requeridos.
 
-Para la beta desktop sintética, los gates pendientes son: (1) compilar Qt 6 y VTK en un entorno reproducible; (2) importar un par OBJ, mostrar ambas mallas y comunicar errores; (3) evaluar pose y barrido sin bloquear la UI, seleccionar frames y exportar el JSON v1 existente; (4) probar errores, resultados asíncronos obsoletos, paridad de export y empaquetar un instalador para el sistema operativo del tester. La fecha objetivo se ajustará según el toolchain y la plataforma elegida; no se considera una beta distribuible hasta pasar estos gates.
+Para la beta macOS sintética, los gates pendientes son: (1) compilación y smoke de render en CI macOS; (2) pruebas de interacción, errores, resultados asíncronos obsoletos y paridad de export; (3) `.app` autocontenido probado en otro Mac. Objetivo provisional: 20 de noviembre de 2026, sujeto al resultado del primer build macOS y del empaquetado. No se considera una beta distribuible hasta pasar estos gates.
 
 ## 9. Hitos completados
 
@@ -134,7 +134,7 @@ Para la beta desktop sintética, los gates pendientes son: (1) compilar Qt 6 y V
 | Phase 4.11 | Validación topológica y orientación OBJ antes de FCL | `5c98b0c` | Publicada en `main`; 39/39 CTest core, 100/100 CTest colisión y 100/100 ASan+UBSan PASS locales; CI remota pendiente. |
 | Phase 4.12 | Inspección CGAL optativa, conversión comprobada y predicados de mallas sintéticas | `b2483d4`, ajuste CI `aec6975` | Publicada en `main`; geometry Ubuntu y los tres core PASS; Ubuntu/macOS collision y Ubuntu sanitizer PASS; Windows collision build FAIL. |
 | Phase 4.13 | CLI de inspección JSON v1 y contrato de visor Qt 6/VTK | `a7aaba4`–`43c2213` | Completada; 39/39 core, 49/49 geometry, 100/100 collision, 110/110 combinado y 100/100 sanitizer CTest locales PASS; web y matriz nativa CI remota PASS. |
-| Phase 4.14 | Adaptador OBJ compartido y primer visor opcional | `0fe8d4e` (en curso) | Adaptador público implementado y CI verificada. `MeshEvaluationSession` implementada; 115/115 CTest combinados y 105/105 sanitizers locales PASS; CI nueva y visor Qt 6/VTK pendientes. |
+| Phase 4.14 | Adaptador OBJ compartido y primer visor opcional | `0fe8d4e`, `df87f18` (en curso) | Adaptador y sesión verificados en CI multiplataforma. Primer visor Qt 6/VTK: 107/107 CTest locales PASS con render bajo Xvfb; CI macOS y paquete pendientes. |
 
 ### Verificación local de Phase 4.13 (2026-10-23)
 
@@ -150,6 +150,7 @@ Para la beta desktop sintética, los gates pendientes son: (1) compilar Qt 6 y V
 - Tres pruebas directas cubren caja cerrada, nombre inválido/fichero ausente y topología abierta en un build core-only. Core Debug 42/42, Geometry+Collision Debug 113/113 y Collision ASan+UBSan 103/103 CTest PASS; builds core y collision Release PASS. Web `40007105819` y los ocho jobs de la matriz nativa `40007106060` PASS en `0fe8d4e`; la ejecución final en `18e04d0` también pasó web `40008247367` y los ocho jobs nativos `40008247380`. El visor opcional queda pendiente.
 - `MeshEvaluationSession` conserva las mismas mallas validadas que compilan el evaluador FCL; la CLI reutiliza esta sesión. La prueba elimina los ficheros fuente tras importar y confirma que pose y barrido siguen funcionando sobre los datos propios. La nueva CI de este cambio sigue pendiente.
 - La sesión y CLI compilan en Release; Collision Debug 105/105, Geometry+Collision Debug 115/115 y Collision ASan+UBSan 105/105 CTest PASS el 2026-10-28.
+- Web `40711050926` y matriz nativa `40711050847` PASS en `df87f18`. Un primer visor opcional Qt 6/VTK compila en Linux con dependencias locales extraídas a `/workspace/occlusion-tools/sysroot`: importación de dos OBJ, escena VTK, pose/barrido asíncronos, selección de frame, cámara y export con el serializador existente. Smoke de render y rechazo de directorio ausente PASS; preset `desktop-debug` 107/107 CTest PASS bajo Xvfb. Se inspeccionó la captura local: las dos mallas y ejes son visibles. El job macOS todavía no se ha verificado.
 
 ### Verificación local de Phase 4.12 (2026-10-22)
 

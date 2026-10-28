@@ -22,11 +22,12 @@
       ]
     },
     "desktop": {
-      "description": "Future Qt 6 and VTK presentation stack",
+      "description": "Optional Qt 6 and VTK desktop viewer",
       "dependencies": [
         {
           "name": "qtbase",
-          "default-features": false
+          "default-features": false,
+          "features": ["concurrent", "gui", "opengl", "widgets"]
         },
         {
           "name": "vtk",

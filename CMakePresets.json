@@ -81,6 +81,15 @@
         "OCCLUSION_ENABLE_GEOMETRY": "ON",
         "VCPKG_MANIFEST_FEATURES": "collision;geometry"
       }
+    },
+    {
+      "name": "desktop-debug",
+      "inherits": "collision-debug",
+      "displayName": "Qt 6 and VTK Desktop Debug",
+      "cacheVariables": {
+        "OCCLUSION_ENABLE_DESKTOP": "ON",
+        "VCPKG_MANIFEST_FEATURES": "collision;desktop"
+      }
     }
   ],
   "buildPresets": [
@@ -111,6 +120,10 @@
     {
       "name": "geometry-collision-debug",
       "configurePreset": "geometry-collision-debug"
+    },
+    {
+      "name": "desktop-debug",
+      "configurePreset": "desktop-debug"
     }
   ],
   "testPresets": [
@@ -145,6 +158,13 @@
     {
       "name": "geometry-collision-debug",
       "configurePreset": "geometry-collision-debug",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "desktop-debug",
+      "configurePreset": "desktop-debug",
       "output": {
         "outputOnFailure": true
       }

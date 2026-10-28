@@ -4,7 +4,7 @@ Occlusion Lab is a **work in progress** educational browser sandbox for syntheti
 
 ## C++ migration (Phase 4)
 
-The project is migrating toward a C++20, desktop-first scientific architecture. The existing Next.js/React/Three.js application remains intact as the production behavioral reference. The native foundation now includes pose and sweep contracts, optional FCL collision/evaluation, a synthetic evaluation CLI, versioned JSON exports, and bounded synthetic OBJ ingestion. CGAL mesh processing and Qt 6/VTK presentation remain future work; no clinical parity or validation is claimed.
+The project is migrating toward a C++20, desktop-first scientific architecture. The existing Next.js/React/Three.js application remains intact as the production behavioral reference. The native foundation includes pose and sweep contracts, FCL collision/evaluation, CGAL inspection, versioned JSON exports, bounded synthetic OBJ ingestion, and an optional first Qt 6/VTK viewer. The viewer is a development preview while macOS build and packaging checks are completed; no clinical parity or validation is claimed.
 
 [`PLAN.md`](PLAN.md) is the concise source of truth for migration status, verification results, risks, and the single next task. The architectural rationale is recorded in [ADR-0001](docs/adr/0001-cpp-desktop-architecture.md).
 
@@ -226,8 +226,29 @@ both a valid mesh and a structured error, with exit code 0 or 2 respectively. It
 examples are in [the inspection contract](docs/native-mesh-inspection-v1.md). The optional
 `geometry-collision-debug` preset provides both inspection and evaluation commands. Evaluation
 does not silently invoke CGAL; inspect each input explicitly when self-intersection screening is
-needed. The [desktop viewer contract](docs/desktop-viewer-phase-4.13.md) defines how a later Qt 6/VTK
-application will consume these public results while keeping the web reference.
+needed. The [desktop viewer contract](docs/desktop-viewer-phase-4.13.md) defines how the Qt 6/VTK
+application consumes these public results while keeping the web reference.
+
+## Phase 4.14: desktop development preview
+
+The optional viewer imports two direct synthetic OBJ names from a selected directory, renders
+them with VTK, evaluates poses and sweeps on worker threads, selects stored frames, and exports
+the native JSON v1 result. The current target is a macOS beta; this source build is for developers
+until the app bundle has been tested and packaged with its dependencies.
+
+On a macOS development machine with Homebrew:
+
+```sh
+brew install qt vtk fcl
+cmake --preset desktop-debug \
+  -DCMAKE_PREFIX_PATH="$(brew --prefix qt);$(brew --prefix vtk);$(brew --prefix fcl)"
+cmake --build --preset desktop-debug --parallel 3
+open build/native/desktop-debug/native/apps/occlusion-desktop/occlusion-desktop.app \
+  --args --open "$(pwd)/fixtures/mesh-io"
+```
+
+This preview uses synthetic meshes only. Follow [PLAN.md](PLAN.md) for the macOS CI and packaged
+beta gates.
 
 ## Phase 4.9: bounded synthetic mesh ingestion
 

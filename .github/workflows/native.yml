@@ -201,6 +201,27 @@ jobs:
       - name: Test geometry and core
         run: ctest --preset geometry-debug --output-on-failure
 
+  desktop_macos:
+    name: Desktop viewer / macOS
+    runs-on: macos-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Install desktop toolchain
+        run: brew install qt vtk fcl
+      - name: Configure desktop Debug
+        run: |
+          cmake --preset desktop-debug \
+            -DCMAKE_PREFIX_PATH="$(brew --prefix qt);$(brew --prefix vtk);$(brew --prefix fcl)"
+      - name: Build macOS app bundle and native tests
+        run: cmake --build --preset desktop-debug --parallel 3
+      - name: Test native contracts
+        run: ctest --preset desktop-debug --output-on-failure
+      - name: Smoke-test desktop rendering and evaluation
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: build/native/desktop-debug/native/apps/occlusion-desktop/occlusion-desktop.app/Contents/MacOS/occlusion-desktop --smoke fixtures/mesh-io
+
   sanitizers:
     name: Collision + evaluation / Ubuntu / ASan+UBSan
     runs-on: ubuntu-latest

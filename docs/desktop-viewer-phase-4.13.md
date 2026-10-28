@@ -1,5 +1,10 @@
 # Phase 4.13 desktop viewer contract
 
+Phase 4.14 now has a first Qt 6/VTK development viewer. It uses a VTK offscreen
+render window captured into a Qt image, with Qt controls for import, pose, sweep,
+frame selection, camera rotation, and export. macOS build, UI interaction tests,
+and a self-contained bundle remain the beta gates.
+
 The first desktop application will be a synthetic-mesh viewer and evaluation client,
 not a second scientific engine. Qt 6 owns windows, commands, and state. VTK owns
 scene objects. Project libraries own parsing, geometry checks, transforms, FCL
