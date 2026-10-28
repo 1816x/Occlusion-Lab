@@ -208,11 +208,11 @@ jobs:
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - name: Install desktop toolchain
-        run: brew install qt vtk fcl
+        run: brew install qtbase vtk fcl
       - name: Configure desktop Debug
         run: |
           cmake --preset desktop-debug \
-            -DCMAKE_PREFIX_PATH="$(brew --prefix qt);$(brew --prefix vtk);$(brew --prefix fcl)"
+            -DCMAKE_PREFIX_PATH="$(brew --prefix qtbase);$(brew --prefix vtk);$(brew --prefix fcl)"
       - name: Build macOS app bundle and native tests
         run: cmake --build --preset desktop-debug --parallel 3
       - name: Test native contracts

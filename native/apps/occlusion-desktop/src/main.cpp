@@ -1,8 +1,13 @@
 #include "occlusion/evaluation/mesh_session.hpp"
 
 #include <QApplication>
+#include <QByteArray>
 #include <QComboBox>
+#include <QCoreApplication>
 #include <QDoubleSpinBox>
+#include <QElapsedTimer>
+#include <QEventLoop>
+#include <QFile>
 #include <QFileDialog>
 #include <QFormLayout>
 #include <QFutureWatcher>
@@ -16,6 +21,7 @@
 #include <QSaveFile>
 #include <QSlider>
 #include <QSpinBox>
+#include <QTemporaryDir>
 #include <QVBoxLayout>
 #include <QWidget>
 #include <QtConcurrent>
@@ -42,6 +48,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <iostream>
+#include <memory>
 #include <optional>
 #include <set>
 #include <string>
@@ -93,6 +100,11 @@ QString classification_text(core::ContactClassification value) {
   return "Unknown";
 }
 
+struct LoadedPair final {
+  std::optional<evaluation::MeshEvaluationSession> session;
+  mesh_io::ObjFileError error;
+};
+
 class MainWindow final : public QWidget {
 public:
   explicit MainWindow(QString initial_directory = {}) {
@@ -119,6 +131,9 @@ public:
     sweep_button_ = new QPushButton("Run sweep");
     frame_slider_ = new QSlider(Qt::Horizontal);
     frame_slider_->setEnabled(false);
+    frame_label_ = new QLabel("No sweep selected");
+    summary_ = new QLabel;
+    summary_->setWordWrap(true);
     export_ = new QPushButton("Export JSON v1");
     export_->setEnabled(false);
     status_ = new QLabel("Import two synthetic, closed OBJ meshes to begin.");
@@ -145,13 +160,25 @@ public:
     form->addRow("Frames", frames_);
     form->addRow(sweep_button_);
     form->addRow("Selected frame", frame_slider_);
+    form->addRow(frame_label_);
+    form->addRow(summary_);
     form->addRow(export_);
     auto* rotate_left = new QPushButton("Rotate left");
     auto* rotate_right = new QPushButton("Rotate right");
+    auto* rotate_up = new QPushButton("Rotate up");
+    auto* rotate_down = new QPushButton("Rotate down");
+    auto* zoom_in = new QPushButton("Zoom in");
+    auto* zoom_out = new QPushButton("Zoom out");
     auto* camera_row = new QHBoxLayout;
     camera_row->addWidget(rotate_left);
     camera_row->addWidget(rotate_right);
     form->addRow("Camera", camera_row);
+    auto* camera_row_two = new QHBoxLayout;
+    camera_row_two->addWidget(rotate_up);
+    camera_row_two->addWidget(rotate_down);
+    camera_row_two->addWidget(zoom_in);
+    camera_row_two->addWidget(zoom_out);
+    form->addRow(camera_row_two);
     auto* legend = new QLabel(
         "Axes: X red, Y green, Z blue. Engine lengths: meters; displayed distances: mm.");
     legend->setWordWrap(true);
@@ -180,32 +207,63 @@ public:
     connect(evaluate_, &QPushButton::clicked, this, [this] { evaluate_pose(); });
     connect(sweep_button_, &QPushButton::clicked, this, [this] { evaluate_sweep(); });
     connect(frame_slider_, &QSlider::valueChanged, this, [this](int index) {
-      if (sweep_ && index < static_cast<int>(sweep_->frames.size()))
+      if (sweep_ && index < static_cast<int>(sweep_->frames.size())) {
+        frame_label_->setText(QString("Frame %1/%2").arg(index + 1).arg(sweep_->frames.size()));
         show_result(sweep_->frames[static_cast<std::size_t>(index)].evaluation);
+      }
     });
     connect(export_, &QPushButton::clicked, this, [this] { export_json(); });
     connect(rotate_left, &QPushButton::clicked, this, [this] { rotate_camera(-15); });
     connect(rotate_right, &QPushButton::clicked, this, [this] { rotate_camera(15); });
+    connect(rotate_up, &QPushButton::clicked, this, [this] { elevate_camera(15); });
+    connect(rotate_down, &QPushButton::clicked, this, [this] { elevate_camera(-15); });
+    connect(zoom_in, &QPushButton::clicked, this, [this] { zoom_camera(1.2); });
+    connect(zoom_out, &QPushButton::clicked, this, [this] { zoom_camera(1.0 / 1.2); });
   }
 
   bool smoke(const std::filesystem::path& directory) {
-    if (!load_pair(directory, "fixed-box.obj", "moving-box.obj"))
+    directory_->setText(QString::fromStdString(directory.string()));
+    import_->click();
+    if (!wait_until_ready(import_) || !session_)
       return false;
-    const auto pose =
-        session_->evaluator.evaluate({core::Meters{0}, core::Meters{0}, core::Meters{0}});
-    if (!pose || pose.value().classification != core::ContactClassification::separated)
+    fixed_name_->setText("missing.obj");
+    import_->click();
+    if (!wait_until_ready(import_) || session_ || evaluate_->isEnabled() ||
+        !status_->text().contains("missing.obj"))
       return false;
-    pose_ = pose.value();
-    show_result(*pose_);
-    const auto sweep = session_->evaluator.evaluate_sweep(core::SweepPreset::closing, 11);
-    if (!sweep || sweep.value().frames.size() != 11)
+    fixed_name_->setText("fixed-box.obj");
+    import_->click();
+    if (!wait_until_ready(import_) || !session_)
       return false;
-    sweep_ = sweep.value();
-    show_result(sweep_->frames.back().evaluation);
+    evaluate_->click();
+    if (!wait_until_ready(evaluate_) || !pose_ ||
+        pose_->classification != core::ContactClassification::separated)
+      return false;
+    frames_->setValue(11);
+    sweep_button_->click();
+    if (!wait_until_ready(sweep_button_) || !sweep_ || sweep_->frames.size() != 11)
+      return false;
+    frame_slider_->setValue(10);
+    if (frame_label_->text() != "Frame 11/11")
+      return false;
     const auto json = evaluation::serialize_evaluation_json(*sweep_, "desktop-obj-pair-v1");
+    QTemporaryDir temporary;
+    if (!temporary.isValid() || !write_export(temporary.filePath("evaluation.json")))
+      return false;
+    QFile exported(temporary.filePath("evaluation.json"));
+    if (!exported.open(QIODevice::ReadOnly) ||
+        exported.readAll() != QByteArray::fromStdString(json))
+      return false;
     const auto screenshot = qEnvironmentVariable("OCCLUSION_DESKTOP_SMOKE_IMAGE");
     if (!screenshot.isEmpty() && !scene_image_.save(screenshot))
       return false;
+    const auto window_screenshot = qEnvironmentVariable("OCCLUSION_DESKTOP_SMOKE_WINDOW");
+    if (!window_screenshot.isEmpty()) {
+      show();
+      QCoreApplication::processEvents();
+      if (!grab().save(window_screenshot))
+        return false;
+    }
     std::set<QRgb> colors;
     for (int y = 0; y < scene_image_.height(); y += 20)
       for (int x = 0; x < scene_image_.width(); x += 20)
@@ -214,6 +272,14 @@ public:
   }
 
 private:
+  static bool wait_until_ready(const QPushButton* button) {
+    QElapsedTimer timer;
+    timer.start();
+    while (!button->isEnabled() && timer.elapsed() < 5000)
+      QCoreApplication::processEvents(QEventLoop::AllEvents, 10);
+    return button->isEnabled();
+  }
+
   static QDoubleSpinBox* spin_box(double minimum, double maximum) {
     auto* spin = new QDoubleSpinBox;
     spin->setRange(minimum, maximum);
@@ -230,18 +296,23 @@ private:
     export_->setEnabled(!busy && (pose_.has_value() || sweep_.has_value()));
   }
 
-  bool load_pair(const std::filesystem::path& directory, std::string_view fixed,
-                 std::string_view moving) {
-    mesh_io::ObjFileError problem;
-    auto loaded = evaluation::load_mesh_evaluation_session(directory, fixed, moving, problem);
-    if (!loaded) {
-      status_->setText(error_text(problem) + ". Last valid scene retained.");
-      return false;
+  void accept_loaded_pair(LoadedPair&& loaded) {
+    if (!loaded.session) {
+      session_.reset();
+      pose_.reset();
+      sweep_.reset();
+      frame_label_->setText("No sweep selected");
+      summary_->clear();
+      status_->setText(error_text(loaded.error) +
+                       ". Last valid scene shown; import a valid pair to evaluate.");
+      set_busy(false);
+      return;
     }
-    ++generation_;
-    session_ = std::move(*loaded);
+    session_ = std::move(*loaded.session);
     pose_.reset();
     sweep_.reset();
+    frame_label_->setText("No sweep selected");
+    summary_->clear();
     frame_slider_->setEnabled(false);
     renderer_->RemoveAllViewProps();
     add_axes();
@@ -253,12 +324,28 @@ private:
     render_scene();
     status_->setText("Pair imported. Evaluate a pose or sweep.");
     set_busy(false);
-    return true;
   }
 
   void import_pair() {
-    load_pair(std::filesystem::path{directory_->text().toStdString()},
-              fixed_name_->text().toStdString(), moving_name_->text().toStdString());
+    const auto directory = std::filesystem::path{directory_->text().toStdString()};
+    const auto fixed = fixed_name_->text().toStdString();
+    const auto moving = moving_name_->text().toStdString();
+    const auto generation = ++generation_;
+    set_busy(true);
+    status_->setText("Importing OBJ pair…");
+    auto* watcher = new QFutureWatcher<std::shared_ptr<LoadedPair>>(this);
+    connect(watcher, &QFutureWatcherBase::finished, this, [this, watcher, generation] {
+      auto loaded = watcher->result();
+      watcher->deleteLater();
+      if (generation == generation_)
+        accept_loaded_pair(std::move(*loaded));
+    });
+    watcher->setFuture(QtConcurrent::run([directory, fixed, moving] {
+      auto loaded = std::make_shared<LoadedPair>();
+      loaded->session =
+          evaluation::load_mesh_evaluation_session(directory, fixed, moving, loaded->error);
+      return loaded;
+    }));
   }
 
   void evaluate_pose() {
@@ -281,6 +368,8 @@ private:
       if (result) {
         pose_ = result.value();
         sweep_.reset();
+        frame_label_->setText("No sweep selected");
+        summary_->clear();
         show_result(*pose_);
       } else {
         status_->setText("Pose is outside the validated native domain.");
@@ -309,8 +398,13 @@ private:
       if (result) {
         sweep_ = result.value();
         pose_.reset();
+        summary_->setText(QString("Contact frames: %1/%2; maximum penetration: %3 mm")
+                              .arg(sweep_->summary.contact_frame_count)
+                              .arg(sweep_->summary.total_frame_count)
+                              .arg(sweep_->summary.maximum_penetration.value() * 1000, 0, 'f', 3));
         frame_slider_->setRange(0, static_cast<int>(sweep_->frames.size()) - 1);
         frame_slider_->setValue(0);
+        frame_label_->setText(QString("Frame 1/%1").arg(sweep_->frames.size()));
         show_result(sweep_->frames.front().evaluation);
       } else {
         status_->setText("Sweep request is outside the validated native domain.");
@@ -381,18 +475,18 @@ private:
     window_->Render();
     auto capture = vtkSmartPointer<vtkWindowToImageFilter>::New();
     capture->SetInput(window_);
-    capture->SetInputBufferTypeToRGBA();
+    capture->SetInputBufferTypeToRGB();
     capture->ReadFrontBufferOff();
     capture->Update();
     auto* image = capture->GetOutput();
     auto* scalars = vtkUnsignedCharArray::SafeDownCast(image->GetPointData()->GetScalars());
-    if (!scalars || scalars->GetNumberOfComponents() != 4) {
+    if (!scalars || scalars->GetNumberOfComponents() != 3) {
       status_->setText("VTK could not capture the scene. Check the display/OpenGL setup.");
       return;
     }
     const int* dimensions = image->GetDimensions();
-    scene_image_ = QImage(scalars->GetPointer(0), dimensions[0], dimensions[1], dimensions[0] * 4,
-                          QImage::Format_RGBA8888)
+    scene_image_ = QImage(scalars->GetPointer(0), dimensions[0], dimensions[1], dimensions[0] * 3,
+                          QImage::Format_RGB888)
                        .copy()
                        .mirrored();
     scene_->setPixmap(QPixmap::fromImage(scene_image_)
@@ -405,6 +499,19 @@ private:
     render_scene();
   }
 
+  void elevate_camera(double degrees) {
+    renderer_->GetActiveCamera()->Elevation(degrees);
+    renderer_->GetActiveCamera()->OrthogonalizeViewUp();
+    renderer_->ResetCameraClippingRange();
+    render_scene();
+  }
+
+  void zoom_camera(double factor) {
+    renderer_->GetActiveCamera()->Dolly(factor);
+    renderer_->ResetCameraClippingRange();
+    render_scene();
+  }
+
   void export_json() {
     if (!pose_ && !sweep_)
       return;
@@ -412,17 +519,23 @@ private:
         QFileDialog::getSaveFileName(this, "Export native evaluation", {}, "JSON (*.json)");
     if (path.isEmpty())
       return;
-    const auto json = sweep_ ? evaluation::serialize_evaluation_json(*sweep_, "desktop-obj-pair-v1")
-                             : evaluation::serialize_evaluation_json(*pose_, "desktop-obj-pair-v1");
-    QSaveFile file(path);
-    if (!file.open(QIODevice::WriteOnly) ||
-        file.write(json.data(), static_cast<qint64>(json.size())) !=
-            static_cast<qint64>(json.size()) ||
-        !file.commit()) {
+    if (!write_export(path)) {
       QMessageBox::warning(this, "Export failed", "Could not write the JSON export.");
       return;
     }
     status_->setText("Exported the engine's versioned JSON result.");
+  }
+
+  bool write_export(const QString& path) const {
+    if (!pose_ && !sweep_)
+      return false;
+    const auto json = sweep_ ? evaluation::serialize_evaluation_json(*sweep_, "desktop-obj-pair-v1")
+                             : evaluation::serialize_evaluation_json(*pose_, "desktop-obj-pair-v1");
+    QSaveFile file(path);
+    return file.open(QIODevice::WriteOnly) &&
+           file.write(json.data(), static_cast<qint64>(json.size())) ==
+               static_cast<qint64>(json.size()) &&
+           file.commit();
   }
 
   QLineEdit* directory_ = nullptr;
@@ -439,6 +552,8 @@ private:
   QPushButton* sweep_button_ = nullptr;
   QPushButton* export_ = nullptr;
   QLabel* status_ = nullptr;
+  QLabel* frame_label_ = nullptr;
+  QLabel* summary_ = nullptr;
   QLabel* scene_ = nullptr;
   QImage scene_image_;
   std::uint64_t generation_ = 0;

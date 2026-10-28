@@ -231,17 +231,17 @@ application consumes these public results while keeping the web reference.
 
 ## Phase 4.14: desktop development preview
 
-The optional viewer imports two direct synthetic OBJ names from a selected directory, renders
-them with VTK, evaluates poses and sweeps on worker threads, selects stored frames, and exports
+The optional viewer imports two direct synthetic OBJ names from a selected directory on a worker
+thread, renders them with VTK, evaluates poses and sweeps on worker threads, selects stored frames, and exports
 the native JSON v1 result. The current target is a macOS beta; this source build is for developers
 until the app bundle has been tested and packaged with its dependencies.
 
 On a macOS development machine with Homebrew:
 
 ```sh
-brew install qt vtk fcl
+brew install qtbase vtk fcl
 cmake --preset desktop-debug \
-  -DCMAKE_PREFIX_PATH="$(brew --prefix qt);$(brew --prefix vtk);$(brew --prefix fcl)"
+  -DCMAKE_PREFIX_PATH="$(brew --prefix qtbase);$(brew --prefix vtk);$(brew --prefix fcl)"
 cmake --build --preset desktop-debug --parallel 3
 open build/native/desktop-debug/native/apps/occlusion-desktop/occlusion-desktop.app \
   --args --open "$(pwd)/fixtures/mesh-io"

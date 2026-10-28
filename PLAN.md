@@ -112,7 +112,7 @@ La aplicación web heredada continúa disponible y funcional como referencia. La
 
 ## 8. Próxima tarea recomendada
 
-Phase 4.14: verificar el nuevo visor Qt 6/VTK en CI macOS, empaquetar un `.app` autocontenido y probarlo como usuario final. El visor local ya importa OBJ, renderiza mallas y contactos, evalúa pose y barrido sin bloquear la UI y exporta JSON v1. Faltan pruebas de interacción, de resultados asíncronos obsoletos y de paridad visual/export antes de distribuir la beta. Conservar la referencia web hasta demostrar paridad de los flujos requeridos.
+Phase 4.14: verificar el nuevo visor Qt 6/VTK en CI macOS, empaquetar un `.app` autocontenido y probarlo como usuario final. El visor local ya importa OBJ, renderiza mallas y contactos, evalúa pose y barrido sin bloquear la UI y exporta JSON v1. El smoke local cubre importación fallida y recuperación, controles de pose/barrido, frame seleccionado, render y bytes de export; faltan pruebas de resultados asíncronos obsoletos y una comprobación visual en macOS antes de distribuir la beta. Conservar la referencia web hasta demostrar paridad de los flujos requeridos.
 
 Para la beta macOS sintética, los gates pendientes son: (1) compilación y smoke de render en CI macOS; (2) pruebas de interacción, errores, resultados asíncronos obsoletos y paridad de export; (3) `.app` autocontenido probado en otro Mac. Objetivo provisional: 20 de noviembre de 2026, sujeto al resultado del primer build macOS y del empaquetado. No se considera una beta distribuible hasta pasar estos gates.
 
@@ -134,7 +134,7 @@ Para la beta macOS sintética, los gates pendientes son: (1) compilación y smok
 | Phase 4.11 | Validación topológica y orientación OBJ antes de FCL | `5c98b0c` | Publicada en `main`; 39/39 CTest core, 100/100 CTest colisión y 100/100 ASan+UBSan PASS locales; CI remota pendiente. |
 | Phase 4.12 | Inspección CGAL optativa, conversión comprobada y predicados de mallas sintéticas | `b2483d4`, ajuste CI `aec6975` | Publicada en `main`; geometry Ubuntu y los tres core PASS; Ubuntu/macOS collision y Ubuntu sanitizer PASS; Windows collision build FAIL. |
 | Phase 4.13 | CLI de inspección JSON v1 y contrato de visor Qt 6/VTK | `a7aaba4`–`43c2213` | Completada; 39/39 core, 49/49 geometry, 100/100 collision, 110/110 combinado y 100/100 sanitizer CTest locales PASS; web y matriz nativa CI remota PASS. |
-| Phase 4.14 | Adaptador OBJ compartido y primer visor opcional | `0fe8d4e`, `df87f18` (en curso) | Adaptador y sesión verificados en CI multiplataforma. Primer visor Qt 6/VTK: 107/107 CTest locales PASS con render bajo Xvfb; CI macOS y paquete pendientes. |
+| Phase 4.14 | Adaptador OBJ compartido y primer visor opcional | `0fe8d4e`, `df87f18`, `a049c90` (en curso) | Adaptador y sesión verificados en CI multiplataforma. Primer visor Qt 6/VTK: 107/107 CTest locales PASS con render bajo Xvfb; CI macOS y paquete pendientes. |
 
 ### Verificación local de Phase 4.13 (2026-10-23)
 
@@ -151,6 +151,7 @@ Para la beta macOS sintética, los gates pendientes son: (1) compilación y smok
 - `MeshEvaluationSession` conserva las mismas mallas validadas que compilan el evaluador FCL; la CLI reutiliza esta sesión. La prueba elimina los ficheros fuente tras importar y confirma que pose y barrido siguen funcionando sobre los datos propios. La nueva CI de este cambio sigue pendiente.
 - La sesión y CLI compilan en Release; Collision Debug 105/105, Geometry+Collision Debug 115/115 y Collision ASan+UBSan 105/105 CTest PASS el 2026-10-28.
 - Web `40711050926` y matriz nativa `40711050847` PASS en `df87f18`. Un primer visor opcional Qt 6/VTK compila en Linux con dependencias locales extraídas a `/workspace/occlusion-tools/sysroot`: importación de dos OBJ, escena VTK, pose/barrido asíncronos, selección de frame, cámara y export con el serializador existente. Smoke de render y rechazo de directorio ausente PASS; preset `desktop-debug` 107/107 CTest PASS bajo Xvfb. Se inspeccionó la captura local: las dos mallas y ejes son visibles. El job macOS todavía no se ha verificado.
+- El visor se amplió con importación asíncrona, resumen de barrido, navegación de cámara, export probado byte a byte y flujo de error/recuperación. La captura de ventana detectó una composición alfa que oscurecía las mallas; la captura VTK ahora usa RGB opaco. Preset `desktop-debug` 107/107 CTest PASS bajo Xvfb después de estos cambios. La prueba macOS sigue en curso.
 
 ### Verificación local de Phase 4.12 (2026-10-22)
 

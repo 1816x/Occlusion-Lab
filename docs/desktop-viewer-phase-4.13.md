@@ -2,8 +2,9 @@
 
 Phase 4.14 now has a first Qt 6/VTK development viewer. It uses a VTK offscreen
 render window captured into a Qt image, with Qt controls for import, pose, sweep,
-frame selection, camera rotation, and export. macOS build, UI interaction tests,
-and a self-contained bundle remain the beta gates.
+frame selection, camera rotation, and export. The Linux display smoke covers
+import, failed import and recovery, pose, sweep selection, rendering, and exact
+JSON export bytes. macOS build and a self-contained bundle remain beta gates.
 
 The first desktop application will be a synthetic-mesh viewer and evaluation client,
 not a second scientific engine. Qt 6 owns windows, commands, and state. VTK owns
@@ -19,8 +20,8 @@ remains the behavior reference until its required workflows have desktop parity.
 | `occlusion-geometry` (optional) | Project `TriangleMesh` | Read-only defect report. No repair or VTK types. |
 | `occlusion-evaluation` | Two validated project meshes and a pose or sweep request | `MeshEvaluationSession` owns the imported mesh pair and compiled evaluator; queries return `PoseEvaluationResult` or `EvaluatedSweepResult` with unchanged v1 JSON export. |
 | Shared mesh file adapter | Two direct `.obj` names in an operator-selected directory | Bounded read and structured file error, using the same rules as the CLI. Exported by `occlusion-mesh-io` for desktop clients. |
-| Future VTK adapter | Copies of project meshes plus a published evaluation result | Fixed/moving actors and contact markers. It performs no collision or classification. |
-| Future Qt application | File selection, pose and sweep requests, and engine results | Controls, error display, frame selection, and export action. |
+| VTK viewer layer | Copies of project meshes plus a published evaluation result | Fixed/moving actors and contact markers. It performs no collision or classification. |
+| Qt application | File selection, pose and sweep requests, and engine results | Controls, error display, frame selection, and export action. |
 
 Only the optional desktop target will link Qt 6 and VTK. `occlusion-core` must
 remain independent of both. The VTK adapter accepts copied mesh arrays and
@@ -33,9 +34,10 @@ must not call FCL or CGAL or reinterpret their private data.
    The desktop file adapter enforces the CLI's filename, symlink, 16 MiB, OBJ,
    and closed-topology checks. If the optional geometry feature is present,
    the user can request the same CGAL inspection before evaluation.
-2. File, parser, topology, and geometry errors appear with file, code, field,
-   line (when known), and message. An invalid mesh blocks evaluation and
-   export; the scene keeps its last valid result clearly labeled.
+2. File, parser, and topology errors appear with file, code, field, line
+   (when known), and message. An invalid mesh blocks evaluation and export;
+   the scene keeps its last valid image clearly labeled. Optional CGAL
+   inspection remains a separate CLI action.
 3. A valid pair compiles one `PoseEvaluator` session. Pose inputs use explicit
    millimeters and existing inclusive limits. Evaluation runs away from the
    Qt UI thread and publishes only a complete `PoseEvaluationResult`.
