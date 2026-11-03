@@ -57,7 +57,11 @@ sign_binary() {
 }
 
 echo "SIGN_STAGE regular files"
+main_executable="$app/Contents/MacOS/occlusion-desktop"
 while IFS= read -r -d '' item; do
+  if [[ "$item" == "$main_executable" ]]; then
+    continue
+  fi
   if [[ "$item" == *.dylib || "$item" == *.so ]] || file -b "$item" | grep -q 'Mach-O'; then
     sign_binary "$item"
   fi
@@ -71,6 +75,8 @@ while IFS= read -r -d '' item; do
   fi
   sign_binary "$item"
 done < <(find "$app" \( -type f -o -type l \) -name '*.dylib' -print0)
+echo "SIGN_STAGE main executable"
+sign_binary "$main_executable"
 vtk_signature_probe=""
 for candidate in "$app/Contents/Frameworks"/libvtkFiltersHybrid*.dylib; do
   if [[ -e "$candidate" ]]; then
