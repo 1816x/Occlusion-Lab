@@ -4,7 +4,7 @@ Occlusion Lab is a **work in progress** educational browser sandbox for syntheti
 
 ## C++ migration (Phase 4)
 
-The project is migrating toward a C++20, desktop-first scientific architecture. The existing Next.js/React/Three.js application remains intact as the production behavioral reference. The native foundation includes pose and sweep contracts, FCL collision/evaluation, CGAL inspection, versioned JSON exports, bounded synthetic OBJ ingestion, and an optional first Qt 6/VTK viewer. The Apple Silicon viewer is a development preview; an Intel package and a visual check on another Mac remain open. No clinical parity or validation is claimed.
+The project is migrating toward a C++20, desktop-first scientific architecture. The existing Next.js/React/Three.js application remains intact as the production behavioral reference. The native foundation includes pose and sweep contracts, FCL collision/evaluation, CGAL inspection, versioned JSON exports, bounded synthetic OBJ ingestion, and an optional first Qt 6/VTK viewer. Apple Silicon and Intel development previews are available; a visual check on another Mac remains open. No clinical parity or validation is claimed.
 
 [`PLAN.md`](PLAN.md) is the concise source of truth for migration status, verification results, risks, and the single next task. The architectural rationale is recorded in [ADR-0001](docs/adr/0001-cpp-desktop-architecture.md).
 
@@ -233,21 +233,23 @@ application consumes these public results while keeping the web reference.
 
 The optional viewer imports two direct synthetic OBJ names from a selected directory on a worker
 thread, renders them with VTK, evaluates poses and sweeps on worker threads, selects stored frames,
-and exports the native JSON v1 result. The Apple Silicon macOS development preview passed its
-bundle dependency audit, signature verification, and a clean-environment launch in CI. Its
-first visual check on another Mac remains the beta gate.
+and exports the native JSON v1 result. Apple Silicon and Intel macOS development previews passed
+their bundle dependency audits, signature verification, and clean-environment Cocoa launches in CI.
+The first visual check on another Mac remains the beta gate.
 
-To try the latest CI-verified Apple Silicon preview, download the
-`occlusion-lab-macos-arm64-preview` artifact from
-[the passing macOS job](https://github.com/1816x/Occlusion-Lab/actions/runs/41681428870/job/126075806565).
+Download the artifact for your Mac's processor (shown in **About This Mac**):
+
+- Apple Silicon: `occlusion-lab-macos-arm64-preview` from [the passing arm64 job](https://github.com/1816x/Occlusion-Lab/actions/runs/41696301191/job/126127631663).
+- Intel: `occlusion-lab-macos-x86_64-preview` from [the passing x86_64 job](https://github.com/1816x/Occlusion-Lab/actions/runs/41696301191/job/126127631852).
+
 Unzip the downloaded artifact, then unzip `occlusion-lab-macos.zip` to get `Occlusion Lab.app`.
 Keep `fixed-box.obj` and `moving-box.obj` from the artifact together in one folder. In the app,
 select that folder and import the OBJ pair; then evaluate a pose, run a sweep, move the frame
 slider, and export JSON v1. The artifact also contains `smoke-window.png`, a capture of the
 packaged app running under macOS Cocoa in CI.
 The bundle is signed locally by CI but is not notarized; if macOS blocks it, use Finder's **Open**
-context menu or **Open Anyway** in Privacy & Security. It runs on Apple Silicon and accepts only
-the bounded synthetic OBJ format described above. An Intel package is still in CI.
+context menu or **Open Anyway** in Privacy & Security. Each artifact runs on its named processor
+architecture and accepts only the bounded synthetic OBJ format described above.
 
 On a macOS development machine with Homebrew:
 
@@ -257,7 +259,7 @@ cmake --preset desktop-debug \
   -DCMAKE_PREFIX_PATH="$(brew --prefix qtbase);$(brew --prefix vtk);$(brew --prefix fcl)"
 cmake --build --preset desktop-debug --parallel 3
 open build/native/desktop-debug/native/apps/occlusion-desktop/occlusion-desktop.app \
-  --args --open "$(pwd)/fixtures/mesh-io"
+  --args --open "$(pwd)/fixtures/desktop-preview"
 ```
 
 This preview uses synthetic meshes only. Follow [PLAN.md](PLAN.md) for the remaining beta gate.

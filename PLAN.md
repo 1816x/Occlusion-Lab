@@ -7,11 +7,11 @@ Occlusion Lab pretende convertirse en una aplicación científica de escritorio 
 ## 2. Estado actual
 
 - **Fase actual:** Phase 4.14: Shared Mesh File Adapter and Optional Desktop Viewer
-- **Estado:** Phase 4.13 verificada en CI; Phase 4.14 tiene un visor Qt 6/VTK funcional y un preview Apple Silicon actualizado con captura Cocoa; build Intel y prueba visual en otro Mac pendientes
+- **Estado:** Phase 4.13 verificada en CI; Phase 4.14 tiene un visor Qt 6/VTK funcional y previews macOS Apple Silicon e Intel firmados ad hoc y lanzados con Cocoa en CI; prueba visual en otro Mac pendiente
 - **Rama y commit iniciales:** `main` en `46ffc9524e781fe2e8d8c269027434f422c2abf7`
 - **Rama activa:** `work`
 - **Phase 4.3:** Completed mediante [PR #13](https://github.com/1816x/Occlusion-Lab/pull/13), merge `da055bc2067b6477eea9efe7abbad0422ed8e9f3`.
-- **Última actualización significativa:** 2026-11-03 — Phase 4.14 corrige la geometría de ejemplo para que Closing termine en contacto y sustituye la conversión decimal no soportada por libc++ Intel.
+- **Última actualización significativa:** 2026-11-03 — Phase 4.14 publica previews macOS Apple Silicon e Intel con muestra Closing corregida y firma verificada en CI.
 
 La aplicación web heredada continúa disponible y funcional como referencia. La base nativa ofrece unidades fuertes y validación; las capas opcionales de colisión/evaluación ejecutan poses y barridos deterministas. Phase 4.7 expone una fixture sintética por CLI; Phase 4.8 exporta resultados versionados; Phase 4.9 añade un parser OBJ estricto. Phase 4.10 une dos ficheros OBJ sintéticos con el evaluador existente. Phase 4.11 verifica su topología y orientación antes de FCL. Phase 4.12 añade inspección geométrica CGAL optativa y Phase 4.13 la expone por un comando CLI explícito, sin alterar la evaluación FCL existente.
 
@@ -26,10 +26,10 @@ La aplicación web heredada continúa disponible y funcional como referencia. La
 | Detección de colisiones | Worker web/Rapier y biblioteca FCL opcional | FCL | Fundación implementada | Sin afirmar igualdad de manifolds entre motores. |
 | Análisis de barrido de movimiento | Web existente y evaluación C++ | Motor C++ | Barrido y resumen implementados | Paridad semántica del resumen cubierta por fixture versionada. |
 | Renderer | Three.js y primer visor VTK | VTK | Visor sintético verificado en Linux y CI macOS | Renderiza mallas, ejes y contactos normalizados; no forma parte del core. |
-| UI de escritorio | Primer visor Qt 6 | Qt 6 | Build, CTest, smoke y paquete Apple Silicon macOS PASS en CI; prueba visual pendiente | Importación sintética, errores, pose y barrido asíncronos, selección de frame y export JSON v1. |
+| UI de escritorio | Primer visor Qt 6 | Qt 6 | Build, CTest, smoke y paquetes Apple Silicon/Intel macOS PASS en CI; prueba visual pendiente | Importación sintética, errores, pose y barrido asíncronos, selección de frame y export JSON v1. |
 | CLI | `occlusion-cli` | `occlusion-cli` extensible | Evaluación OBJ e inspección optativa implementadas | Evaluación requiere FCL; inspección CGAL puede compilarse sin FCL. |
 | Pruebas | Vitest/web y GoogleTest nativo | GoogleTest + pruebas web | Fundación implementada | Se mantiene la suite heredada. |
-| CI | Web y workflow nativo | CI web y nativa multiplataforma | Implementado y verificado | Web `40713815428` y matriz nativa con paquete macOS `40749999630` pasaron en los cambios del visor. |
+| CI | Web y workflow nativo | CI web y nativa multiplataforma | Implementado y verificado | Web `40713815428`; los 10 jobs nativos de `41696301191`, incluidos los dos paquetes macOS, pasaron en `31ab710`. |
 | Aplicación web heredada | Next.js/React/Three.js | Referencia temporal | Conservada | No eliminar antes de paridad y UI sustituta. |
 
 ## 4. Lista de comprobación de Phase 4
@@ -112,9 +112,9 @@ La aplicación web heredada continúa disponible y funcional como referencia. La
 
 ## 8. Próxima tarea recomendada
 
-Phase 4.14: probar el `.app` autocontenido como usuario final en otro Mac y resolver los hallazgos de esa prueba. El visor importa OBJ, renderiza mallas y contactos, evalúa pose y barrido sin bloquear la UI y exporta JSON v1. El smoke local cubre importación fallida y recuperación, descarte de resultados asíncronos obsoletos, controles de pose/barrido, frame seleccionado, render y bytes de export. El build, CTest, smoke, audit y paquete Apple Silicon macOS pasaron en CI. Conservar la referencia web hasta demostrar paridad de los flujos requeridos.
+Phase 4.14: probar el `.app` autocontenido como usuario final en otro Mac y resolver los hallazgos de esa prueba. El visor importa OBJ, renderiza mallas y contactos, evalúa pose y barrido sin bloquear la UI y exporta JSON v1. El smoke local cubre importación fallida y recuperación, descarte de resultados asíncronos obsoletos, controles de pose/barrido, frame seleccionado, render y bytes de export. Build, CTest, smoke, audit y paquete macOS pasaron en CI para Apple Silicon e Intel. Conservar la referencia web hasta demostrar paridad de los flujos requeridos.
 
-Para la beta macOS sintética, el gate pendiente es una comprobación visual y arranque del `.app` en otro Mac, seguida de correcciones si aparecen. El preview Apple Silicon no está notarizado; las instrucciones para abrirlo están en README. No existe todavía paquete Intel. Objetivo provisional para cerrar la beta: 20 de noviembre de 2026, sujeto a esa prueba. El preview para pruebas tempranas ya está disponible en la CI.
+Para la beta macOS sintética, el gate pendiente es una comprobación visual y arranque del `.app` en otro Mac, seguida de correcciones si aparecen. Los previews no están notarizados; las instrucciones para abrirlos están en README. Objetivo provisional para cerrar la beta: 20 de noviembre de 2026, sujeto a esa prueba. Ambos previews para pruebas tempranas ya están disponibles en CI.
 
 ## 9. Hitos completados
 
@@ -134,7 +134,7 @@ Para la beta macOS sintética, el gate pendiente es una comprobación visual y a
 | Phase 4.11 | Validación topológica y orientación OBJ antes de FCL | `5c98b0c` | Publicada en `main`; 39/39 CTest core, 100/100 CTest colisión y 100/100 ASan+UBSan PASS locales; CI remota pendiente. |
 | Phase 4.12 | Inspección CGAL optativa, conversión comprobada y predicados de mallas sintéticas | `b2483d4`, ajuste CI `aec6975` | Publicada en `main`; geometry Ubuntu y los tres core PASS; Ubuntu/macOS collision y Ubuntu sanitizer PASS; Windows collision build FAIL. |
 | Phase 4.13 | CLI de inspección JSON v1 y contrato de visor Qt 6/VTK | `a7aaba4`–`43c2213` | Completada; 39/39 core, 49/49 geometry, 100/100 collision, 110/110 combinado y 100/100 sanitizer CTest locales PASS; web y matriz nativa CI remota PASS. |
-| Phase 4.14 | Adaptador OBJ compartido y primer visor opcional | `0fe8d4e`–`384d729` (en curso) | Adaptador y sesión verificados en CI multiplataforma. Primer visor Qt 6/VTK: 107/107 CTest locales PASS con render bajo Xvfb; CI macOS y paquete Apple Silicon PASS. Prueba visual en otro Mac pendiente. |
+| Phase 4.14 | Adaptador OBJ compartido y primer visor opcional | `0fe8d4e`–`31ab710` (en curso) | Adaptador y sesión verificados en CI multiplataforma. Primer visor Qt 6/VTK: 109/109 CTest locales PASS con render bajo Xvfb; paquetes Apple Silicon e Intel macOS PASS en CI. Prueba visual en otro Mac pendiente. |
 
 ### Verificación local de Phase 4.13 (2026-10-23)
 
@@ -168,6 +168,7 @@ Para la beta macOS sintética, el gate pendiente es una comprobación visual y a
 - La anotación del job Intel `41691692693` confirmó que `libvtkFiltersHybrid-9.7.1.dylib` es un Mach-O x86_64 regular y no tiene firma al fallar el paquete. Firmar el `.app` primero tampoco es válido: el job Apple Silicon `41693199175` detectó recursos sellados modificados al firmar después las bibliotecas. Se restauró el orden binarios anidados → `.app`.
 - En `41694029386` no apareció el marcador diagnóstico anterior a firmar el `.app`, por lo que el fallo ocurre antes y no demuestra que la firma exterior eliminase la firma VTK. El script ahora informa la etapa exacta y el error de `codesign` al firmar cada fichero; la CI lo publica en una anotación para evitar nuevas inferencias sobre el orden.
 - La anotación de `41695070237` localizó la causa: el primer bucle de `find` intenta firmar `Contents/MacOS/occlusion-desktop` antes de las bibliotecas VTK de `Contents/Frameworks`; `codesign` rechaza el ejecutable porque encuentra `libvtkFiltersHybrid-9.7.1.dylib` aún sin firmar. Se firma primero frameworks y bibliotecas, después el ejecutable y finalmente el `.app`, manteniendo las verificaciones individuales y recursivas.
+- Los diez jobs nativos de `41696301191` concluyeron correctamente en `31ab710`. En particular, los jobs Intel `126127631852` y Apple Silicon `126127631663` pasaron build, CTest, smoke fuente, relocación y audit, firma estricta del `.app`, smoke Cocoa con entorno mínimo, captura de ventana y subida de los artifacts `occlusion-lab-macos-x86_64-preview` y `occlusion-lab-macos-arm64-preview`. La prueba visual en otro Mac sigue pendiente.
 
 ### Verificación local de Phase 4.12 (2026-10-22)
 
