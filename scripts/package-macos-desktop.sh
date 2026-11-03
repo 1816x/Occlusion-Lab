@@ -62,8 +62,8 @@ codesign --force --deep --sign - "$app"
 codesign --verify --deep --strict --verbose=2 "$app"
 ditto -c -k --keepParent "$app" "$output_directory/occlusion-lab-macos.zip"
 repository_root="$(cd "$(dirname "$0")/.." && pwd)"
-ditto "$repository_root/fixtures/mesh-io/fixed-box.obj" "$output_directory/fixed-box.obj"
-ditto "$repository_root/fixtures/mesh-io/moving-box.obj" "$output_directory/moving-box.obj"
+ditto "$repository_root/fixtures/desktop-preview/fixed-box.obj" "$output_directory/fixed-box.obj"
+ditto "$repository_root/fixtures/desktop-preview/moving-box.obj" "$output_directory/moving-box.obj"
 cat > "$output_directory/README.txt" <<'EOF'
 Occlusion Lab macOS development preview
 

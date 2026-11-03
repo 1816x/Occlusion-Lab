@@ -247,7 +247,7 @@ slider, and export JSON v1.
 The bundle is signed locally by CI but is not notarized; if macOS blocks it, use Finder's **Open**
 context menu or **Open Anyway** in Privacy & Security. It runs on Apple Silicon and accepts only
 the bounded synthetic OBJ format described above. This artifact predates the latest input-state
-fix; a new build is pending macOS CI. An Intel package has not been built.
+and preview-geometry fixes; a new build is pending macOS CI. An Intel package has not been built.
 
 On a macOS development machine with Homebrew:
 

@@ -13,6 +13,7 @@ on:
       - 'fixtures/parity/evaluated-sweep-summary-v1.json'
       - 'fixtures/export/**'
       - 'fixtures/mesh-io/**'
+      - 'fixtures/desktop-preview/**'
       - 'schemas/native-evaluation-v1.schema.json'
       - 'schemas/native-mesh-inspection-v1.schema.json'
       - 'scripts/parity/evaluated-sweep-summary-fixture.ts'
@@ -37,6 +38,7 @@ on:
       - 'fixtures/parity/evaluated-sweep-summary-v1.json'
       - 'fixtures/export/**'
       - 'fixtures/mesh-io/**'
+      - 'fixtures/desktop-preview/**'
       - 'schemas/native-evaluation-v1.schema.json'
       - 'schemas/native-mesh-inspection-v1.schema.json'
       - 'scripts/parity/evaluated-sweep-summary-fixture.ts'
@@ -248,7 +250,7 @@ jobs:
       - name: Smoke-test desktop rendering and evaluation
         env:
           QT_QPA_PLATFORM: offscreen
-        run: build/native/desktop-debug/native/apps/occlusion-desktop/occlusion-desktop.app/Contents/MacOS/occlusion-desktop --smoke fixtures/mesh-io
+        run: build/native/desktop-debug/native/apps/occlusion-desktop/occlusion-desktop.app/Contents/MacOS/occlusion-desktop --smoke fixtures/desktop-preview
       - name: Package app and audit bundled libraries
         run: |
           if ! {
@@ -259,6 +261,7 @@ jobs:
               "$RUNNER_TEMP/occlusion-desktop-package/Occlusion Lab.app/Contents/MacOS/occlusion-desktop" \
               --smoke "$RUNNER_TEMP/occlusion-desktop-package" &&
             env -i PATH="/usr/bin:/bin:/usr/sbin:/sbin" HOME="$HOME" QT_QPA_PLATFORM=cocoa \
+              OCCLUSION_DESKTOP_SMOKE_WINDOW="$RUNNER_TEMP/occlusion-desktop-package/smoke-window.png" \
               "$RUNNER_TEMP/occlusion-desktop-package/Occlusion Lab.app/Contents/MacOS/occlusion-desktop" \
               --smoke "$RUNNER_TEMP/occlusion-desktop-package"
           } > "$RUNNER_TEMP/occlusion-package.log" 2>&1; then
@@ -280,6 +283,7 @@ jobs:
             ${{ runner.temp }}/occlusion-desktop-package/fixed-box.obj
             ${{ runner.temp }}/occlusion-desktop-package/moving-box.obj
             ${{ runner.temp }}/occlusion-desktop-package/README.txt
+            ${{ runner.temp }}/occlusion-desktop-package/smoke-window.png
           if-no-files-found: error
 
   sanitizers:

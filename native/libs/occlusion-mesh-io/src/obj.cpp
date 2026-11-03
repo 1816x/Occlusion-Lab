@@ -1,7 +1,10 @@
 #include "occlusion/mesh_io/mesh_io.hpp"
 
+#include "occlusion/core/parse_decimal.hpp"
+
 #include <charconv>
 #include <cmath>
+#include <type_traits>
 
 namespace occlusion::mesh_io {
 namespace {
@@ -24,11 +27,15 @@ std::optional<std::string_view> take_token(std::string_view& value) {
 }
 
 template <typename T> std::optional<T> parse_number(std::string_view token) {
-  T value{};
-  const auto [end, error] = std::from_chars(token.data(), token.data() + token.size(), value);
-  if (error != std::errc{} || end != token.data() + token.size())
-    return std::nullopt;
-  return value;
+  if constexpr (std::is_floating_point_v<T>) {
+    return core::parse_decimal(token);
+  } else {
+    T value{};
+    const auto [end, error] = std::from_chars(token.data(), token.data() + token.size(), value);
+    if (error != std::errc{} || end != token.data() + token.size())
+      return std::nullopt;
+    return value;
+  }
 }
 
 MeshIngestionResult<TriangleMesh> failure(MeshIngestionErrorCode code, std::size_t line,

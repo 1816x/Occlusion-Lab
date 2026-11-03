@@ -10,6 +10,7 @@
 
 #include "occlusion/core/domain.hpp"
 #include "occlusion/core/length.hpp"
+#include "occlusion/core/parse_decimal.hpp"
 #ifdef OCCLUSION_CLI_ENABLE_EVALUATION
 #include "mesh_files.hpp"
 #include "occlusion/evaluation/evaluation.hpp"
@@ -89,15 +90,18 @@ TriangleMesh synthetic_box() {
 }
 
 template <typename Value> std::optional<Value> parse_number(std::string_view text) {
-  Value value{};
-  const auto [end, error] = std::from_chars(text.data(), text.data() + text.size(), value);
-  if (error != std::errc{} || end != text.data() + text.size())
-    return std::nullopt;
   if constexpr (std::is_floating_point_v<Value>) {
-    if (!std::isfinite(value))
+    const auto value = occlusion::core::parse_decimal(text);
+    if (!value || !std::isfinite(*value))
       return std::nullopt;
+    return value;
+  } else {
+    Value value{};
+    const auto [end, error] = std::from_chars(text.data(), text.data() + text.size(), value);
+    if (error != std::errc{} || end != text.data() + text.size())
+      return std::nullopt;
+    return value;
   }
-  return value;
 }
 
 std::optional<SweepPreset> parse_preset(std::string_view value) {

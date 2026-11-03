@@ -40,6 +40,19 @@ TEST(ObjIngestion, AcceptsCrLfWhitespaceAndInlineComments) {
   EXPECT_EQ(result.value().vertices_meters.size(), 3);
 }
 
+TEST(ObjIngestion, ParsesDecimalExponentAndRejectsNonstandardPrefix) {
+  const auto result = parse_obj_mesh("v 0 0 0\nv 1e-1 0 0\nv 0 .5 0\nf 1 2 3\n");
+  ASSERT_TRUE(result);
+  EXPECT_DOUBLE_EQ(result.value().vertices_meters[1].x, 0.1);
+  EXPECT_DOUBLE_EQ(result.value().vertices_meters[2].y, 0.5);
+  const auto plus = parse_obj_mesh("v +1 0 0\n");
+  ASSERT_FALSE(plus);
+  EXPECT_EQ(plus.error().code, MeshIngestionErrorCode::invalid_number);
+  const auto comma = parse_obj_mesh("v 1,5 0 0\n");
+  ASSERT_FALSE(comma);
+  EXPECT_EQ(comma.error().code, MeshIngestionErrorCode::invalid_number);
+}
+
 TEST(ObjIngestion, RejectsEmptyAndIncompleteMeshes) {
   auto empty = parse_obj_mesh("");
   ASSERT_FALSE(empty);

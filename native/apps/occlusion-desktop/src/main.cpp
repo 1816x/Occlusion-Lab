@@ -275,6 +275,7 @@ public:
     moving_name_->setText("moving-box.obj");
     if (!evaluate_->isEnabled())
       return false;
+    opening_->setValue(250);
     evaluate_->click();
     import_pair(); // Simulate a newer selection before the earlier worker result is published.
     if (!wait_until_ready(import_) || !QThreadPool::globalInstance()->waitForDone(5000))
@@ -299,10 +300,14 @@ public:
     sweep_button_->click();
     if (preset_->isEnabled() || frames_->isEnabled())
       return false;
-    if (!wait_until_ready(sweep_button_) || !sweep_ || sweep_->frames.size() != 11)
+    if (!wait_until_ready(sweep_button_) || !sweep_ || sweep_->frames.size() != 11 ||
+        sweep_->frames.front().evaluation.classification !=
+            core::ContactClassification::separated ||
+        sweep_->frames.back().evaluation.classification != core::ContactClassification::touching ||
+        !sweep_->summary.contact_persists_through_final_frame)
       return false;
     frame_slider_->setValue(10);
-    if (frame_label_->text() != "Frame 11/11")
+    if (frame_label_->text() != "Frame 11/11" || !status_->text().startsWith("Touching"))
       return false;
     const auto& selected_transform = sweep_->frames[10].evaluation.applied_transform;
     const auto* selected_matrix = moving_actor_->GetUserMatrix();
@@ -346,8 +351,8 @@ public:
         return false;
     }
     std::set<QRgb> colors;
-    for (int y = 0; y < scene_image_.height(); y += 20)
-      for (int x = 0; x < scene_image_.width(); x += 20)
+    for (int y = 0; y < scene_image_.height(); y += 10)
+      for (int x = 0; x < scene_image_.width(); x += 10)
         colors.insert(scene_image_.pixel(x, y));
     return colors.size() > 4 && json.find("\"requestedFrameCount\":11") != std::string::npos;
   }

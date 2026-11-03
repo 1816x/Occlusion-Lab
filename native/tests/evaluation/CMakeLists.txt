@@ -23,6 +23,11 @@ add_test(NAME cli-rejects-non-finite-pose
   COMMAND occlusion-cli --evaluate-fixture pose nan 0 0)
 set_tests_properties(cli-rejects-non-finite-pose PROPERTIES WILL_FAIL TRUE)
 
+add_test(NAME cli-accepts-scientific-pose
+  COMMAND occlusion-cli --evaluate-fixture pose 7e1 0 0)
+set_tests_properties(cli-accepts-scientific-pose PROPERTIES
+  PASS_REGULAR_EXPRESSION "\"opening\":0.07")
+
 add_test(NAME cli-rejects-out-of-range-sweep
   COMMAND occlusion-cli --evaluate-fixture sweep closing 1)
 set_tests_properties(cli-rejects-out-of-range-sweep PROPERTIES WILL_FAIL TRUE)

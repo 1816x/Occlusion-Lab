@@ -8,7 +8,7 @@ vtk_module_autoinit(TARGETS occlusion-desktop MODULES ${VTK_LIBRARIES})
 
 if(OCCLUSION_BUILD_TESTS AND NOT APPLE)
   add_test(NAME desktop-render-smoke
-    COMMAND occlusion-desktop --smoke ${PROJECT_SOURCE_DIR}/fixtures/mesh-io)
+    COMMAND occlusion-desktop --smoke ${PROJECT_SOURCE_DIR}/fixtures/desktop-preview)
   set_tests_properties(desktop-render-smoke PROPERTIES
     ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
   add_test(NAME desktop-rejects-missing-mesh-directory
