@@ -8,7 +8,6 @@ fi
 
 source_app="$1"
 output_directory="$2"
-app="$output_directory/Occlusion Lab.app"
 
 if [[ ! -x "$source_app/Contents/MacOS/occlusion-desktop" ]]; then
   echo "Built desktop executable is missing: $source_app" >&2
@@ -16,6 +15,8 @@ if [[ ! -x "$source_app/Contents/MacOS/occlusion-desktop" ]]; then
 fi
 
 mkdir -p "$output_directory"
+output_directory="$(cd "$output_directory" && pwd)"
+app="$output_directory/Occlusion Lab.app"
 ditto "$source_app" "$app"
 "$(brew --prefix qtbase)/bin/macdeployqt" "$app" -verbose=1
 rm -f "$app/Contents/PlugIns/platforms/libqoffscreen.dylib"
@@ -52,6 +53,15 @@ while IFS= read -r -d '' item; do
     codesign --force --sign - "$item"
   fi
 done < <(find "$app" -type f -print0)
+while IFS= read -r -d '' item; do
+  resolved="$(realpath "$item")"
+  if [[ "$resolved" != "$app"/* ]]; then
+    echo "Bundled library resolves outside the app: $item -> $resolved" >&2
+    exit 1
+  fi
+  codesign --force --sign - "$item"
+  codesign --verify --strict --all-architectures --verbose=2 "$item"
+done < <(find "$app" \( -type f -o -type l \) -name '*.dylib' -print0)
 codesign --force --sign - "$app"
 codesign --verify --deep --strict --verbose=2 "$app"
 ditto -c -k --keepParent "$app" "$output_directory/occlusion-lab-macos.zip"
