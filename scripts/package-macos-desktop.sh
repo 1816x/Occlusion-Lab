@@ -48,7 +48,6 @@ while IFS= read -r -d '' item; do
   ')
 done < <(find "$app" -type f -print0)
 
-codesign --force --sign - "$app"
 while IFS= read -r -d '' item; do
   if [[ "$item" == *.dylib || "$item" == *.so ]] || file -b "$item" | grep -q 'Mach-O'; then
     codesign --force --sign - "$item"
@@ -62,6 +61,22 @@ while IFS= read -r -d '' item; do
   fi
   codesign --force --sign - "$item"
 done < <(find "$app" \( -type f -o -type l \) -name '*.dylib' -print0)
+vtk_signature_probe=""
+for candidate in "$app/Contents/Frameworks"/libvtkFiltersHybrid*.dylib; do
+  if [[ -e "$candidate" ]]; then
+    vtk_signature_probe="$candidate"
+    break
+  fi
+done
+if [[ -n "$vtk_signature_probe" ]]; then
+  echo "VTK_SIGNATURE_BEFORE $(shasum -a 256 "$vtk_signature_probe")"
+  echo "VTK_SIGNATURE_BEFORE $(codesign --display --verbose=2 "$vtk_signature_probe" 2>&1 | tail -n 2 | tr '\n' ' ')"
+fi
+codesign --force --deep --sign - "$app"
+if [[ -n "$vtk_signature_probe" ]]; then
+  echo "VTK_SIGNATURE_AFTER $(shasum -a 256 "$vtk_signature_probe")"
+  echo "VTK_SIGNATURE_AFTER $(codesign --display --verbose=2 "$vtk_signature_probe" 2>&1 | tail -n 2 | tr '\n' ' ')"
+fi
 while IFS= read -r -d '' item; do
   codesign --verify --strict --all-architectures --verbose=2 "$item"
 done < <(find "$app" \( -type f -o -type l \) -name '*.dylib' -print0)
