@@ -7,11 +7,11 @@ Occlusion Lab pretende convertirse en una aplicación científica de escritorio 
 ## 2. Estado actual
 
 - **Fase actual:** Phase 4.14: Shared Mesh File Adapter and Optional Desktop Viewer
-- **Estado:** Phase 4.13 verificada en CI; Phase 4.14 tiene un visor Qt 6/VTK funcional y un preview macOS Apple Silicon empaquetado en CI; prueba visual en otro Mac pendiente
+- **Estado:** Phase 4.13 verificada en CI; Phase 4.14 tiene un visor Qt 6/VTK funcional y un preview macOS Apple Silicon empaquetado en CI; paquete Intel y prueba visual en otro Mac pendientes
 - **Rama y commit iniciales:** `main` en `46ffc9524e781fe2e8d8c269027434f422c2abf7`
 - **Rama activa:** `work`
 - **Phase 4.3:** Completed mediante [PR #13](https://github.com/1816x/Occlusion-Lab/pull/13), merge `da055bc2067b6477eea9efe7abbad0422ed8e9f3`.
-- **Última actualización significativa:** 2026-10-28 — Phase 4.14 añade una sesión compartida y un primer visor Qt 6/VTK con importación OBJ, pose, barrido, cámara y export JSON v1.
+- **Última actualización significativa:** 2026-11-03 — Phase 4.14 empaqueta el visor Apple Silicon con OBJ de ejemplo y comprueba el arranque Cocoa; se añadió una matriz Intel pendiente de corregir.
 
 La aplicación web heredada continúa disponible y funcional como referencia. La base nativa ofrece unidades fuertes y validación; las capas opcionales de colisión/evaluación ejecutan poses y barridos deterministas. Phase 4.7 expone una fixture sintética por CLI; Phase 4.8 exporta resultados versionados; Phase 4.9 añade un parser OBJ estricto. Phase 4.10 une dos ficheros OBJ sintéticos con el evaluador existente. Phase 4.11 verifica su topología y orientación antes de FCL. Phase 4.12 añade inspección geométrica CGAL optativa y Phase 4.13 la expone por un comando CLI explícito, sin alterar la evaluación FCL existente.
 
@@ -159,7 +159,7 @@ Para la beta macOS sintética, el gate pendiente es una comprobación visual y a
 - La ejecución `a42245e` ya pasó relocación, auditoría de enlaces, firma y creación del ZIP. El smoke de la copia falló porque `macdeployqt` distribuyó solo el plugin Qt Cocoa, mientras la CI usa el plugin offscreen. El empaquetador ahora añade este plugin explícitamente y repetirá el smoke con el entorno mínimo.
 - La ejecución `40749999630` de `384d729` pasó build, CTest, smoke, relocación, audit, firma, smoke del `.app` empaquetado con entorno mínimo y upload del artifact `occlusion-lab-macos-preview` (38.8 MB; SHA-256 del artifact `a92771ed6c177798a19d344d05e2f452dfe62662f3e70897a7be44ad6ddf4a1f`). El preview Apple Silicon está listo para pruebas manuales, con alcance sintético y sin notarización.
 - La siguiente CI de Phase 4.14 añade un segundo paquete x86_64 en `macos-15-intel` y comprueba el `.app` con el plugin Cocoa del usuario final, además del smoke offscreen existente. La prueba visual manual en otro Mac sigue pendiente.
-- La ejecución `41677644019` pasó los jobs Apple Silicon, incluido el smoke Cocoa del paquete, pero el job Intel falló al compilar tras instalar y configurar el toolchain. La CI ahora publica las líneas de error del compilador para corregirlo. El visor bloquea las entradas durante trabajos asíncronos y exige reimportar tras cambiar la selección de mallas; cambios de pose o barrido invalidan su resultado y export. Este flujo pasó 107/107 CTest locales y 20 repeticiones del smoke bajo Xvfb.
+- La ejecución `41677644019` pasó los jobs Apple Silicon, incluido el smoke Cocoa del paquete, pero el job Intel falló al compilar tras instalar y configurar el toolchain. La ejecución Apple Silicon `41678290455` también pasó el smoke con los dos OBJ empaquetados y subió el artifact `occlusion-lab-macos-arm64-preview`; Intel volvió a fallar durante build. La CI `41679136035` publica las líneas de error del compilador para corregirlo cuando obtenga un runner. El visor bloquea las entradas durante trabajos asíncronos y exige reimportar tras cambiar la selección de mallas; cambios de pose o barrido invalidan su resultado y export. Este flujo pasó 107/107 CTest locales y 20 repeticiones del smoke bajo Xvfb, pero aún no tiene resultado macOS CI.
 
 ### Verificación local de Phase 4.12 (2026-10-22)
 

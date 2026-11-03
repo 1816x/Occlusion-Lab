@@ -4,7 +4,7 @@ Occlusion Lab is a **work in progress** educational browser sandbox for syntheti
 
 ## C++ migration (Phase 4)
 
-The project is migrating toward a C++20, desktop-first scientific architecture. The existing Next.js/React/Three.js application remains intact as the production behavioral reference. The native foundation includes pose and sweep contracts, FCL collision/evaluation, CGAL inspection, versioned JSON exports, bounded synthetic OBJ ingestion, and an optional first Qt 6/VTK viewer. The viewer is a development preview while macOS build and packaging checks are completed; no clinical parity or validation is claimed.
+The project is migrating toward a C++20, desktop-first scientific architecture. The existing Next.js/React/Three.js application remains intact as the production behavioral reference. The native foundation includes pose and sweep contracts, FCL collision/evaluation, CGAL inspection, versioned JSON exports, bounded synthetic OBJ ingestion, and an optional first Qt 6/VTK viewer. The Apple Silicon viewer is a development preview; an Intel package and a visual check on another Mac remain open. No clinical parity or validation is claimed.
 
 [`PLAN.md`](PLAN.md) is the concise source of truth for migration status, verification results, risks, and the single next task. The architectural rationale is recorded in [ADR-0001](docs/adr/0001-cpp-desktop-architecture.md).
 
@@ -20,7 +20,7 @@ cmake --preset native-release
 cmake --build --preset native-release --parallel
 ```
 
-Scientific lengths inside the native domain use `double` meters. Millimeter values are a distinct type and conversion is explicit. Phase 4.2 does not import files, calculate collisions or biomechanics, render with VTK, or provide a Qt interface.
+Scientific lengths inside the native domain use `double` meters. Millimeter values are a distinct type and conversion is explicit. The current optional native modules import bounded synthetic OBJ files, evaluate FCL collisions, inspect geometry with CGAL, and render with Qt 6/VTK. They do not model biomechanics.
 
 ## Phase 1 scope
 
@@ -237,12 +237,17 @@ and exports the native JSON v1 result. The Apple Silicon macOS development previ
 bundle dependency audit, signature verification, and a clean-environment launch in CI. Its
 first visual check on another Mac remains the beta gate.
 
-To try that preview, download the `occlusion-lab-macos-preview` artifact from
-[the passing macOS workflow run](https://github.com/1816x/Occlusion-Lab/actions/runs/40749999630).
+To try the latest CI-verified Apple Silicon preview, download the
+`occlusion-lab-macos-arm64-preview` artifact from
+[the passing macOS job](https://github.com/1816x/Occlusion-Lab/actions/runs/41678290455/job/126064744527).
 Unzip the downloaded artifact, then unzip `occlusion-lab-macos.zip` to get `Occlusion Lab.app`.
+Keep `fixed-box.obj` and `moving-box.obj` from the artifact together in one folder. In the app,
+select that folder and import the OBJ pair; then evaluate a pose, run a sweep, move the frame
+slider, and export JSON v1.
 The bundle is signed locally by CI but is not notarized; if macOS blocks it, use Finder's **Open**
 context menu or **Open Anyway** in Privacy & Security. It runs on Apple Silicon and accepts only
-the bounded synthetic OBJ format described above. An Intel package has not been built.
+the bounded synthetic OBJ format described above. This artifact predates the latest input-state
+fix; a new build is pending macOS CI. An Intel package has not been built.
 
 On a macOS development machine with Homebrew:
 
