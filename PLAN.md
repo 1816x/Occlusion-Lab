@@ -159,6 +159,7 @@ Para la beta macOS sintética, el gate pendiente es una comprobación visual y a
 - La ejecución `a42245e` ya pasó relocación, auditoría de enlaces, firma y creación del ZIP. El smoke de la copia falló porque `macdeployqt` distribuyó solo el plugin Qt Cocoa, mientras la CI usa el plugin offscreen. El empaquetador ahora añade este plugin explícitamente y repetirá el smoke con el entorno mínimo.
 - La ejecución `40749999630` de `384d729` pasó build, CTest, smoke, relocación, audit, firma, smoke del `.app` empaquetado con entorno mínimo y upload del artifact `occlusion-lab-macos-preview` (38.8 MB; SHA-256 del artifact `a92771ed6c177798a19d344d05e2f452dfe62662f3e70897a7be44ad6ddf4a1f`). El preview Apple Silicon está listo para pruebas manuales, con alcance sintético y sin notarización.
 - La siguiente CI de Phase 4.14 añade un segundo paquete x86_64 en `macos-15-intel` y comprueba el `.app` con el plugin Cocoa del usuario final, además del smoke offscreen existente. La prueba visual manual en otro Mac sigue pendiente.
+- La ejecución `41677644019` pasó los jobs Apple Silicon, incluido el smoke Cocoa del paquete, pero el job Intel falló al compilar tras instalar y configurar el toolchain. La CI ahora publica las líneas de error del compilador para corregirlo. El visor bloquea las entradas durante trabajos asíncronos y exige reimportar tras cambiar la selección de mallas; cambios de pose o barrido invalidan su resultado y export. Este flujo pasó 107/107 CTest locales y 20 repeticiones del smoke bajo Xvfb.
 
 ### Verificación local de Phase 4.12 (2026-10-22)
 

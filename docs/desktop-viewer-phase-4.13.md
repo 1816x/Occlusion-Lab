@@ -54,8 +54,10 @@ must not call FCL or CGAL or reinterpret their private data.
 Qt and VTK objects stay on the UI thread. Worker results cross that boundary as
 owned project values, with a request generation number so late results from an
 older selection cannot replace a newer scene. The first release disables a
-request while it is running; cooperative cancellation needs an explicit engine
-API and is not simulated by discarding a running FCL query. It must never
+request and its inputs while it is running. Editing the selected mesh names or
+directory requires re-import before evaluation or export; editing pose or sweep
+inputs invalidates that result until it is recalculated. Cooperative cancellation
+needs an explicit engine API and is not simulated by discarding a running FCL query. It must never
 publish a partial sweep as a complete result.
 
 ## Presentation and acceptance rules

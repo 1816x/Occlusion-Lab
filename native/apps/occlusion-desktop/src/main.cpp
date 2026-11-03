@@ -140,7 +140,7 @@ public:
     directory_ = new QLineEdit(std::move(initial_directory));
     fixed_name_ = new QLineEdit("fixed-box.obj");
     moving_name_ = new QLineEdit("moving-box.obj");
-    auto* browse = new QPushButton("Browse…");
+    browse_ = new QPushButton("Browse…");
     import_ = new QPushButton("Import OBJ pair");
     opening_ = spin_box(0, 250);
     protrusion_ = spin_box(0, 50);
@@ -173,7 +173,7 @@ public:
     auto* form = new QFormLayout;
     auto* directory_row = new QHBoxLayout;
     directory_row->addWidget(directory_);
-    directory_row->addWidget(browse);
+    directory_row->addWidget(browse_);
     form->addRow("Directory", directory_row);
     form->addRow("Fixed OBJ", fixed_name_);
     form->addRow("Moving OBJ", moving_name_);
@@ -223,7 +223,7 @@ public:
     add_axes();
     set_busy(false);
 
-    connect(browse, &QPushButton::clicked, this, [this] {
+    connect(browse_, &QPushButton::clicked, this, [this] {
       const auto selected = QFileDialog::getExistingDirectory(
           this, "Select synthetic OBJ directory", directory_->text());
       if (!selected.isEmpty())
@@ -245,11 +245,19 @@ public:
     connect(rotate_down, &QPushButton::clicked, this, [this] { elevate_camera(-15); });
     connect(zoom_in, &QPushButton::clicked, this, [this] { zoom_camera(1.2); });
     connect(zoom_out, &QPushButton::clicked, this, [this] { zoom_camera(1.0 / 1.2); });
+    for (auto* field : {directory_, fixed_name_, moving_name_})
+      connect(field, &QLineEdit::textChanged, this, [this] { selection_changed(); });
+    for (auto* field : {opening_, protrusion_, lateral_})
+      connect(field, &QDoubleSpinBox::valueChanged, this, [this] { pose_inputs_changed(); });
+    connect(preset_, &QComboBox::currentIndexChanged, this, [this] { sweep_inputs_changed(); });
+    connect(frames_, &QSpinBox::valueChanged, this, [this] { sweep_inputs_changed(); });
   }
 
   bool smoke(const std::filesystem::path& directory) {
     directory_->setText(QString::fromStdString(directory.string()));
     import_->click();
+    if (directory_->isEnabled() || fixed_name_->isEnabled() || browse_->isEnabled())
+      return false;
     if (!wait_until_ready(import_) || !session_)
       return false;
     fixed_name_->setText("missing.obj");
@@ -261,6 +269,12 @@ public:
     import_->click();
     if (!wait_until_ready(import_) || !session_)
       return false;
+    moving_name_->setText("other.obj");
+    if (evaluate_->isEnabled() || sweep_button_->isEnabled() || export_->isEnabled())
+      return false;
+    moving_name_->setText("moving-box.obj");
+    if (!evaluate_->isEnabled())
+      return false;
     evaluate_->click();
     import_pair(); // Simulate a newer selection before the earlier worker result is published.
     if (!wait_until_ready(import_) || !QThreadPool::globalInstance()->waitForDone(5000))
@@ -269,11 +283,22 @@ public:
     if (pose_ || !evaluate_->isEnabled())
       return false;
     evaluate_->click();
+    if (opening_->isEnabled() || protrusion_->isEnabled() || lateral_->isEnabled())
+      return false;
     if (!wait_until_ready(evaluate_) || !pose_ ||
         pose_->classification != core::ContactClassification::separated)
       return false;
+    opening_->setValue(1);
+    if (pose_ || export_->isEnabled())
+      return false;
+    opening_->setValue(0);
+    evaluate_->click();
+    if (!wait_until_ready(evaluate_) || !pose_)
+      return false;
     frames_->setValue(11);
     sweep_button_->click();
+    if (preset_->isEnabled() || frames_->isEnabled())
+      return false;
     if (!wait_until_ready(sweep_button_) || !sweep_ || sweep_->frames.size() != 11)
       return false;
     frame_slider_->setValue(10);
@@ -300,6 +325,15 @@ public:
     if (!exported.open(QIODevice::ReadOnly) ||
         exported.readAll() != QByteArray::fromStdString(json))
       return false;
+    frames_->setValue(12);
+    if (sweep_ || export_->isEnabled() || frame_slider_->isEnabled())
+      return false;
+    frames_->setValue(11);
+    sweep_button_->click();
+    if (!wait_until_ready(sweep_button_) || !sweep_ ||
+        evaluation::serialize_evaluation_json(*sweep_, "desktop-obj-pair-v1") != json)
+      return false;
+    frame_slider_->setValue(10);
     const auto screenshot = qEnvironmentVariable("OCCLUSION_DESKTOP_SMOKE_IMAGE");
     if (!screenshot.isEmpty() && !scene_image_.save(screenshot))
       return false;
@@ -335,17 +369,65 @@ private:
     return spin;
   }
 
+  bool selection_matches_import() const {
+    return session_ && directory_->text() == imported_directory_ &&
+           fixed_name_->text() == imported_fixed_name_ &&
+           moving_name_->text() == imported_moving_name_;
+  }
+
+  void selection_changed() {
+    if (!session_)
+      return;
+    status_->setText(selection_matches_import()
+                         ? "Imported pair restored. Evaluate a pose or sweep."
+                         : "Mesh selection changed. Import this pair before evaluating; last valid "
+                           "scene shown.");
+    set_busy(busy_);
+  }
+
+  void pose_inputs_changed() {
+    if (pose_) {
+      pose_.reset();
+      status_->setText("Pose inputs changed. Evaluate the new pose before exporting.");
+      set_busy(busy_);
+    }
+  }
+
+  void sweep_inputs_changed() {
+    if (sweep_) {
+      sweep_.reset();
+      frame_label_->setText("No sweep selected");
+      summary_->clear();
+      status_->setText("Sweep inputs changed. Run the new sweep before exporting.");
+      set_busy(busy_);
+    }
+  }
+
   void set_busy(bool busy) {
+    busy_ = busy;
+    browse_->setEnabled(!busy);
+    directory_->setEnabled(!busy);
+    fixed_name_->setEnabled(!busy);
+    moving_name_->setEnabled(!busy);
+    opening_->setEnabled(!busy);
+    protrusion_->setEnabled(!busy);
+    lateral_->setEnabled(!busy);
+    preset_->setEnabled(!busy);
+    frames_->setEnabled(!busy);
     import_->setEnabled(!busy);
-    evaluate_->setEnabled(!busy && session_.has_value());
-    sweep_button_->setEnabled(!busy && session_.has_value());
-    frame_slider_->setEnabled(!busy && sweep_.has_value());
-    export_->setEnabled(!busy && (pose_.has_value() || sweep_.has_value()));
+    const bool imported = selection_matches_import();
+    evaluate_->setEnabled(!busy && imported);
+    sweep_button_->setEnabled(!busy && imported);
+    frame_slider_->setEnabled(!busy && imported && sweep_.has_value());
+    export_->setEnabled(!busy && imported && (pose_.has_value() || sweep_.has_value()));
   }
 
   void accept_loaded_pair(LoadedPair&& loaded) {
     if (!loaded.session) {
       session_.reset();
+      imported_directory_.clear();
+      imported_fixed_name_.clear();
+      imported_moving_name_.clear();
       pose_.reset();
       sweep_.reset();
       frame_label_->setText("No sweep selected");
@@ -356,6 +438,9 @@ private:
       return;
     }
     session_ = std::move(*loaded.session);
+    imported_directory_ = directory_->text();
+    imported_fixed_name_ = fixed_name_->text();
+    imported_moving_name_ = moving_name_->text();
     pose_.reset();
     sweep_.reset();
     frame_label_->setText("No sweep selected");
@@ -397,7 +482,7 @@ private:
   }
 
   void evaluate_pose() {
-    if (!session_)
+    if (!selection_matches_import())
       return;
     set_busy(true);
     status_->setText("Evaluating pose…");
@@ -428,7 +513,7 @@ private:
   }
 
   void evaluate_sweep() {
-    if (!session_)
+    if (!selection_matches_import())
       return;
     set_busy(true);
     status_->setText("Evaluating sweep…");
@@ -560,7 +645,7 @@ private:
   }
 
   void export_json() {
-    if (!pose_ && !sweep_)
+    if (!selection_matches_import() || (!pose_ && !sweep_))
       return;
     const auto path =
         QFileDialog::getSaveFileName(this, "Export native evaluation", {}, "JSON (*.json)");
@@ -574,7 +659,7 @@ private:
   }
 
   bool write_export(const QString& path) const {
-    if (!pose_ && !sweep_)
+    if (!selection_matches_import() || (!pose_ && !sweep_))
       return false;
     const auto json = sweep_ ? evaluation::serialize_evaluation_json(*sweep_, "desktop-obj-pair-v1")
                              : evaluation::serialize_evaluation_json(*pose_, "desktop-obj-pair-v1");
@@ -588,6 +673,7 @@ private:
   QLineEdit* directory_ = nullptr;
   QLineEdit* fixed_name_ = nullptr;
   QLineEdit* moving_name_ = nullptr;
+  QPushButton* browse_ = nullptr;
   QDoubleSpinBox* opening_ = nullptr;
   QDoubleSpinBox* protrusion_ = nullptr;
   QDoubleSpinBox* lateral_ = nullptr;
@@ -603,6 +689,10 @@ private:
   QLabel* summary_ = nullptr;
   SceneLabel* scene_ = nullptr;
   QImage scene_image_;
+  bool busy_ = false;
+  QString imported_directory_;
+  QString imported_fixed_name_;
+  QString imported_moving_name_;
   std::uint64_t generation_ = 0;
   std::optional<evaluation::MeshEvaluationSession> session_;
   std::optional<evaluation::PoseEvaluationResult> pose_;
