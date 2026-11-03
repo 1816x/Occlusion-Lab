@@ -24,7 +24,13 @@ if [[ -z "$offscreen_plugin" ]]; then
   exit 1
 fi
 mkdir -p "$app/Contents/PlugIns/platforms"
-ditto "$offscreen_plugin" "$app/Contents/PlugIns/platforms/libqoffscreen.dylib"
+offscreen_destination="$app/Contents/PlugIns/platforms/libqoffscreen.dylib"
+rm -f "$offscreen_destination"
+cp -L "$offscreen_plugin" "$offscreen_destination"
+if [[ ! -f "$offscreen_destination" || -L "$offscreen_destination" ]]; then
+  echo "Qt offscreen platform plugin was not copied as a regular file" >&2
+  exit 1
+fi
 python3 "$(dirname "$0")/relocate-macos-libraries.py" "$app"
 
 # macdeployqt copies native libraries but can retain build-machine search paths.
