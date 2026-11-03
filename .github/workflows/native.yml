@@ -206,13 +206,23 @@ jobs:
         run: ctest --preset geometry-debug --output-on-failure
 
   desktop_macos:
-    name: Desktop viewer / macOS
-    runs-on: macos-latest
+    name: Desktop viewer / macOS / ${{ matrix.arch }}
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            arch: arm64
+          - os: macos-15-intel
+            arch: x86_64
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - name: Install desktop toolchain
-        run: brew install qtbase vtk fcl
+        run: |
+          test "$(uname -m)" = "${{ matrix.arch }}"
+          brew install qtbase vtk fcl
       - name: Configure desktop Debug
         run: |
           cmake --preset desktop-debug \
@@ -233,6 +243,9 @@ jobs:
               "$RUNNER_TEMP/occlusion-desktop-package" &&
             env -i PATH="/usr/bin:/bin:/usr/sbin:/sbin" HOME="$HOME" QT_QPA_PLATFORM=offscreen \
               "$RUNNER_TEMP/occlusion-desktop-package/Occlusion Lab.app/Contents/MacOS/occlusion-desktop" \
+              --smoke fixtures/mesh-io &&
+            env -i PATH="/usr/bin:/bin:/usr/sbin:/sbin" HOME="$HOME" QT_QPA_PLATFORM=cocoa \
+              "$RUNNER_TEMP/occlusion-desktop-package/Occlusion Lab.app/Contents/MacOS/occlusion-desktop" \
               --smoke fixtures/mesh-io
           } > "$RUNNER_TEMP/occlusion-package.log" 2>&1; then
             echo "::error title=macOS bundle failed::$(tail -n 12 "$RUNNER_TEMP/occlusion-package.log" | tr '\n' ' ' | cut -c 1-3000)"
@@ -247,7 +260,7 @@ jobs:
       - name: Upload macOS development preview
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: occlusion-lab-macos-preview
+          name: occlusion-lab-macos-${{ matrix.arch }}-preview
           path: ${{ runner.temp }}/occlusion-desktop-package/occlusion-lab-macos.zip
           if-no-files-found: error
 
