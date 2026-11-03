@@ -33,6 +33,18 @@ def dependencies(path: Path) -> list[str]:
 def relocate(app: Path) -> None:
     frameworks = app / "Contents" / "Frameworks"
     frameworks.mkdir(exist_ok=True)
+    bundle_root = app.resolve(strict=True)
+    for item in list(app.rglob("*")):
+        if not item.is_symlink():
+            continue
+        target = item.resolve(strict=True)
+        if target.is_relative_to(bundle_root):
+            continue
+        if not target.is_file():
+            raise RuntimeError(f"External bundle symlink is not a file: {item} -> {target}")
+        item.unlink()
+        shutil.copy2(target, item)
+        print(f"Materialized external bundle symlink: {item}")
     changes = 0
     for _ in range(64):
         pass_changes = 0

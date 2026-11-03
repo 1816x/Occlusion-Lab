@@ -48,7 +48,7 @@ while IFS= read -r -d '' item; do
 done < <(find "$app" -type f -print0)
 
 while IFS= read -r -d '' item; do
-  if file -b "$item" | grep -q 'Mach-O'; then
+  if [[ "$item" == *.dylib || "$item" == *.so ]] || file -b "$item" | grep -q 'Mach-O'; then
     codesign --force --sign - "$item"
   fi
 done < <(find "$app" -type f -print0)
