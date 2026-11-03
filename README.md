@@ -239,15 +239,15 @@ first visual check on another Mac remains the beta gate.
 
 To try the latest CI-verified Apple Silicon preview, download the
 `occlusion-lab-macos-arm64-preview` artifact from
-[the passing macOS job](https://github.com/1816x/Occlusion-Lab/actions/runs/41678290455/job/126064744527).
+[the passing macOS job](https://github.com/1816x/Occlusion-Lab/actions/runs/41681428870/job/126075806565).
 Unzip the downloaded artifact, then unzip `occlusion-lab-macos.zip` to get `Occlusion Lab.app`.
 Keep `fixed-box.obj` and `moving-box.obj` from the artifact together in one folder. In the app,
 select that folder and import the OBJ pair; then evaluate a pose, run a sweep, move the frame
-slider, and export JSON v1.
+slider, and export JSON v1. The artifact also contains `smoke-window.png`, a capture of the
+packaged app running under macOS Cocoa in CI.
 The bundle is signed locally by CI but is not notarized; if macOS blocks it, use Finder's **Open**
 context menu or **Open Anyway** in Privacy & Security. It runs on Apple Silicon and accepts only
-the bounded synthetic OBJ format described above. This artifact predates the latest input-state
-and preview-geometry fixes; a new build is pending macOS CI. An Intel package has not been built.
+the bounded synthetic OBJ format described above. An Intel package is still in CI.
 
 On a macOS development machine with Homebrew:
 
