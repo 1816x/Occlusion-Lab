@@ -61,4 +61,21 @@ done < <(find "$app" -type f -print0)
 codesign --force --deep --sign - "$app"
 codesign --verify --deep --strict --verbose=2 "$app"
 ditto -c -k --keepParent "$app" "$output_directory/occlusion-lab-macos.zip"
+repository_root="$(cd "$(dirname "$0")/.." && pwd)"
+ditto "$repository_root/fixtures/mesh-io/fixed-box.obj" "$output_directory/fixed-box.obj"
+ditto "$repository_root/fixtures/mesh-io/moving-box.obj" "$output_directory/moving-box.obj"
+cat > "$output_directory/README.txt" <<'EOF'
+Occlusion Lab macOS development preview
+
+1. Unzip occlusion-lab-macos.zip to get Occlusion Lab.app.
+2. Open the app. If macOS blocks this unnotarized preview, use Finder's
+   right-click > Open or Privacy & Security > Open Anyway.
+3. In the app, select this folder (containing fixed-box.obj and moving-box.obj)
+   as the directory, then click Import OBJ pair.
+4. Try Evaluate pose, Run sweep, the frame slider, and Export JSON v1.
+
+This preview works with synthetic, closed OBJ meshes only. It has no clinical
+validation. Please report your Mac model, macOS version, and any launch or
+rendering problem.
+EOF
 echo "Packaged $output_directory/occlusion-lab-macos.zip"
