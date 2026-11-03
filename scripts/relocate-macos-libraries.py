@@ -38,13 +38,13 @@ def relocate(app: Path) -> None:
         if not item.is_symlink():
             continue
         target = item.resolve(strict=True)
-        if target.is_relative_to(bundle_root):
+        if target.is_relative_to(bundle_root) and item.suffix not in {".dylib", ".so"}:
             continue
         if not target.is_file():
             raise RuntimeError(f"External bundle symlink is not a file: {item} -> {target}")
         item.unlink()
         shutil.copy2(target, item)
-        print(f"Materialized external bundle symlink: {item}")
+        print(f"Materialized bundle library symlink: {item}")
     changes = 0
     for _ in range(64):
         pass_changes = 0

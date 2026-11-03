@@ -263,6 +263,11 @@ jobs:
               --smoke "$RUNNER_TEMP/occlusion-desktop-package"
           } > "$RUNNER_TEMP/occlusion-package.log" 2>&1; then
             echo "::error title=macOS bundle failed::$(tail -n 12 "$RUNNER_TEMP/occlusion-package.log" | tr '\n' ' ' | cut -c 1-3000)"
+            suspect="$(sed -n 's/^In subcomponent: //p' "$RUNNER_TEMP/occlusion-package.log" | tail -n 1)"
+            if [ -n "$suspect" ] && [ -e "$suspect" ]; then
+              details="$(ls -l "$suspect"; file "$suspect"; codesign --verify --strict --all-architectures --verbose=2 "$suspect" 2>&1 || true; codesign --display --verbose=2 "$suspect" 2>&1 || true)"
+              echo "::error title=macOS nested signature diagnostic::$(printf '%s' "$details" | tr '\n' ' ' | cut -c 1-3000)"
+            fi
             {
               echo '### macOS packaging failure'
               echo '```'

@@ -60,9 +60,11 @@ while IFS= read -r -d '' item; do
     exit 1
   fi
   codesign --force --sign - "$item"
-  codesign --verify --strict --all-architectures --verbose=2 "$item"
 done < <(find "$app" \( -type f -o -type l \) -name '*.dylib' -print0)
 codesign --force --sign - "$app"
+while IFS= read -r -d '' item; do
+  codesign --verify --strict --all-architectures --verbose=2 "$item"
+done < <(find "$app" \( -type f -o -type l \) -name '*.dylib' -print0)
 codesign --verify --deep --strict --verbose=2 "$app"
 ditto -c -k --keepParent "$app" "$output_directory/occlusion-lab-macos.zip"
 repository_root="$(cd "$(dirname "$0")/.." && pwd)"
