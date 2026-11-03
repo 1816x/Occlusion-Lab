@@ -263,6 +263,10 @@ jobs:
               --smoke "$RUNNER_TEMP/occlusion-desktop-package"
           } > "$RUNNER_TEMP/occlusion-package.log" 2>&1; then
             echo "::error title=macOS bundle failed::$(tail -n 12 "$RUNNER_TEMP/occlusion-package.log" | tr '\n' ' ' | cut -c 1-3000)"
+            signing_stage="$(grep -E '^SIGN_STAGE |^SIGN_FAILED ' "$RUNNER_TEMP/occlusion-package.log" | tail -n 8 | tr '\n' ' ' | cut -c 1-3000 || true)"
+            if [ -n "$signing_stage" ]; then
+              echo "::error title=macOS signing stage::$signing_stage"
+            fi
             signature_probe="$(grep '^VTK_SIGNATURE_' "$RUNNER_TEMP/occlusion-package.log" | tr '\n' ' ' | cut -c 1-3000 || true)"
             if [ -n "$signature_probe" ]; then
               echo "::error title=macOS VTK signature before and after app signing::$signature_probe"

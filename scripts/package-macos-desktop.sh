@@ -48,18 +48,28 @@ while IFS= read -r -d '' item; do
   ')
 done < <(find "$app" -type f -print0)
 
+sign_binary() {
+  local result
+  if ! result="$(codesign --force --sign - "$1" 2>&1)"; then
+    echo "SIGN_FAILED $1: $result" >&2
+    exit 1
+  fi
+}
+
+echo "SIGN_STAGE regular files"
 while IFS= read -r -d '' item; do
   if [[ "$item" == *.dylib || "$item" == *.so ]] || file -b "$item" | grep -q 'Mach-O'; then
-    codesign --force --sign - "$item"
+    sign_binary "$item"
   fi
 done < <(find "$app" -type f -print0)
+echo "SIGN_STAGE dylib paths"
 while IFS= read -r -d '' item; do
   resolved="$(realpath "$item")"
   if [[ "$resolved" != "$app"/* ]]; then
     echo "Bundled library resolves outside the app: $item -> $resolved" >&2
     exit 1
   fi
-  codesign --force --sign - "$item"
+  sign_binary "$item"
 done < <(find "$app" \( -type f -o -type l \) -name '*.dylib' -print0)
 vtk_signature_probe=""
 for candidate in "$app/Contents/Frameworks"/libvtkFiltersHybrid*.dylib; do
@@ -72,14 +82,17 @@ if [[ -n "$vtk_signature_probe" ]]; then
   echo "VTK_SIGNATURE_BEFORE $(shasum -a 256 "$vtk_signature_probe")"
   echo "VTK_SIGNATURE_BEFORE $(codesign --display --verbose=2 "$vtk_signature_probe" 2>&1 | tail -n 2 | tr '\n' ' ')"
 fi
-codesign --force --deep --sign - "$app"
+echo "SIGN_STAGE app"
+sign_binary "$app"
 if [[ -n "$vtk_signature_probe" ]]; then
   echo "VTK_SIGNATURE_AFTER $(shasum -a 256 "$vtk_signature_probe")"
   echo "VTK_SIGNATURE_AFTER $(codesign --display --verbose=2 "$vtk_signature_probe" 2>&1 | tail -n 2 | tr '\n' ' ')"
 fi
+echo "SIGN_STAGE verify dylibs"
 while IFS= read -r -d '' item; do
   codesign --verify --strict --all-architectures --verbose=2 "$item"
 done < <(find "$app" \( -type f -o -type l \) -name '*.dylib' -print0)
+echo "SIGN_STAGE verify app"
 codesign --verify --deep --strict --verbose=2 "$app"
 ditto -c -k --keepParent "$app" "$output_directory/occlusion-lab-macos.zip"
 repository_root="$(cd "$(dirname "$0")/.." && pwd)"
