@@ -64,6 +64,9 @@ while IFS= read -r -d '' item; do
     codesign --force --sign - "$item"
   fi
 done < <(find "$app" -type f -print0)
+echo "Qt offscreen platform plugin: $(file -b "$offscreen_destination")"
+codesign --force --sign - "$offscreen_destination"
+codesign --verify --verbose=2 "$offscreen_destination"
 codesign --force --deep --sign - "$app"
 codesign --verify --deep --strict --verbose=2 "$app"
 ditto -c -k --keepParent "$app" "$output_directory/occlusion-lab-macos.zip"
