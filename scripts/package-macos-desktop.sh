@@ -48,6 +48,7 @@ while IFS= read -r -d '' item; do
   ')
 done < <(find "$app" -type f -print0)
 
+codesign --force --sign - "$app"
 while IFS= read -r -d '' item; do
   if [[ "$item" == *.dylib || "$item" == *.so ]] || file -b "$item" | grep -q 'Mach-O'; then
     codesign --force --sign - "$item"
@@ -61,7 +62,6 @@ while IFS= read -r -d '' item; do
   fi
   codesign --force --sign - "$item"
 done < <(find "$app" \( -type f -o -type l \) -name '*.dylib' -print0)
-codesign --force --sign - "$app"
 while IFS= read -r -d '' item; do
   codesign --verify --strict --all-architectures --verbose=2 "$item"
 done < <(find "$app" \( -type f -o -type l \) -name '*.dylib' -print0)
