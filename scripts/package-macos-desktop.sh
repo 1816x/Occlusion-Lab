@@ -18,19 +18,7 @@ fi
 mkdir -p "$output_directory"
 ditto "$source_app" "$app"
 "$(brew --prefix qtbase)/bin/macdeployqt" "$app" -verbose=1
-offscreen_plugin="$(find "$(realpath "$(brew --prefix qtbase)")" -name libqoffscreen.dylib -print -quit)"
-if [[ -z "$offscreen_plugin" ]]; then
-  echo "Qt offscreen platform plugin was not found" >&2
-  exit 1
-fi
-mkdir -p "$app/Contents/PlugIns/platforms"
-offscreen_destination="$app/Contents/PlugIns/platforms/libqoffscreen.dylib"
-rm -f "$offscreen_destination"
-cp -L "$offscreen_plugin" "$offscreen_destination"
-if [[ ! -f "$offscreen_destination" || -L "$offscreen_destination" ]]; then
-  echo "Qt offscreen platform plugin was not copied as a regular file" >&2
-  exit 1
-fi
+rm -f "$app/Contents/PlugIns/platforms/libqoffscreen.dylib"
 python3 "$(dirname "$0")/relocate-macos-libraries.py" "$app"
 
 # macdeployqt copies native libraries but can retain build-machine search paths.
@@ -64,11 +52,7 @@ while IFS= read -r -d '' item; do
     codesign --force --sign - "$item"
   fi
 done < <(find "$app" -type f -print0)
-echo "Qt offscreen platform plugin: $(file -b "$offscreen_destination")"
-codesign --force --sign - "$offscreen_destination"
-codesign --verify --verbose=2 "$offscreen_destination"
 codesign --force --sign - "$app"
-codesign --verify --strict --verbose=2 "$offscreen_destination"
 codesign --verify --deep --strict --verbose=2 "$app"
 ditto -c -k --keepParent "$app" "$output_directory/occlusion-lab-macos.zip"
 repository_root="$(cd "$(dirname "$0")/.." && pwd)"

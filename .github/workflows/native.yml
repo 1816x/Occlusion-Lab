@@ -257,9 +257,6 @@ jobs:
             bash scripts/package-macos-desktop.sh \
               build/native/desktop-debug/native/apps/occlusion-desktop/occlusion-desktop.app \
               "$RUNNER_TEMP/occlusion-desktop-package" &&
-            env -i PATH="/usr/bin:/bin:/usr/sbin:/sbin" HOME="$HOME" QT_QPA_PLATFORM=offscreen \
-              "$RUNNER_TEMP/occlusion-desktop-package/Occlusion Lab.app/Contents/MacOS/occlusion-desktop" \
-              --smoke "$RUNNER_TEMP/occlusion-desktop-package" &&
             env -i PATH="/usr/bin:/bin:/usr/sbin:/sbin" HOME="$HOME" QT_QPA_PLATFORM=cocoa \
               OCCLUSION_DESKTOP_SMOKE_WINDOW="$RUNNER_TEMP/occlusion-desktop-package/smoke-window.png" \
               "$RUNNER_TEMP/occlusion-desktop-package/Occlusion Lab.app/Contents/MacOS/occlusion-desktop" \
