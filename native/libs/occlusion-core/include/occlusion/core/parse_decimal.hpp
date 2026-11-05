@@ -30,7 +30,16 @@ inline std::optional<double> parse_decimal(std::string_view text) {
   stream.imbue(std::locale::classic());
   stream >> std::noskipws;
   double value = 0;
-  if (!(stream >> value) || stream.peek() != std::char_traits<char>::eof())
+  stream >> value;
+  if (stream.fail()) {
+    // libc++ marks representable subnormals as ERANGE but retains their value.
+    // Accept only a fully consumed, finite, nonzero subnormal in this case.
+    if (!stream.eof() || !std::isfinite(value) || value == 0 ||
+        std::abs(value) >= std::numeric_limits<double>::min())
+      return std::nullopt;
+    stream.clear();
+  }
+  if (stream.peek() != std::char_traits<char>::eof())
     return std::nullopt;
   // Some standard-library streams silently round underflow to zero.
   // Preserve genuine zero mantissas, but reject lost nonzero coordinates.
