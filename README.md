@@ -235,7 +235,7 @@ The optional viewer imports two direct synthetic OBJ names from a selected direc
 thread, renders them with VTK, evaluates poses and sweeps on worker threads, selects stored frames,
 and exports the native JSON v1 result. Apple Silicon and Intel macOS development previews passed
 their bundle dependency audits, signature verification, and clean-environment Cocoa launches in CI.
-The first visual check on another Mac remains the beta gate.
+The first [visual check on another Mac](docs/macos-beta-checklist.md) remains the beta gate.
 
 Download the artifact for your Mac's processor (shown in **About This Mac**):
 

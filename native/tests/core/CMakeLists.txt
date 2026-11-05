@@ -5,7 +5,7 @@ configure_file(
   "${PROJECT_SOURCE_DIR}/fixtures/parity/mandibular-sweep-generation-v1.json"
   "${CMAKE_CURRENT_BINARY_DIR}/mandibular-sweep-generation-v1.json" COPYONLY)
 
-add_executable(occlusion-core-tests core_tests.cpp pose_fixture_tests.cpp sweep_fixture_tests.cpp public_headers.cpp)
+add_executable(occlusion-core-tests core_tests.cpp decimal_tests.cpp pose_fixture_tests.cpp sweep_fixture_tests.cpp public_headers.cpp)
 target_link_libraries(occlusion-core-tests PRIVATE occlusion::core GTest::gtest_main nlohmann_json::nlohmann_json occlusion_project_warnings)
 target_compile_definitions(occlusion-core-tests PRIVATE
   OCCLUSION_POSE_FIXTURE_PATH="${CMAKE_CURRENT_BINARY_DIR}/mandibular-pose-v1.json")

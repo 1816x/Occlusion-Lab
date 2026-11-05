@@ -354,6 +354,28 @@ public:
     for (int y = 0; y < scene_image_.height(); y += 10)
       for (int x = 0; x < scene_image_.width(); x += 10)
         colors.insert(scene_image_.pixel(x, y));
+    // Exercise engine rejection even though normal UI ranges prevent these requests.
+    opening_->setMaximum(300);
+    opening_->setValue(300);
+    evaluate_->click();
+    if (!wait_until_ready(evaluate_) || pose_ || sweep_ || export_->isEnabled() ||
+        frame_slider_->isEnabled())
+      return false;
+    opening_->setMaximum(250);
+    opening_->setValue(0);
+    evaluate_->click();
+    if (!wait_until_ready(evaluate_) || !pose_ || !export_->isEnabled())
+      return false;
+    frames_->setMaximum(62);
+    frames_->setValue(62);
+    sweep_button_->click();
+    if (!wait_until_ready(sweep_button_) || pose_ || sweep_ || export_->isEnabled())
+      return false;
+    frames_->setMaximum(61);
+    frames_->setValue(11);
+    sweep_button_->click();
+    if (!wait_until_ready(sweep_button_) || !sweep_ || !export_->isEnabled())
+      return false;
     return colors.size() > 4 && json.find("\"requestedFrameCount\":11") != std::string::npos;
   }
 
@@ -489,6 +511,7 @@ private:
   void evaluate_pose() {
     if (!selection_matches_import())
       return;
+    clear_evaluation();
     set_busy(true);
     status_->setText("Evaluating pose…");
     const core::MandibularPose pose{core::to_meters(core::Millimeters{opening_->value()}),
@@ -520,6 +543,7 @@ private:
   void evaluate_sweep() {
     if (!selection_matches_import())
       return;
+    clear_evaluation();
     set_busy(true);
     status_->setText("Evaluating sweep…");
     const auto preset = static_cast<core::SweepPreset>(preset_->currentData().toInt());
@@ -551,6 +575,13 @@ private:
     });
     watcher->setFuture(QtConcurrent::run(
         [evaluator, preset, count] { return evaluator.evaluate_sweep(preset, count); }));
+  }
+
+  void clear_evaluation() {
+    pose_.reset();
+    sweep_.reset();
+    frame_label_->setText("No sweep selected");
+    summary_->clear();
   }
 
   void add_axes() {

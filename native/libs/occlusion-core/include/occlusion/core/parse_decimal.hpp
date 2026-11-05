@@ -32,6 +32,11 @@ inline std::optional<double> parse_decimal(std::string_view text) {
   double value = 0;
   if (!(stream >> value) || stream.peek() != std::char_traits<char>::eof())
     return std::nullopt;
+  // Some standard-library streams silently round underflow to zero.
+  // Preserve genuine zero mantissas, but reject lost nonzero coordinates.
+  const auto mantissa = text.substr(0, text.find_first_of("eE"));
+  if (value == 0 && mantissa.find_first_of("123456789") != std::string_view::npos)
+    return std::nullopt;
   return value;
 }
 

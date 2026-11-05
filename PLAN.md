@@ -112,6 +112,8 @@ La aplicación web heredada continúa disponible y funcional como referencia. La
 
 ## 8. Próxima tarea recomendada
 
+Verificación adicional del 2026-11-05: se corrigió el underflow decimal no nulo que el parser convertía silenciosamente a cero y la conservación de resultados exportables antiguos después de una evaluación rechazada. Tres pruebas numéricas nuevas y el smoke de recuperación de pose/barrido pasan: 112/112 CTest desktop. Web: 94/94 pruebas, lint, typecheck, fixtures de paridad, assets y build de producción PASS. La nueva CI macOS queda pendiente. El usuario confirmó que todavía no ha probado el preview en su Mac; usar [la lista de aceptación](docs/macos-beta-checklist.md) para cerrar ese gate.
+
 Phase 4.14: probar el `.app` autocontenido como usuario final en otro Mac y resolver los hallazgos de esa prueba. El visor importa OBJ, renderiza mallas y contactos, evalúa pose y barrido sin bloquear la UI y exporta JSON v1. El smoke local cubre importación fallida y recuperación, descarte de resultados asíncronos obsoletos, controles de pose/barrido, frame seleccionado, render y bytes de export. Build, CTest, smoke, audit y paquete macOS pasaron en CI para Apple Silicon e Intel. Conservar la referencia web hasta demostrar paridad de los flujos requeridos.
 
 Para la beta macOS sintética, el gate pendiente es una comprobación visual y arranque del `.app` en otro Mac, seguida de correcciones si aparecen. Los previews no están notarizados; las instrucciones para abrirlos están en README. Objetivo provisional para cerrar la beta: 20 de noviembre de 2026, sujeto a esa prueba. Ambos previews para pruebas tempranas ya están disponibles en CI.
