@@ -246,7 +246,11 @@ jobs:
             exit 1
           fi
       - name: Test native contracts
-        run: ctest --preset desktop-debug --output-on-failure
+        run: |
+          if ! ctest --preset desktop-debug --output-on-failure > "$RUNNER_TEMP/desktop-tests.log" 2>&1; then
+            echo "::error title=Desktop CTest failure::$(grep -A 25 -B 3 -E '\*\*\*Failed|FAILED|Failure' "$RUNNER_TEMP/desktop-tests.log" | tail -n 80 | tr '\n' ' ' | cut -c 1-6000)"
+            exit 1
+          fi
       - name: Smoke-test desktop rendering and evaluation
         env:
           QT_QPA_PLATFORM: offscreen
