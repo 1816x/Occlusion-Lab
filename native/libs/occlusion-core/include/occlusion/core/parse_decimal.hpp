@@ -26,6 +26,11 @@ inline std::optional<double> parse_decimal(std::string_view text) {
   if (lower == "-inf" || lower == "-infinity")
     return -std::numeric_limits<double>::infinity();
 
+  // libc++ streams also accept hexadecimal floating-point text. This boundary
+  // accepts decimal coordinates only, independent of the platform's num_get.
+  if (text.find_first_not_of("0123456789.eE+-") != std::string_view::npos)
+    return std::nullopt;
+
   std::istringstream stream{std::string{text}};
   stream.imbue(std::locale::classic());
   stream >> std::noskipws;

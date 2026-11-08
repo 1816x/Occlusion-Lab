@@ -23,7 +23,8 @@ TEST(DecimalParsing, PreservesZeroAndRepresentableSubnormalValues) {
 
 TEST(DecimalParsing, RequiresCompleteLocaleIndependentToken) {
   EXPECT_EQ(parse_decimal("1.25e2"), 125);
-  for (const auto text : {"", "+1", " 1", "1 ", "1,25", "1x", "0x1p2", "1e", "1e-310x"})
+  for (const auto text :
+       {"", "+1", " 1", "1 ", "1,25", "1x", "0x1p2", "-0X1P2", "0x1", "1e", "1e-310x", "1\t"})
     EXPECT_FALSE(parse_decimal(text)) << text;
   ASSERT_TRUE(parse_decimal("NaN"));
   EXPECT_TRUE(std::isnan(*parse_decimal("NaN")));
