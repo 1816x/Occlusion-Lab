@@ -4,6 +4,9 @@ find_package(VTK REQUIRED COMPONENTS CommonCore CommonDataModel FiltersSources R
 add_executable(occlusion-desktop MACOSX_BUNDLE src/main.cpp)
 target_link_libraries(occlusion-desktop PRIVATE occlusion::evaluation Qt6::Widgets Qt6::Concurrent ${VTK_LIBRARIES} occlusion_project_warnings)
 target_compile_features(occlusion-desktop PRIVATE cxx_std_20)
+if(WIN32)
+  set_target_properties(occlusion-desktop PROPERTIES WIN32_EXECUTABLE TRUE)
+endif()
 vtk_module_autoinit(TARGETS occlusion-desktop MODULES ${VTK_LIBRARIES})
 
 if(OCCLUSION_BUILD_TESTS AND NOT APPLE)

@@ -90,6 +90,14 @@
         "OCCLUSION_ENABLE_DESKTOP": "ON",
         "VCPKG_MANIFEST_FEATURES": "collision;desktop"
       }
+    },
+    {
+      "name": "desktop-release",
+      "inherits": "desktop-debug",
+      "displayName": "Qt 6 and VTK Desktop Release with tests",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
     }
   ],
   "buildPresets": [
@@ -124,6 +132,10 @@
     {
       "name": "desktop-debug",
       "configurePreset": "desktop-debug"
+    },
+    {
+      "name": "desktop-release",
+      "configurePreset": "desktop-release"
     }
   ],
   "testPresets": [
@@ -165,6 +177,13 @@
     {
       "name": "desktop-debug",
       "configurePreset": "desktop-debug",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "desktop-release",
+      "configurePreset": "desktop-release",
       "output": {
         "outputOnFailure": true
       }
