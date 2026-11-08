@@ -8,8 +8,7 @@ selection, rendering, and exact JSON export bytes. The Apple Silicon macOS
 and Intel bundles pass CI relocation, signature, and clean-environment launch checks;
 a [visual launch on another Mac](macos-beta-checklist.md) remains a beta gate.
 
-The first desktop application will be a synthetic-mesh viewer and evaluation client,
-not a second scientific engine. Qt 6 owns windows, commands, and state. VTK owns
+The first desktop application is a synthetic-mesh viewer and evaluation client. Qt 6 owns windows, commands, and state. VTK owns
 scene objects. Project libraries own parsing, geometry checks, transforms, FCL
 queries, sweep summaries, and versioned export. The existing browser application
 remains the behavior reference until its required workflows have desktop parity.
@@ -25,7 +24,7 @@ remains the behavior reference until its required workflows have desktop parity.
 | VTK viewer layer | Copies of project meshes plus a published evaluation result | Fixed/moving actors and contact markers. It performs no collision or classification. |
 | Qt application | File selection, pose and sweep requests, and engine results | Controls, error display, frame selection, and export action. |
 
-Only the optional desktop target will link Qt 6 and VTK. `occlusion-core` must
+Only the optional desktop target links Qt 6 and VTK. `occlusion-core` must
 remain independent of both. The VTK adapter accepts copied mesh arrays and
 `RigidTransform`/normalized contact samples from public project headers; it
 must not call FCL or CGAL or reinterpret their private data.
@@ -34,8 +33,8 @@ must not call FCL or CGAL or reinterpret their private data.
 
 1. The user selects a trusted directory and two direct synthetic `.obj` files.
    The desktop file adapter enforces the CLI's filename, symlink, 16 MiB, OBJ,
-   and closed-topology checks. If the optional geometry feature is present,
-   the user can request the same CGAL inspection before evaluation.
+   and closed-topology checks. Optional CGAL inspection is available through
+   the geometry-enabled CLI before import; the viewer has no inspection control.
 2. File, parser, and topology errors appear with file, code, field, line
    (when known), and message. An invalid mesh blocks evaluation and export;
    the scene keeps its last valid image clearly labeled. Optional CGAL

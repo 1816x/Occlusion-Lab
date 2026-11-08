@@ -180,12 +180,15 @@ or establish clinical validity.
 ## Explicit inspection and desktop contract (Phase 4.13)
 
 The public `occlusion-mesh-io` file adapter centralizes direct-name, regular-file, size, parser, and
-topology checks for the CLI and future desktop clients. With geometry enabled,
+topology checks for the CLI and desktop viewer. With geometry enabled,
 `--inspect-mesh <directory> <mesh.obj>` calls the public CGAL inspection API and publishes one
 versioned JSON document containing a valid status or a structured code, field, line, and message.
 It does not evaluate the mesh. The existing `--evaluate-meshes` path remains independent of CGAL;
 users request inspection explicitly. See [the v1 inspection contract](native-mesh-inspection-v1.md).
 
-The proposed Qt 6/VTK client is specified in [the desktop viewer contract](desktop-viewer-phase-4.13.md).
+Phase 4.14 implements the optional Qt 6/VTK client specified in [the desktop viewer contract](desktop-viewer-phase-4.13.md).
 Its scene adapter consumes project-owned mesh and evaluation values and does not calculate contacts
-or clinical metrics. Qt and VTK remain absent from the native engine and CLI in this phase.
+or clinical metrics. Qt and VTK remain absent from the native engine and CLI. Import, pose and
+sweep evaluation run on workers; the UI selects stored frames and exports JSON v1. macOS preview
+bundles are available through [README](../README.md#phase-414-desktop-development-preview);
+the [hands-on Mac acceptance check](macos-beta-checklist.md) remains open.

@@ -26,13 +26,17 @@ Phase 4.13 adds an explicit `--inspect-mesh` CLI command with versioned JSON err
 The CLI continues to use its existing topology and FCL path for evaluation; CGAL
 screening is requested separately and does not silently change evaluation results.
 
-## Desktop integration after the geometry boundary
+## Phase 4.14: desktop integration
 
 The first viewer's data flow, error presentation, threading, and parity gates are
 specified in [desktop-viewer-phase-4.13.md](desktop-viewer-phase-4.13.md).
+The optional Qt 6/VTK viewer now implements import, pose and sweep evaluation, frame
+selection, camera controls, and JSON v1 export. Apple Silicon and Intel previews
+are available; the [hands-on Mac check](macos-beta-checklist.md) is still pending.
 
-- Put Qt 6 application state, file selection, error presentation, and cancellation in
-  `occlusion-desktop`; call public project APIs rather than FCL or CGAL directly.
+- Keep Qt 6 application state, file selection, and error presentation in
+  `occlusion-desktop`, using public project APIs. Cooperative cancellation remains
+  deferred until the engine has an explicit cancellation contract.
 - Put VTK scene construction in a presentation adapter. Display units and axis labels
   explicitly, and keep rendering state out of the scientific result contracts.
 - Reuse the same versioned pose and sweep exports as the CLI. Capture deterministic

@@ -239,8 +239,8 @@ The first [visual check on another Mac](docs/macos-beta-checklist.md) remains th
 
 Download the artifact for your Mac's processor (shown in **About This Mac**):
 
-- Apple Silicon: `occlusion-lab-macos-arm64-preview` from [the passing arm64 job](https://github.com/1816x/Occlusion-Lab/actions/runs/41696301191/job/126127631663).
-- Intel: `occlusion-lab-macos-x86_64-preview` from [the passing x86_64 job](https://github.com/1816x/Occlusion-Lab/actions/runs/41696301191/job/126127631852).
+- Apple Silicon: `occlusion-lab-macos-arm64-preview` from [the passing arm64 job](https://github.com/1816x/Occlusion-Lab/actions/runs/42434785308/job/128591201982).
+- Intel: `occlusion-lab-macos-x86_64-preview` from [the passing x86_64 job](https://github.com/1816x/Occlusion-Lab/actions/runs/42434785308/job/128591201992).
 
 Unzip the downloaded artifact, then unzip `occlusion-lab-macos.zip` to get `Occlusion Lab.app`.
 Keep `fixed-box.obj` and `moving-box.obj` from the artifact together in one folder. In the app,
