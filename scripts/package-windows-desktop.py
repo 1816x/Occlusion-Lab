@@ -74,7 +74,7 @@ def main():
     manifest = bundle_dependencies(bundle, source_bin, Path(os.environ['SystemRoot']) / 'System32',
                                    lambda binary: imported_dlls(binary, source_bin / 'objdump.exe'))
     (bundle / 'pinned-dependencies.txt').write_text(
-        'Eigen 3.4.0\nlibccd 2.1 (double precision)\nFCL 0.7.0 (OctoMap disabled)\n', encoding='utf-8')
+        'Eigen 3.4.0\nlibccd 2.1 (double precision)\nFCL 0.7.0 (static; OctoMap disabled)\n', encoding='utf-8')
     (bundle / 'dependency-manifest.json').write_text(json.dumps(manifest, indent=2), encoding='utf-8')
     repo = Path(__file__).resolve().parents[1]
     for name in ('fixed-box.obj', 'moving-box.obj'):

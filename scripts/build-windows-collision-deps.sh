@@ -27,7 +27,7 @@ cmake --install "$root/libccd-build"
 cmake -S "$root/fcl" -B "$root/fcl-build" -G Ninja \
   -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$install_prefix" -DCMAKE_PREFIX_PATH="$install_prefix" \
   -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DBUILD_SHARED_LIBS=ON \
-  -DFCL_WITH_OCTOMAP=OFF -DFCL_BUILD_TESTS=OFF -DFCL_BUILD_EXAMPLES=OFF
+  -DFCL_STATIC_LIBRARY=ON -DFCL_WITH_OCTOMAP=OFF -DFCL_BUILD_TESTS=OFF -DFCL_BUILD_EXAMPLES=OFF
 cmake --build "$root/fcl-build" --parallel 2
 cmake --install "$root/fcl-build"
 mkdir -p "$install_prefix/share/licenses/occlusion-fcl" "$install_prefix/share/licenses/occlusion-libccd"

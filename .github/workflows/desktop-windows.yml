@@ -80,7 +80,7 @@ jobs:
           export PATH="$PWD/build/windows-deps/install/bin:$PATH"
           export GALLIUM_DRIVER=llvmpipe
           if ! ctest --preset desktop-release > "$RUNNER_TEMP/windows-tests.log" 2>&1; then
-            echo "::error title=Windows desktop CTest::$(tail -n 90 "$RUNNER_TEMP/windows-tests.log" | tr '\n' ' ' | cut -c 1-6000)"
+            echo "::error title=Windows desktop CTest::$(grep -A 25 -B 3 -E "FAILED|Failed|Exception|Error" "$RUNNER_TEMP/windows-tests.log" | tail -n 90 | tr '\n' ' ' | cut -c 1-6000)"
             exit 1
           fi
           python -m unittest discover -s scripts/tests -p 'test_windows_bundle.py' -v
