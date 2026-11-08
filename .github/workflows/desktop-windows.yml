@@ -44,7 +44,6 @@ jobs:
             mingw-w64-ucrt-x86_64-gcc
             mingw-w64-ucrt-x86_64-cmake
             mingw-w64-ucrt-x86_64-ninja
-            mingw-w64-ucrt-x86_64-eigen3
             mingw-w64-ucrt-x86_64-gtest
             mingw-w64-ucrt-x86_64-nlohmann-json
             mingw-w64-ucrt-x86_64-qt6-base
@@ -57,6 +56,7 @@ jobs:
         run: |
           if ! bash scripts/build-windows-collision-deps.sh > "$RUNNER_TEMP/windows-deps.log" 2>&1; then
             tail -n 80 "$RUNNER_TEMP/windows-deps.log"
+            echo "::error title=Windows dependency compiler errors::$(grep -E 'error:|fatal error|CMake Error' "$RUNNER_TEMP/windows-deps.log" | head -n 12 | tr '\n' ' ' | cut -c 1-6000)"
             echo "::error title=Windows dependencies::$(tail -n 25 "$RUNNER_TEMP/windows-deps.log" | tr '\n' ' ' | cut -c 1-6000)"
             exit 1
           fi
@@ -64,7 +64,7 @@ jobs:
         run: |
           if ! {
             cmake --preset desktop-release -DOCCLUSION_FETCH_DEPENDENCIES=OFF \
-              -DCMAKE_PREFIX_PATH="$(cygpath -m "$MINGW_PREFIX")" &&
+              -DCMAKE_PREFIX_PATH="$(cygpath -m "$PWD/build/windows-deps/install");$(cygpath -m "$MINGW_PREFIX")" &&
             cmake --build --preset desktop-release --parallel 2
           } > "$RUNNER_TEMP/windows-build.log" 2>&1; then
             echo "::error title=Windows desktop build::$(tail -n 35 "$RUNNER_TEMP/windows-build.log" | tr '\n' ' ' | cut -c 1-6000)"
@@ -73,6 +73,7 @@ jobs:
           cp "$MINGW_PREFIX/bin/opengl32.dll" build/native/desktop-release/native/apps/occlusion-desktop/
       - name: Test native contracts and desktop flow
         run: |
+          export PATH="$PWD/build/windows-deps/install/bin:$PATH"
           export GALLIUM_DRIVER=llvmpipe
           if ! ctest --preset desktop-release > "$RUNNER_TEMP/windows-tests.log" 2>&1; then
             echo "::error title=Windows desktop CTest::$(tail -n 90 "$RUNNER_TEMP/windows-tests.log" | tr '\n' ' ' | cut -c 1-6000)"
@@ -84,6 +85,7 @@ jobs:
           if ! python scripts/package-windows-desktop.py \
             build/native/desktop-release/native/apps/occlusion-desktop/occlusion-desktop.exe \
             "$(cygpath -m "$MINGW_PREFIX")" "$RUNNER_TEMP/Occlusion Lab" \
+            --collision-prefix "$(cygpath -m "$PWD/build/windows-deps/install")" \
             > "$RUNNER_TEMP/windows-package.log" 2>&1; then
             echo "::error title=Windows desktop package::$(tail -n 30 "$RUNNER_TEMP/windows-package.log" | tr '\n' ' ' | cut -c 1-6000)"
             exit 1

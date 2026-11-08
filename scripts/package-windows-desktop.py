@@ -52,6 +52,7 @@ def main():
     parser.add_argument('executable', type=Path)
     parser.add_argument('prefix', type=Path)
     parser.add_argument('output', type=Path)
+    parser.add_argument('--collision-prefix', type=Path, required=True)
     args = parser.parse_args()
     if os.name != 'nt':
         parser.error('Packaging requires Windows and the UCRT64 toolchain')
@@ -60,6 +61,8 @@ def main():
     executable = bundle / 'occlusion-desktop.exe'
     shutil.copy2(args.executable, executable)
     source_bin = args.prefix / 'bin'
+    for binary in (args.collision_prefix / 'bin').glob('*.dll'):
+        shutil.copy2(binary, bundle / binary.name)
     subprocess.run([str(source_bin / 'windeployqt6.exe') if (source_bin / 'windeployqt6.exe').exists()
                     else str(source_bin / 'windeployqt.exe'), '--release', '--no-translations',
                     '--no-system-d3d-compiler', '--no-opengl-sw', str(executable)], check=True)
@@ -75,6 +78,8 @@ def main():
     for name in ('fixed-box.obj', 'moving-box.obj'):
         shutil.copy2(repo / 'fixtures/desktop-preview' / name, bundle / name)
     shutil.copytree(args.prefix / 'share/licenses', bundle / 'third-party-licenses')
+    shutil.copytree(args.collision_prefix / 'share/licenses', bundle / 'third-party-licenses',
+                    dirs_exist_ok=True)
     shutil.copy2(repo / 'LICENSE', bundle / 'LICENSE.txt')
     (bundle / 'README.txt').write_text('''Occlusion Lab Windows x64 beta preview
 
