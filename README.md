@@ -4,7 +4,7 @@ Occlusion Lab is a **work in progress** educational browser sandbox for syntheti
 
 ## C++ migration (Phase 4)
 
-The project is migrating toward a C++20, desktop-first scientific architecture. The existing Next.js/React/Three.js application remains intact as the production behavioral reference. The native foundation includes pose and sweep contracts, FCL collision/evaluation, CGAL inspection, versioned JSON exports, bounded synthetic OBJ ingestion, and an optional first Qt 6/VTK viewer. Apple Silicon and Intel development previews are available; a visual check on another Mac remains open. No clinical parity or validation is claimed.
+The project is migrating toward a C++20, desktop-first scientific architecture. The existing Next.js/React/Three.js application remains intact as the production behavioral reference. The native foundation includes pose and sweep contracts, FCL collision/evaluation, CGAL inspection, versioned JSON exports, bounded synthetic OBJ ingestion, and an optional first Qt 6/VTK viewer. Windows x64, Apple Silicon, and Intel development previews are available; hands-on acceptance checks remain open. No clinical parity or validation is claimed.
 
 [`PLAN.md`](PLAN.md) is the concise source of truth for migration status, verification results, risks, and the single next task. The architectural rationale is recorded in [ADR-0001](docs/adr/0001-cpp-desktop-architecture.md).
 
@@ -237,8 +237,9 @@ and exports the native JSON v1 result. Apple Silicon and Intel macOS development
 their bundle dependency audits, signature verification, and clean-environment Cocoa launches in CI.
 The first [visual check on another Mac](docs/macos-beta-checklist.md) remains the beta gate.
 
-A Windows x64 preview is also built by the [Windows desktop beta workflow](https://github.com/1816x/Occlusion-Lab/actions/workflows/desktop-windows.yml).
-Download `occlusion-lab-windows-x64-preview` from a successful run. Extract the artifact,
+The Windows x64 preview passed its native tests, DLL dependency audit, and launch from an extracted
+ZIP without developer toolchain paths. Download **`occlusion-lab-windows-x64-preview`** from
+[the verified Windows beta run](https://github.com/1816x/Occlusion-Lab/actions/runs/42521969459). Extract the artifact,
 then extract `occlusion-lab-windows-x64.zip` and open `Occlusion Lab/occlusion-desktop.exe`.
 Keep the complete folder together; Qt, VTK, collision dependencies, and software OpenGL are bundled.
 Select that folder in the app to import the included synthetic OBJ pair. The preview targets
