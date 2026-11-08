@@ -24,6 +24,9 @@ on:
       - 'scripts/package-windows-desktop.py'
       - 'scripts/tests/test_windows_bundle.py'
       - '.github/workflows/desktop-windows.yml'
+concurrency:
+  group: windows-desktop-${{ github.ref }}
+  cancel-in-progress: true
 permissions:
   contents: read
 jobs:
@@ -62,6 +65,7 @@ jobs:
           fi
       - name: Configure and build Release viewer and tests
         run: |
+          export PATH="$PWD/build/windows-deps/install/bin:$PATH"
           if ! {
             cmake --preset desktop-release -DOCCLUSION_FETCH_DEPENDENCIES=OFF \
               -DCMAKE_PREFIX_PATH="$(cygpath -m "$PWD/build/windows-deps/install");$(cygpath -m "$MINGW_PREFIX")" &&
