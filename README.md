@@ -237,7 +237,16 @@ and exports the native JSON v1 result. Apple Silicon and Intel macOS development
 their bundle dependency audits, signature verification, and clean-environment Cocoa launches in CI.
 The first [visual check on another Mac](docs/macos-beta-checklist.md) remains the beta gate.
 
-Download the artifact for your Mac's processor (shown in **About This Mac**):
+A Windows x64 preview is also built by the [Windows desktop beta workflow](https://github.com/1816x/Occlusion-Lab/actions/workflows/desktop-windows.yml).
+Download `occlusion-lab-windows-x64-preview` from a successful run. Extract the artifact,
+then extract `occlusion-lab-windows-x64.zip` and open `Occlusion Lab/occlusion-desktop.exe`.
+Keep the complete folder together; Qt, VTK, collision dependencies, and software OpenGL are bundled.
+Select that folder in the app to import the included synthetic OBJ pair. The preview targets
+Windows 10/11 x64 and is unsigned. Follow the [Windows beta checklist](docs/windows-beta-checklist.md)
+and report any launch, display, import, sweep, or export issue. The artifact includes a screenshot
+from CI's packaged launch and a SHA-256 checksum for the inner ZIP.
+
+Download the macOS artifact for your Mac's processor (shown in **About This Mac**):
 
 - Apple Silicon: `occlusion-lab-macos-arm64-preview` from [the passing arm64 job](https://github.com/1816x/Occlusion-Lab/actions/runs/42434785308/job/128591201982).
 - Intel: `occlusion-lab-macos-x86_64-preview` from [the passing x86_64 job](https://github.com/1816x/Occlusion-Lab/actions/runs/42434785308/job/128591201992).

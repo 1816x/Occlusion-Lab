@@ -11,3 +11,7 @@ CMakeUserPresets.json
 
 # Deterministic Phase 1 binary build artifacts (regenerate with npm scripts).
 public/generated/
+
+# Python packaging checks.
+__pycache__/
+*.pyc

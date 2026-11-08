@@ -33,3 +33,6 @@ cmake --install "$root/fcl-build"
 mkdir -p "$install_prefix/share/licenses/occlusion-fcl" "$install_prefix/share/licenses/occlusion-libccd"
 cp "$root/fcl/LICENSE" "$install_prefix/share/licenses/occlusion-fcl/"
 cp "$root/libccd/BSD-LICENSE" "$install_prefix/share/licenses/occlusion-libccd/"
+
+mkdir -p "$install_prefix/share/licenses/occlusion-eigen"
+cp "$root/eigen/COPYING.MPL2" "$install_prefix/share/licenses/occlusion-eigen/"
