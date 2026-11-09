@@ -23,6 +23,7 @@
 #include <QResizeEvent>
 #include <QSaveFile>
 #include <QScrollArea>
+#include <QSignalBlocker>
 #include <QSlider>
 #include <QSpinBox>
 #include <QTabWidget>
@@ -547,7 +548,8 @@ public:
         !sweep_->summary.contact_persists_through_final_frame)
       return false;
     frame_slider_->setValue(10);
-    if (frame_label_->text() != "Posición 11/11" || !status_->text().startsWith("En contacto"))
+    if (frame_label_->text() != "Posición 11/11" || !status_->text().startsWith("En contacto") ||
+        opening_->value() != 0 || !sweep_ || !export_->isEnabled())
       return false;
     const auto& selected_transform = sweep_->frames[10].evaluation.applied_transform;
     const auto* selected_matrix = moving_actor_->GetUserMatrix();
@@ -1009,6 +1011,13 @@ private:
   }
 
   void show_result(const evaluation::PoseEvaluationResult& result) {
+    // A selected sweep frame is the visible pose. Reflect it without invalidating the sweep.
+    const QSignalBlocker opening_block(opening_);
+    const QSignalBlocker protrusion_block(protrusion_);
+    const QSignalBlocker lateral_block(lateral_);
+    opening_->setValue(result.requested_pose.opening.value() * 1000);
+    protrusion_->setValue(result.requested_pose.protrusion.value() * 1000);
+    lateral_->setValue(result.requested_pose.lateral_displacement.value() * 1000);
     auto matrix = vtkSmartPointer<vtkMatrix4x4>::New();
     for (int row = 0; row < 3; ++row)
       for (int column = 0; column < 3; ++column)
