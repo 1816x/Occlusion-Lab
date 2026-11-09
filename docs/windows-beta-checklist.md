@@ -1,8 +1,8 @@
 # Windows beta acceptance check
 
 Download `occlusion-lab-windows-x64-preview` from the passing workflow linked in
-[README](../README.md#phase-414-desktop-development-preview). Extract the artifact,
-extract the downloaded ZIP once into a new folder, then launch `occlusion-desktop.exe`
+[README](../README.md#phase-414-desktop-development-preview). Extract the downloaded ZIP
+once into a new folder, then launch `occlusion-desktop.exe`
 from that folder. Keep the executable and DLLs together. No Qt or MSYS2 installation is required.
 This preview targets Windows 10/11 on x64 processors and is unsigned.
 If Windows reports that it cannot access the executable, use the

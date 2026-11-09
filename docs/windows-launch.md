@@ -5,7 +5,7 @@ aparece antes de que Occlusion Lab inicie. El paquete de CI se abrió desde un Z
 pasó la auditoría de DLL; esa prueba no reproduce las reglas de seguridad de cada PC.
 
 1. Confirma que descargaste `occlusion-lab-windows-x64-preview` del
-   [run verificado](https://github.com/1816x/Occlusion-Lab/actions/runs/42653810736).
+   [run verificado](https://github.com/1816x/Occlusion-Lab/actions/runs/42677129073).
    En la carpeta extraída, `build-commit.txt` debe coincidir con el commit indicado por ese run.
 2. En el Explorador, abre **Propiedades → General** del ZIP descargado. Si aparece
    **Desbloquear** en la sección Seguridad, márcalo y extrae el ZIP de nuevo en

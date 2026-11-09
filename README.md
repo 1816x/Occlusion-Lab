@@ -246,8 +246,8 @@ The first [visual check on another Mac](docs/macos-beta-checklist.md) remains th
 
 The Windows x64 preview passed its native tests, DLL dependency audit, and launch from an extracted
 ZIP without developer toolchain paths. Download **`occlusion-lab-windows-x64-preview`** from
-[the verified Windows beta run](https://github.com/1816x/Occlusion-Lab/actions/runs/42653810736). Extract the artifact,
-extract it once into a new folder and open `occlusion-desktop.exe` next to the DLL files.
+[the verified Windows beta run](https://github.com/1816x/Occlusion-Lab/actions/runs/42677129073). Extract the downloaded artifact once
+into a new folder and open `occlusion-desktop.exe` next to the DLL files.
 Keep the complete folder together; Qt, VTK, collision dependencies, and software OpenGL are bundled.
 The included box files remain available as an optional import exercise. The preview targets
 Windows 10/11 x64 and is unsigned. Follow the [Windows beta checklist](docs/windows-beta-checklist.md)
