@@ -246,7 +246,7 @@ The first [visual check on another Mac](docs/macos-beta-checklist.md) remains th
 
 The Windows x64 preview passed its native tests, DLL dependency audit, and launch from an extracted
 ZIP without developer toolchain paths. Download **`occlusion-lab-windows-x64-preview`** from
-[the verified Windows beta run](https://github.com/1816x/Occlusion-Lab/actions/runs/42521969459). Extract the artifact,
+[the verified Windows beta run](https://github.com/1816x/Occlusion-Lab/actions/runs/42653810736). Extract the artifact,
 then extract `occlusion-lab-windows-x64.zip` and open `Occlusion Lab/occlusion-desktop.exe`.
 Keep the complete folder together; Qt, VTK, collision dependencies, and software OpenGL are bundled.
 The included box files remain available as an optional import exercise. The preview targets
@@ -256,8 +256,8 @@ from CI's packaged launch and a SHA-256 checksum for the inner ZIP.
 
 Download the macOS artifact for your Mac's processor (shown in **About This Mac**):
 
-- Apple Silicon: `occlusion-lab-macos-arm64-preview` from [the passing arm64 job](https://github.com/1816x/Occlusion-Lab/actions/runs/42434785308/job/128591201982).
-- Intel: `occlusion-lab-macos-x86_64-preview` from [the passing x86_64 job](https://github.com/1816x/Occlusion-Lab/actions/runs/42434785308/job/128591201992).
+- Apple Silicon: `occlusion-lab-macos-arm64-preview` from [the passing arm64 job](https://github.com/1816x/Occlusion-Lab/actions/runs/42653810979/job/129286846226).
+- Intel: `occlusion-lab-macos-x86_64-preview` from [the passing x86_64 job](https://github.com/1816x/Occlusion-Lab/actions/runs/42653810979/job/129286846034).
 
 Unzip the downloaded artifact, then unzip `occlusion-lab-macos.zip` to get `Occlusion Lab.app`.
 The built-in teaching arches load automatically. Keep the included box OBJ files together
