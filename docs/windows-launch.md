@@ -20,11 +20,29 @@ pasó la auditoría de DLL; esa prueba no reproduce las reglas de seguridad de c
    de aplicaciones y servicios → Microsoft → Windows**. Busca una entrada del
    mismo momento y archivo en **AppLocker → EXE and DLL** o en
    **CodeIntegrity → Operational**. Anota el identificador del evento y el motivo.
+5. Si tampoco hay entrada allí, abre la carpeta extraída en el Explorador, escribe
+   `powershell` en la barra de dirección y pulsa Enter. Ejecuta este comando para
+   obtener el código que devuelve Windows al intentar abrir la aplicación:
+
+   ```powershell
+   try {
+     Start-Process -FilePath (Join-Path (Get-Location) 'occlusion-desktop.exe') -ErrorAction Stop
+   } catch {
+     $problem = $_.Exception
+     while ($problem.InnerException) { $problem = $problem.InnerException }
+     "Código Win32: $($problem.NativeErrorCode); HRESULT: $($problem.HResult)"
+     "Motivo: $($problem.Message)"
+   }
+   ```
+
+   Si abre correctamente, el bloqueo de acceso ya no se reproduce. Si falla,
+   comparte solamente el código y el motivo; puedes omitir la ruta de tu usuario.
 
 Si el equipo pertenece a una organización, su política puede impedir ejecutar
 programas sin firma descargados en `Downloads`. El equipo de TI puede confirmar
 esa restricción; cambiar el código de la app no concede permisos a Windows.
 
 Para reportar el problema, indica si había **Desbloquear** en el ZIP o en el
-`.exe`, si Historial de protección o Visor de eventos muestran una entrada, y los primeros caracteres
-de `build-commit.txt`. No incluyas datos personales de otros eventos del historial.
+`.exe`, si Historial de protección o Visor de eventos muestran una entrada, el
+código Win32 y los primeros caracteres de `build-commit.txt`. No incluyas datos
+personales de otros eventos del historial.
