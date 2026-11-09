@@ -877,7 +877,8 @@ private:
   }
 
   void import_pair(bool evaluate_after_import = false) {
-    const auto directory = std::filesystem::path{directory_->text().toStdString()};
+    // UTF-16 preserves accented Windows profile/temp paths; filesystem converts on Unix.
+    const auto directory = std::filesystem::path{directory_->text().toStdU16String()};
     const auto fixed = fixed_name_->text().toStdString();
     const auto moving = moving_name_->text().toStdString();
     const auto generation = ++generation_;
