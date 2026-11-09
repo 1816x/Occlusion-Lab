@@ -134,31 +134,39 @@ jobs:
             Set-Content (Join-Path $preview 'occlusion-desktop.exe.sha256')
           # Match a double-click on the user's machine, without the smoke-only driver override.
           Remove-Item Env:GALLIUM_DRIVER -ErrorAction SilentlyContinue
-          $normal = Start-Process -FilePath "$bundle/occlusion-desktop.exe" -WorkingDirectory $env:RUNNER_TEMP -PassThru
           try {
-            $deadline = (Get-Date).AddSeconds(30)
-            do {
-              Start-Sleep -Milliseconds 500
+            $normal = Start-Process -FilePath "$bundle/occlusion-desktop.exe" -WorkingDirectory $env:RUNNER_TEMP -PassThru -ErrorAction Stop
+            try {
+              $deadline = (Get-Date).AddSeconds(30)
+              do {
+                Start-Sleep -Milliseconds 500
+                $normal.Refresh()
+                if ($normal.HasExited) {
+                  throw "Normal desktop launch exited before showing a window: $($normal.ExitCode)"
+                }
+              } until ($normal.MainWindowHandle -ne 0 -or (Get-Date) -ge $deadline)
+              if ($normal.MainWindowHandle -eq 0 -or $normal.MainWindowTitle -notlike 'Occlusion Lab*') {
+                throw "Normal desktop launch did not show the expected window: $($normal.MainWindowTitle)"
+              }
+              Start-Sleep -Seconds 2
               $normal.Refresh()
               if ($normal.HasExited) {
-                throw "Normal desktop launch exited before showing a window: $($normal.ExitCode)"
+                throw "Normal desktop launch closed immediately after showing a window: $($normal.ExitCode)"
               }
-            } until ($normal.MainWindowHandle -ne 0 -or (Get-Date) -ge $deadline)
-            if ($normal.MainWindowHandle -eq 0 -or $normal.MainWindowTitle -notlike 'Occlusion Lab*') {
-              throw "Normal desktop launch did not show the expected window: $($normal.MainWindowTitle)"
+              Write-Output 'Normal desktop launch showed a window and remained running'
+              Add-Content $env:GITHUB_STEP_SUMMARY 'Normal desktop launch showed a window and remained running.'
+            } finally {
+              $normal.Refresh()
+              if (-not $normal.HasExited) {
+                Stop-Process -Id $normal.Id -Force -ErrorAction SilentlyContinue
+                $normal.WaitForExit(10000) | Out-Null
+              }
             }
-            Start-Sleep -Seconds 2
-            $normal.Refresh()
-            if ($normal.HasExited) {
-              throw "Normal desktop launch closed immediately after showing a window: $($normal.ExitCode)"
-            }
-            Write-Output "Normal desktop launch showed a window and remained running"
-          } finally {
-            $normal.Refresh()
-            if (-not $normal.HasExited) {
-              Stop-Process -Id $normal.Id -Force
-              $normal.WaitForExit(10000) | Out-Null
-            }
+          } catch {
+            $detail = $_.Exception.Message
+            Write-Output "::error title=Normal Windows desktop launch::$detail"
+            Add-Content $env:GITHUB_STEP_SUMMARY "Normal desktop launch failed: $detail"
+            throw
           }
       - name: Upload Windows beta preview
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
