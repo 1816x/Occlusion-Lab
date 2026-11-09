@@ -26,7 +26,11 @@ pasó la auditoría de DLL; esa prueba no reproduce las reglas de seguridad de c
 
    ```powershell
    try {
-     Start-Process -FilePath (Join-Path (Get-Location) 'occlusion-desktop.exe') -ErrorAction Stop
+     $app = Start-Process -FilePath (Join-Path (Get-Location) 'occlusion-desktop.exe') -PassThru -ErrorAction Stop
+     Start-Sleep -Seconds 5
+     $app.Refresh()
+     if ($app.HasExited) { "La app se cerró. Código de salida: $($app.ExitCode)" }
+     else { "La app sigue en ejecución. PID: $($app.Id)" }
    } catch {
      $problem = $_.Exception
      while ($problem.InnerException) { $problem = $problem.InnerException }
@@ -35,8 +39,12 @@ pasó la auditoría de DLL; esa prueba no reproduce las reglas de seguridad de c
    }
    ```
 
-   Si abre correctamente, el bloqueo de acceso ya no se reproduce. Si falla,
-   comparte solamente el código y el motivo; puedes omitir la ruta de tu usuario.
+   Si sigue en ejecución pero no ves la ventana, revisa si está minimizada u oculta
+   detrás de otra aplicación. Si se cerró, anota el código de salida y busca una
+   entrada de la misma hora en **Visor de eventos → Registros de Windows → Aplicación**
+   para `occlusion-desktop.exe` (por ejemplo, **Application Error**, evento 1000).
+   Comparte el código y el motivo o el módulo con errores; puedes omitir la ruta
+   de tu usuario.
 
 Si el equipo pertenece a una organización, su política puede impedir ejecutar
 programas sin firma descargados en `Downloads`. El equipo de TI puede confirmar
@@ -44,5 +52,5 @@ esa restricción; cambiar el código de la app no concede permisos a Windows.
 
 Para reportar el problema, indica si había **Desbloquear** en el ZIP o en el
 `.exe`, si Historial de protección o Visor de eventos muestran una entrada, el
-código Win32 y los primeros caracteres de `build-commit.txt`. No incluyas datos
+código Win32 o de salida y los primeros caracteres de `build-commit.txt`. No incluyas datos
 personales de otros eventos del historial.
