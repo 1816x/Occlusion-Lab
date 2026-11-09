@@ -110,9 +110,10 @@ Occlusion Lab macOS development preview
 1. Unzip occlusion-lab-macos.zip to get Occlusion Lab.app.
 2. Open the app. If macOS blocks this unnotarized preview, use Finder's
    right-click > Open or Privacy & Security > Open Anyway.
-3. In the app, select this folder (containing fixed-box.obj and moving-box.obj)
-   as the directory, then click Import OBJ pair.
-4. Try Evaluate pose, Run sweep, the frame slider, and Export JSON v1.
+3. The Spanish student workspace opens with schematic teaching arches already loaded.
+4. Try Abrir/Cerrar/Protruir, Evaluar contactos, mouse rotation/zoom, and Barrido playback.
+   Restablecer ejemplo restores the built-in material; Exportar resultados saves JSON.
+   Importar optionally loads external OBJ pairs, including the supplied box files.
 
 This preview works with synthetic, closed OBJ meshes only. It has no clinical
 validation. Please report your Mac model, macOS version, and any launch or

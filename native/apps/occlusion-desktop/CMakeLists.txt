@@ -1,7 +1,8 @@
 find_package(Qt6 REQUIRED COMPONENTS Widgets Concurrent)
-find_package(VTK REQUIRED COMPONENTS CommonCore CommonDataModel FiltersSources RenderingCore RenderingOpenGL2)
+find_package(VTK REQUIRED COMPONENTS CommonCore CommonDataModel FiltersCore FiltersSources RenderingCore RenderingOpenGL2)
 
-add_executable(occlusion-desktop MACOSX_BUNDLE src/main.cpp)
+qt_add_resources(desktop_demo_resources resources/demo.qrc)
+add_executable(occlusion-desktop MACOSX_BUNDLE src/main.cpp ${desktop_demo_resources})
 target_link_libraries(occlusion-desktop PRIVATE occlusion::evaluation Qt6::Widgets Qt6::Concurrent ${VTK_LIBRARIES} occlusion_project_warnings)
 target_compile_features(occlusion-desktop PRIVATE cxx_std_20)
 if(WIN32)

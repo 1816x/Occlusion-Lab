@@ -231,6 +231,13 @@ application consumes these public results while keeping the web reference.
 
 ## Phase 4.14: desktop development preview
 
+The student workspace opens in Spanish with **built-in schematic arches already loaded** at
+8 mm opening. No initial import is required. Use **Explorar** to change the position,
+**Evaluar contactos** to update measurements, and drag/wheel to rotate/zoom.
+**Barrido** calculates a sequence with **Reproducir / Pausar** and frame selection.
+**Restablecer ejemplo** restores the example; **Importar** is available for other synthetic OBJ pairs.
+The embedded material is procedural, schematic, and nonclinical; see [its provenance](native/apps/occlusion-desktop/resources/README.md).
+
 The optional viewer imports two direct synthetic OBJ names from a selected directory on a worker
 thread, renders them with VTK, evaluates poses and sweeps on worker threads, selects stored frames,
 and exports the native JSON v1 result. Apple Silicon and Intel macOS development previews passed
@@ -242,7 +249,7 @@ ZIP without developer toolchain paths. Download **`occlusion-lab-windows-x64-pre
 [the verified Windows beta run](https://github.com/1816x/Occlusion-Lab/actions/runs/42521969459). Extract the artifact,
 then extract `occlusion-lab-windows-x64.zip` and open `Occlusion Lab/occlusion-desktop.exe`.
 Keep the complete folder together; Qt, VTK, collision dependencies, and software OpenGL are bundled.
-Select that folder in the app to import the included synthetic OBJ pair. The preview targets
+The included box files remain available as an optional import exercise. The preview targets
 Windows 10/11 x64 and is unsigned. Follow the [Windows beta checklist](docs/windows-beta-checklist.md)
 and report any launch, display, import, sweep, or export issue. The artifact includes a screenshot
 from CI's packaged launch and a SHA-256 checksum for the inner ZIP.
@@ -253,9 +260,8 @@ Download the macOS artifact for your Mac's processor (shown in **About This Mac*
 - Intel: `occlusion-lab-macos-x86_64-preview` from [the passing x86_64 job](https://github.com/1816x/Occlusion-Lab/actions/runs/42434785308/job/128591201992).
 
 Unzip the downloaded artifact, then unzip `occlusion-lab-macos.zip` to get `Occlusion Lab.app`.
-Keep `fixed-box.obj` and `moving-box.obj` from the artifact together in one folder. In the app,
-select that folder and import the OBJ pair; then evaluate a pose, run a sweep, move the frame
-slider, and export JSON v1. The artifact also contains `smoke-window.png`, a capture of the
+The built-in teaching arches load automatically. Keep the included box OBJ files together
+if you want to try them through the optional Importar tab. The artifact also contains `smoke-window.png`, a capture of the
 packaged app running under macOS Cocoa in CI.
 The bundle is signed locally by CI but is not notarized; if macOS blocks it, use Finder's **Open**
 context menu or **Open Anyway** in Privacy & Security. Each artifact runs on its named processor

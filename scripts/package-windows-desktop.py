@@ -87,8 +87,11 @@ def main():
 
 Extract the whole ZIP before launching occlusion-desktop.exe.
 Keep the executable, DLLs, and platforms folder together. No Qt or MSYS2 installation is needed.
-Select this extracted folder in the app, then click Import OBJ pair to load the sample meshes.
-Try Evaluate pose, Run sweep, the frame slider, camera controls, and Export JSON v1.
+The app opens in Spanish with schematic teaching arches already loaded.
+Use Explorar, Abrir/Cerrar/Protruir, Evaluar contactos, and the mouse to explore the scene.
+Use Barrido to calculate and play a sequence; Exportar resultados saves JSON.
+Restablecer ejemplo restores the built-in material. Importar optionally loads external OBJ pairs.
+The included box OBJ files remain available as an additional synthetic test case.
 
 This unsigned development preview is for Windows 10/11 x64 and synthetic meshes only.
 If Windows displays an unknown-publisher warning, verify that you downloaded this artifact

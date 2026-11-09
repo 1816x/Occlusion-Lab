@@ -11,20 +11,26 @@
 #include <QFileDialog>
 #include <QFormLayout>
 #include <QFutureWatcher>
+#include <QGroupBox>
 #include <QHBoxLayout>
 #include <QImage>
 #include <QLabel>
 #include <QLineEdit>
 #include <QMessageBox>
+#include <QMouseEvent>
 #include <QPixmap>
 #include <QPushButton>
 #include <QResizeEvent>
 #include <QSaveFile>
+#include <QScrollArea>
 #include <QSlider>
 #include <QSpinBox>
+#include <QTabWidget>
 #include <QTemporaryDir>
 #include <QThreadPool>
+#include <QTimer>
 #include <QVBoxLayout>
+#include <QWheelEvent>
 #include <QWidget>
 #include <QtConcurrent>
 
@@ -38,6 +44,7 @@
 #include <vtkPoints.h>
 #include <vtkPolyData.h>
 #include <vtkPolyDataMapper.h>
+#include <vtkPolyDataNormals.h>
 #include <vtkProperty.h>
 #include <vtkRenderWindow.h>
 #include <vtkRenderer.h>
@@ -46,9 +53,12 @@
 #include <vtkUnsignedCharArray.h>
 #include <vtkWindowToImageFilter.h>
 
+#include <algorithm>
 #include <array>
+#include <cmath>
 #include <cstdint>
 #include <filesystem>
+#include <functional>
 #include <iostream>
 #include <memory>
 #include <optional>
@@ -65,6 +75,7 @@ namespace mesh_io = occlusion::mesh_io;
 vtkSmartPointer<vtkActor> mesh_actor(const mesh_io::TriangleMesh& mesh,
                                      const std::array<double, 3>& color) {
   auto points = vtkSmartPointer<vtkPoints>::New();
+  points->SetDataTypeToDouble();
   for (const auto& point : mesh.vertices_meters)
     points->InsertNextPoint(point.x, point.y, point.z);
   auto faces = vtkSmartPointer<vtkCellArray>::New();
@@ -78,11 +89,16 @@ vtkSmartPointer<vtkActor> mesh_actor(const mesh_io::TriangleMesh& mesh,
   polydata->SetPoints(points);
   polydata->SetPolys(faces);
   auto mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
-  mapper->SetInputData(polydata);
+  auto normals = vtkSmartPointer<vtkPolyDataNormals>::New();
+  normals->SetInputData(polydata);
+  normals->SplittingOff();
+  mapper->SetInputConnection(normals->GetOutputPort());
   auto actor = vtkSmartPointer<vtkActor>::New();
   actor->SetMapper(mapper);
   actor->GetProperty()->SetColor(color[0], color[1], color[2]);
-  actor->GetProperty()->SetOpacity(0.68);
+  actor->GetProperty()->SetOpacity(1.0);
+  actor->GetProperty()->SetSpecular(0.3);
+  actor->GetProperty()->SetSpecularPower(24);
   return actor;
 }
 
@@ -94,13 +110,13 @@ QString error_text(const mesh_io::ObjFileError& error) {
 QString classification_text(core::ContactClassification value) {
   switch (value) {
   case core::ContactClassification::separated:
-    return "Separated";
+    return "Separadas";
   case core::ContactClassification::touching:
-    return "Touching";
+    return "En contacto";
   case core::ContactClassification::penetrating:
-    return "Penetrating";
+    return "Intersección";
   }
-  return "Unknown";
+  return "Sin resultado";
 }
 
 struct LoadedPair final {
@@ -110,15 +126,45 @@ struct LoadedPair final {
 
 class SceneLabel final : public QLabel {
 public:
+  std::function<void(double, double)> orbit;
+  std::function<void(double)> zoom;
+  std::function<void()> resized;
+
   void set_image(QImage image) {
     image_ = std::move(image);
     update_pixmap();
   }
 
 protected:
+  void mousePressEvent(QMouseEvent* event) override {
+    if (event->button() == Qt::LeftButton) {
+      last_position_ = event->position();
+      setCursor(Qt::ClosedHandCursor);
+      event->accept();
+    }
+  }
+  void mouseMoveEvent(QMouseEvent* event) override {
+    if ((event->buttons() & Qt::LeftButton) && orbit) {
+      const auto delta = event->position() - last_position_;
+      last_position_ = event->position();
+      orbit(delta.x() * 0.4, delta.y() * 0.4);
+      event->accept();
+    }
+  }
+  void mouseReleaseEvent(QMouseEvent* event) override {
+    setCursor(Qt::OpenHandCursor);
+    event->accept();
+  }
+  void wheelEvent(QWheelEvent* event) override {
+    if (zoom && event->angleDelta().y() != 0)
+      zoom(event->angleDelta().y() > 0 ? 1.15 : 1.0 / 1.15);
+    event->accept();
+  }
   void resizeEvent(QResizeEvent* event) override {
     QLabel::resizeEvent(event);
     update_pixmap();
+    if (resized)
+      resized();
   }
 
 private:
@@ -129,93 +175,281 @@ private:
   }
 
   QImage image_;
+  QPointF last_position_;
 };
 
 class MainWindow final : public QWidget {
 public:
-  explicit MainWindow(QString initial_directory = {}) {
-    setWindowTitle("Occlusion Lab — synthetic desktop viewer");
-    resize(1120, 720);
+  explicit MainWindow(QString initial_directory = {}, bool autostart = true) {
+    setWindowTitle("Occlusion Lab · Aula de oclusión");
+    resize(1280, 820);
+    setStyleSheet(R"qss(
+      QWidget { background: #f3f6fa; color: #23384b; font-family: "Segoe UI", "Arial"; font-size: 13px; }
+      QLabel { background: transparent; }
+      QLabel#brand { font-size: 23px; font-weight: 700; color: #133b48; }
+      QLabel#muted { color: #61788a; }
+      QLabel#section { font-size: 16px; font-weight: 600; }
+      QLabel#metric { font-size: 21px; font-weight: 600; color: #126c69; }
+      QGroupBox { background: white; border: 1px solid #dce5ec; border-radius: 10px; margin-top: 14px; padding: 16px 10px 10px; font-weight: 600; }
+      QGroupBox::title { subcontrol-origin: margin; left: 12px; padding: 0 5px; }
+      QPushButton { background: white; border: 1px solid #cddbe3; border-radius: 7px; padding: 9px 12px; font-weight: 600; }
+      QPushButton:hover { background: #e6f4f1; border-color: #68aaa2; }
+      QPushButton:pressed { background: #cde7e1; }
+      QPushButton:disabled { color: #91a1ac; background: #edf1f4; border-color: #e1e6eb; }
+      QPushButton#primary { color: white; background: #137e77; border: 1px solid #137e77; }
+      QPushButton#primary:hover { background: #09675f; }
+      QPushButton#primary:disabled { background: #96b6b4; border-color: #96b6b4; }
+      QLineEdit, QDoubleSpinBox, QSpinBox, QComboBox { background: white; border: 1px solid #cddbe3; border-radius: 5px; padding: 6px; min-height: 20px; }
+      QLineEdit:focus, QDoubleSpinBox:focus { border-color: #137e77; }
+      QTabWidget::pane { border: 0; }
+      QTabBar::tab { padding: 10px 12px; background: #e8eef3; color: #526c7d; }
+      QTabBar::tab:selected { background: white; color: #126c69; border-bottom: 3px solid #137e77; }
+      QScrollArea { border: 0; }
+      QSlider::groove:horizontal { background: #cedee4; height: 5px; border-radius: 2px; }
+      QSlider::handle:horizontal:disabled { background: #b7c5cc; }
+      QSlider::handle:horizontal { background: #137e77; width: 16px; margin: -6px 0; border-radius: 8px; }
+    )qss");
 
     directory_ = new QLineEdit(std::move(initial_directory));
     fixed_name_ = new QLineEdit("fixed-box.obj");
     moving_name_ = new QLineEdit("moving-box.obj");
-    browse_ = new QPushButton("Browse…");
-    import_ = new QPushButton("Import OBJ pair");
+    browse_ = new QPushButton("Elegir carpeta…");
+    import_ = new QPushButton("Importar mallas");
     opening_ = spin_box(0, 250);
     protrusion_ = spin_box(0, 50);
     lateral_ = spin_box(-50, 50);
-    evaluate_ = new QPushButton("Evaluate pose");
+    evaluate_ = new QPushButton("Evaluar contactos");
     preset_ = new QComboBox;
-    preset_->addItem("Closing", static_cast<int>(core::SweepPreset::closing));
-    preset_->addItem("Protrusive", static_cast<int>(core::SweepPreset::protrusive));
-    preset_->addItem("Left lateral", static_cast<int>(core::SweepPreset::left_lateral));
-    preset_->addItem("Right lateral", static_cast<int>(core::SweepPreset::right_lateral));
+    preset_->addItem("Cierre", static_cast<int>(core::SweepPreset::closing));
+    preset_->addItem("Protrusión", static_cast<int>(core::SweepPreset::protrusive));
+    preset_->addItem("Lateral izquierdo", static_cast<int>(core::SweepPreset::left_lateral));
+    preset_->addItem("Lateral derecho", static_cast<int>(core::SweepPreset::right_lateral));
     frames_ = new QSpinBox;
     frames_->setRange(2, 61);
     frames_->setValue(31);
-    sweep_button_ = new QPushButton("Run sweep");
+    sweep_button_ = new QPushButton("Calcular barrido");
     frame_slider_ = new QSlider(Qt::Horizontal);
     frame_slider_->setEnabled(false);
-    frame_label_ = new QLabel("No sweep selected");
+    frame_label_ = new QLabel("Sin barrido calculado");
     summary_ = new QLabel;
     summary_->setWordWrap(true);
-    export_ = new QPushButton("Export JSON v1");
+    export_ = new QPushButton("Exportar resultados");
     export_->setEnabled(false);
-    status_ = new QLabel("Import two synthetic, closed OBJ meshes to begin.");
+    status_ = new QLabel("Preparando tu espacio de práctica…");
     status_->setWordWrap(true);
     scene_ = new SceneLabel;
-    scene_->setMinimumSize(640, 480);
+    scene_->setMinimumSize(320, 260);
+    scene_->setCursor(Qt::OpenHandCursor);
+    scene_->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
     scene_->setAlignment(Qt::AlignCenter);
-    scene_->setStyleSheet("background: #101820; color: white;");
-    scene_->setText("VTK scene appears after import");
+    scene_->setStyleSheet("background: #eaf2f6; border-radius: 12px; color: #456273;");
+    scene_->setText("Cargando material de práctica…");
 
-    auto* form = new QFormLayout;
-    auto* directory_row = new QHBoxLayout;
-    directory_row->addWidget(directory_);
-    directory_row->addWidget(browse_);
-    form->addRow("Directory", directory_row);
-    form->addRow("Fixed OBJ", fixed_name_);
-    form->addRow("Moving OBJ", moving_name_);
-    form->addRow(import_);
-    form->addRow("Opening (mm)", opening_);
-    form->addRow("Protrusion (mm)", protrusion_);
-    form->addRow("Lateral (mm)", lateral_);
-    form->addRow(evaluate_);
-    form->addRow("Sweep", preset_);
-    form->addRow("Frames", frames_);
-    form->addRow(sweep_button_);
-    form->addRow("Selected frame", frame_slider_);
-    form->addRow(frame_label_);
-    form->addRow(summary_);
-    form->addRow(export_);
-    auto* rotate_left = new QPushButton("Rotate left");
-    auto* rotate_right = new QPushButton("Rotate right");
-    auto* rotate_up = new QPushButton("Rotate up");
-    auto* rotate_down = new QPushButton("Rotate down");
-    auto* zoom_in = new QPushButton("Zoom in");
-    auto* zoom_out = new QPushButton("Zoom out");
+    auto* layout = new QVBoxLayout(this);
+    layout->setContentsMargins(22, 16, 22, 16);
+    layout->setSpacing(14);
+    auto* header = new QHBoxLayout;
+    auto* titles = new QVBoxLayout;
+    auto* brand = new QLabel("Occlusion Lab");
+    brand->setObjectName("brand");
+    titles->addWidget(brand);
+    auto* subtitle = new QLabel("AULA DE OCLUSIÓN  /  Explora, observa y compara");
+    subtitle->setObjectName("muted");
+    titles->addWidget(subtitle);
+    header->addLayout(titles);
+    header->addStretch();
+    demo_button_ = new QPushButton("Restablecer ejemplo");
+    header->addWidget(demo_button_);
+    header->addWidget(export_);
+    layout->addLayout(header);
+    auto* body = new QHBoxLayout;
+    body->setSpacing(18);
+    layout->addLayout(body, 1);
+    auto* sidebar = new QWidget;
+    sidebar->setMinimumWidth(300);
+    sidebar->setMaximumWidth(340);
+    auto* side = new QVBoxLayout(sidebar);
+    side->setContentsMargins(0, 0, 0, 0);
+    auto* material = new QGroupBox("MATERIAL DE PRÁCTICA");
+    auto* material_layout = new QVBoxLayout(material);
+    case_label_ = new QLabel("Arcadas esquemáticas · 14 + 14 piezas");
+    case_label_->setWordWrap(true);
+    material_layout->addWidget(case_label_);
+    auto* disclaimer = new QLabel("Modelo sintético para explorar movimientos. No reproduce "
+                                  "anatomía ni permite diagnóstico.");
+    disclaimer->setObjectName("muted");
+    disclaimer->setWordWrap(true);
+    material_layout->addWidget(disclaimer);
+    side->addWidget(material);
+    auto* tabs = new QTabWidget;
+    side->addWidget(tabs, 1);
+    auto add_tab = [tabs](const QString& name) {
+      auto* scroll = new QScrollArea;
+      scroll->setWidgetResizable(true);
+      auto* page = new QWidget;
+      auto* column = new QVBoxLayout(page);
+      column->setContentsMargins(6, 14, 6, 8);
+      column->setSpacing(12);
+      scroll->setWidget(page);
+      tabs->addTab(scroll, name);
+      return column;
+    };
+    auto* explore = add_tab("Explorar");
+    auto* guide = new QLabel("1. Cambia la posición.\n2. Evalúa para consultar contactos.\n3. Gira "
+                             "la escena y compara.");
+    guide->setWordWrap(true);
+    guide->setObjectName("muted");
+    explore->addWidget(guide);
+    auto* pose_form = new QFormLayout;
+    pose_form->addRow("Apertura (mm)", opening_);
+    pose_form->addRow("Protrusión (mm)", protrusion_);
+    pose_form->addRow("Lateralidad (mm)", lateral_);
+    explore->addLayout(pose_form);
+    auto* examples = new QHBoxLayout;
+    auto* open_pose = new QPushButton("Abrir");
+    auto* close_pose = new QPushButton("Cerrar");
+    auto* protrude_pose = new QPushButton("Protruir");
+    pose_examples_ = {open_pose, close_pose, protrude_pose};
+    for (auto* button : pose_examples_)
+      examples->addWidget(button);
+    explore->addLayout(examples);
+    evaluate_->setObjectName("primary");
+    explore->addWidget(evaluate_);
+    auto* lesson = new QGroupBox("¿QUÉ ESTÁS OBSERVANDO?");
+    auto* lesson_layout = new QVBoxLayout(lesson);
+    auto* lesson_text =
+        new QLabel("Apertura: separa las arcadas.\nProtrusión: desplaza la inferior hacia "
+                   "delante.\nLateralidad: desplaza la inferior hacia los lados.\n\nLos puntos "
+                   "amarillos indican contactos geométricos, no fuerzas.");
+    lesson_text->setWordWrap(true);
+    lesson_layout->addWidget(lesson_text);
+    explore->addWidget(lesson);
+    explore->addStretch();
+    auto* sweep_tab = add_tab("Barrido");
+    auto* sweep_help =
+        new QLabel("Compara una secuencia de posiciones y reproduce sus resultados. Los recorridos "
+                   "usan los rangos completos del modelo sintético; no son límites fisiológicos.");
+    sweep_help->setWordWrap(true);
+    sweep_tab->addWidget(sweep_help);
+    auto* sweep_form = new QFormLayout;
+    sweep_form->addRow("Movimiento", preset_);
+    sweep_form->addRow("Posiciones", frames_);
+    sweep_tab->addLayout(sweep_form);
+    sweep_button_->setObjectName("primary");
+    sweep_tab->addWidget(sweep_button_);
+    sweep_tab->addWidget(summary_);
+    sweep_tab->addStretch();
+    auto* import_tab = add_tab("Importar");
+    auto* import_help =
+        new QLabel("Opcional: carga dos mallas OBJ sintéticas cerradas, con coordenadas en metros. "
+                   "El ejemplo integrado siempre está disponible arriba.");
+    import_help->setWordWrap(true);
+    import_tab->addWidget(import_help);
+    import_tab->addWidget(new QLabel("Carpeta de los archivos"));
+    import_tab->addWidget(directory_);
+    import_tab->addWidget(browse_);
+    import_tab->addWidget(new QLabel("Malla fija (superior)"));
+    import_tab->addWidget(fixed_name_);
+    import_tab->addWidget(new QLabel("Malla móvil (inferior)"));
+    import_tab->addWidget(moving_name_);
+    import_tab->addWidget(import_);
+    import_tab->addStretch();
+    body->addWidget(sidebar);
+    auto* workspace = new QVBoxLayout;
+    body->addLayout(workspace, 1);
+    auto* scene_header = new QHBoxLayout;
+    auto* scene_title = new QLabel("Exploración 3D");
+    scene_title->setObjectName("section");
+    scene_header->addWidget(scene_title);
+    scene_header->addStretch();
+    scene_header->addWidget(new QLabel("● Superior: marfil     ● Inferior: turquesa"));
+    workspace->addLayout(scene_header);
+    workspace->addWidget(scene_, 1);
     auto* camera_row = new QHBoxLayout;
-    camera_row->addWidget(rotate_left);
-    camera_row->addWidget(rotate_right);
-    form->addRow("Camera", camera_row);
-    auto* camera_row_two = new QHBoxLayout;
-    camera_row_two->addWidget(rotate_up);
-    camera_row_two->addWidget(rotate_down);
-    camera_row_two->addWidget(zoom_in);
-    camera_row_two->addWidget(zoom_out);
-    form->addRow(camera_row_two);
-    auto* legend = new QLabel(
-        "Axes: X red, Y green, Z blue. Engine lengths: meters; displayed distances: mm.");
-    legend->setWordWrap(true);
-    form->addRow(legend);
-    form->addRow(status_);
-    auto* layout = new QHBoxLayout(this);
-    layout->addLayout(form, 1);
-    layout->addWidget(scene_, 2);
+    auto* rotate_left = new QPushButton("↶");
+    auto* rotate_right = new QPushButton("↷");
+    auto* rotate_up = new QPushButton("↑");
+    auto* rotate_down = new QPushButton("↓");
+    auto* zoom_in = new QPushButton("+");
+    auto* zoom_out = new QPushButton("−");
+    auto* reset_view = new QPushButton("Centrar vista");
+    camera_row->addWidget(new QLabel("Arrastra para girar · Rueda para zoom"), 1);
+    for (auto* button :
+         {rotate_left, rotate_right, rotate_up, rotate_down, zoom_in, zoom_out, reset_view})
+      camera_row->addWidget(button);
+    workspace->addLayout(camera_row);
+    auto* timeline = new QHBoxLayout;
+    play_ = new QPushButton("Reproducir");
+    play_->setEnabled(false);
+    timeline->addWidget(play_);
+    timeline->addWidget(frame_slider_, 1);
+    timeline->addWidget(frame_label_);
+    workspace->addLayout(timeline);
+    auto* metrics = new QHBoxLayout;
+    auto metric = [metrics](const QString& title, QLabel*& value) {
+      auto* card = new QGroupBox(title);
+      auto* column = new QVBoxLayout(card);
+      value = new QLabel("—");
+      value->setObjectName("metric");
+      column->addWidget(value);
+      metrics->addWidget(card, 1);
+    };
+    metric("RELACIÓN ENTRE MALLAS", relation_);
+    metric("SEPARACIÓN", clearance_);
+    metric("MUESTRAS DE CONTACTO", contacts_);
+    workspace->addLayout(metrics);
+    workspace->addWidget(status_);
+    playback_ = new QTimer(this);
+    playback_->setInterval(140);
+    connect(playback_, &QTimer::timeout, this, [this] {
+      if (!sweep_ || busy_ || frame_slider_->value() >= frame_slider_->maximum()) {
+        stop_playback();
+        return;
+      }
+      frame_slider_->setValue(frame_slider_->value() + 1);
+    });
+    connect(play_, &QPushButton::clicked, this, [this] {
+      if (playback_->isActive()) {
+        stop_playback();
+        return;
+      }
+      if (frame_slider_->value() == frame_slider_->maximum())
+        frame_slider_->setValue(0);
+      play_->setText("Pausar");
+      playback_->start();
+    });
+    connect(demo_button_, &QPushButton::clicked, this, [this] { load_demo(); });
+    connect(reset_view, &QPushButton::clicked, this, [this] { reset_camera(); });
+    connect(open_pose, &QPushButton::clicked, this, [this] { example_pose(8, 0); });
+    connect(close_pose, &QPushButton::clicked, this, [this] { example_pose(0, 0); });
+    connect(protrude_pose, &QPushButton::clicked, this, [this] { example_pose(2, 4); });
+    scene_->orbit = [this](double x, double y) {
+      renderer_->GetActiveCamera()->Azimuth(-x);
+      renderer_->GetActiveCamera()->Elevation(y);
+      renderer_->GetActiveCamera()->OrthogonalizeViewUp();
+      renderer_->ResetCameraClippingRange();
+      render_scene();
+    };
+    scene_->zoom = [this](double factor) { zoom_camera(factor); };
+    scene_->resized = [this] {
+      if (window_) {
+        window_->SetSize(std::max(1, scene_->width()), std::max(1, scene_->height()));
+        render_scene();
+      }
+    };
+    rotate_left->setToolTip("Girar a la izquierda");
+    rotate_right->setToolTip("Girar a la derecha");
+    rotate_up->setToolTip("Girar hacia arriba");
+    rotate_down->setToolTip("Girar hacia abajo");
+    zoom_in->setToolTip("Acercar");
+    zoom_out->setToolTip("Alejar");
+    for (auto* button : {rotate_left, rotate_right, rotate_up, rotate_down, zoom_in, zoom_out})
+      button->setAccessibleName(button->toolTip());
 
     renderer_ = vtkSmartPointer<vtkRenderer>::New();
-    renderer_->SetBackground(0.06, 0.10, 0.15);
+    renderer_->SetBackground(0.82, 0.89, 0.92);
+    renderer_->SetBackground2(0.97, 0.98, 0.99);
+    renderer_->GradientBackgroundOn();
     window_ = vtkSmartPointer<vtkRenderWindow>::New();
     window_->SetOffScreenRendering(1);
     window_->SetSize(800, 600);
@@ -225,7 +459,7 @@ public:
 
     connect(browse_, &QPushButton::clicked, this, [this] {
       const auto selected = QFileDialog::getExistingDirectory(
-          this, "Select synthetic OBJ directory", directory_->text());
+          this, "Selecciona la carpeta de las mallas", directory_->text());
       if (!selected.isEmpty())
         directory_->setText(selected);
     });
@@ -234,7 +468,7 @@ public:
     connect(sweep_button_, &QPushButton::clicked, this, [this] { evaluate_sweep(); });
     connect(frame_slider_, &QSlider::valueChanged, this, [this](int index) {
       if (sweep_ && index < static_cast<int>(sweep_->frames.size())) {
-        frame_label_->setText(QString("Frame %1/%2").arg(index + 1).arg(sweep_->frames.size()));
+        frame_label_->setText(QString("Posición %1/%2").arg(index + 1).arg(sweep_->frames.size()));
         show_result(sweep_->frames[static_cast<std::size_t>(index)].evaluation);
       }
     });
@@ -251,6 +485,12 @@ public:
       connect(field, &QDoubleSpinBox::valueChanged, this, [this] { pose_inputs_changed(); });
     connect(preset_, &QComboBox::currentIndexChanged, this, [this] { sweep_inputs_changed(); });
     connect(frames_, &QSpinBox::valueChanged, this, [this] { sweep_inputs_changed(); });
+    if (autostart) {
+      if (directory_->text().isEmpty())
+        load_demo();
+      else
+        import_pair(true);
+    }
   }
 
   bool smoke(const std::filesystem::path& directory) {
@@ -307,7 +547,7 @@ public:
         !sweep_->summary.contact_persists_through_final_frame)
       return false;
     frame_slider_->setValue(10);
-    if (frame_label_->text() != "Frame 11/11" || !status_->text().startsWith("Touching"))
+    if (frame_label_->text() != "Posición 11/11" || !status_->text().startsWith("En contacto"))
       return false;
     const auto& selected_transform = sweep_->frames[10].evaluation.applied_transform;
     const auto* selected_matrix = moving_actor_->GetUserMatrix();
@@ -379,7 +619,124 @@ public:
     return colors.size() > 4 && json.find("\"requestedFrameCount\":11") != std::string::npos;
   }
 
+  bool smoke_startup() {
+    if (!wait_until_ready(import_) || !session_ || !pose_ || !export_->isEnabled() ||
+        session_->fixed_mesh.vertices_meters.size() != 868 ||
+        pose_->classification != core::ContactClassification::separated ||
+        std::abs(pose_->requested_pose.opening.value() - 0.008) > 1e-12)
+      return false;
+    QTemporaryDir output;
+    if (!output.isValid() || !write_export(output.filePath("demo.json")))
+      return false;
+    QFile file(output.filePath("demo.json"));
+    if (!file.open(QIODevice::ReadOnly) || !file.readAll().contains("desktop-teaching-arches-v1"))
+      return false;
+    const auto previous_x = renderer_->GetActiveCamera()->GetPosition()[0];
+    QMouseEvent press(QEvent::MouseButtonPress, QPointF(100, 100), QPointF(100, 100),
+                      Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+    QMouseEvent move(QEvent::MouseMove, QPointF(140, 110), QPointF(140, 110), Qt::NoButton,
+                     Qt::LeftButton, Qt::NoModifier);
+    QMouseEvent release(QEvent::MouseButtonRelease, QPointF(140, 110), QPointF(140, 110),
+                        Qt::LeftButton, Qt::NoButton, Qt::NoModifier);
+    QApplication::sendEvent(scene_, &press);
+    QApplication::sendEvent(scene_, &move);
+    QApplication::sendEvent(scene_, &release);
+    if (renderer_->GetActiveCamera()->GetPosition()[0] == previous_x)
+      return false;
+    const auto distance = renderer_->GetActiveCamera()->GetDistance();
+    QWheelEvent wheel(QPointF(100, 100), QPointF(100, 100), QPoint(), QPoint(0, 120), Qt::NoButton,
+                      Qt::NoModifier, Qt::NoScrollPhase, false);
+    QApplication::sendEvent(scene_, &wheel);
+    if (renderer_->GetActiveCamera()->GetDistance() >= distance)
+      return false;
+    opening_->setValue(12);
+    if (export_->isEnabled() || relation_->text() != "Sin evaluar" ||
+        std::abs(moving_actor_->GetUserMatrix()->GetElement(1, 3) - 0.148) > 1e-12)
+      return false;
+    pose_examples_[1]->click();
+    if (!wait_until_ready(evaluate_) || !pose_ || pose_->requested_pose.opening.value() != 0)
+      return false;
+    frames_->setValue(11);
+    sweep_button_->click();
+    if (!wait_until_ready(sweep_button_) || !sweep_ || !play_->isEnabled())
+      return false;
+    play_->click();
+    QElapsedTimer timer;
+    timer.start();
+    while (frame_slider_->value() == 0 && timer.elapsed() < 2000)
+      QCoreApplication::processEvents(QEventLoop::AllEvents, 10);
+    if (frame_slider_->value() == 0)
+      return false;
+    play_->click();
+    if (playback_->isActive())
+      return false;
+    opening_->setValue(9);
+    if (sweep_ || play_->isEnabled() || export_->isEnabled())
+      return false;
+    demo_button_->click();
+    if (!wait_until_ready(import_) || !pose_ || !export_->isEnabled() || opening_->value() != 8)
+      return false;
+    show();
+    QCoreApplication::processEvents();
+    const auto screenshot = qEnvironmentVariable("OCCLUSION_DESKTOP_SMOKE_WINDOW");
+    if (!screenshot.isEmpty() && !grab().save(screenshot))
+      return false;
+    return !scene_image_.isNull();
+  }
+
 private:
+  void stop_playback() {
+    playback_->stop();
+    play_->setText("Reproducir");
+  }
+
+  void clear_metrics() {
+    relation_->setText("Sin evaluar");
+    clearance_->setText("—");
+    contacts_->setText("—");
+  }
+
+  void reset_camera() {
+    auto* camera = renderer_->GetActiveCamera();
+    camera->SetPosition(0.09, 0.055, 0.13);
+    camera->SetFocalPoint(0, 0, 0.02);
+    camera->SetViewUp(0, 1, 0);
+    renderer_->ResetCamera();
+    renderer_->ResetCameraClippingRange();
+    render_scene();
+  }
+
+  void load_demo() {
+    if (busy_)
+      return;
+    if (!demo_directory_.isValid()) {
+      status_->setText("No se pudo preparar el ejemplo. Comprueba el espacio temporal disponible.");
+      return;
+    }
+    for (const auto* name : {"upper-arch.obj", "lower-arch.obj"}) {
+      const auto destination = demo_directory_.filePath(name);
+      if (!QFile::exists(destination) && !QFile::copy(QString(":/demo/") + name, destination)) {
+        status_->setText("No se pudo cargar el material integrado.");
+        return;
+      }
+    }
+    directory_->setText(demo_directory_.path());
+    fixed_name_->setText("upper-arch.obj");
+    moving_name_->setText("lower-arch.obj");
+    opening_->setValue(8);
+    protrusion_->setValue(0);
+    lateral_->setValue(0);
+    import_pair(true);
+  }
+
+  void example_pose(double opening, double protrusion) {
+    opening_->setValue(opening);
+    protrusion_->setValue(protrusion);
+    lateral_->setValue(0);
+    reset_after_evaluation_ = true;
+    evaluate_pose();
+  }
+
   static bool wait_until_ready(const QPushButton* button) {
     QElapsedTimer timer;
     timer.start();
@@ -405,33 +762,64 @@ private:
   void selection_changed() {
     if (!session_)
       return;
-    status_->setText(selection_matches_import()
-                         ? "Imported pair restored. Evaluate a pose or sweep."
-                         : "Mesh selection changed. Import this pair before evaluating; last valid "
-                           "scene shown.");
+    if (!selection_matches_import()) {
+      stop_playback();
+      clear_metrics();
+    }
+    status_->setText(
+        selection_matches_import()
+            ? "Selección restaurada. Evalúa una posición o un barrido."
+            : "La selección cambió. Importa las mallas para evaluar; se conserva la última "
+              "escena válida.");
     set_busy(busy_);
   }
 
   void pose_inputs_changed() {
-    if (pose_) {
-      pose_.reset();
-      status_->setText("Pose inputs changed. Evaluate the new pose before exporting.");
-      set_busy(busy_);
+    if (!selection_matches_import() || busy_)
+      return;
+    clear_evaluation();
+    const auto transform = core::mandibular_pose_to_transform(
+        {core::to_meters(core::Millimeters{opening_->value()}),
+         core::to_meters(core::Millimeters{protrusion_->value()}),
+         core::to_meters(core::Millimeters{lateral_->value()})});
+    if (transform && moving_actor_) {
+      auto matrix = vtkSmartPointer<vtkMatrix4x4>::New();
+      const auto& translation = transform.value().translation_meters;
+      matrix->SetElement(0, 3, translation.x);
+      matrix->SetElement(1, 3, translation.y);
+      matrix->SetElement(2, 3, translation.z);
+      moving_actor_->SetUserMatrix(matrix);
+      for (const auto& actor : contact_actors_)
+        renderer_->RemoveActor(actor);
+      contact_actors_.clear();
+      renderer_->ResetCameraClippingRange();
+      render_scene();
     }
+    status_->setText(
+        "Vista previa de posición · Pulsa Evaluar contactos para actualizar los resultados.");
+    set_busy(busy_);
   }
 
   void sweep_inputs_changed() {
     if (sweep_) {
+      stop_playback();
+      clear_metrics();
       sweep_.reset();
-      frame_label_->setText("No sweep selected");
+      frame_label_->setText("Sin barrido calculado");
       summary_->clear();
-      status_->setText("Sweep inputs changed. Run the new sweep before exporting.");
+      status_->setText("El barrido cambió. Vuelve a calcularlo antes de exportar.");
       set_busy(busy_);
     }
   }
 
   void set_busy(bool busy) {
     busy_ = busy;
+    if (busy)
+      stop_playback();
+    demo_button_->setEnabled(!busy);
+    for (auto* button : pose_examples_)
+      button->setEnabled(!busy && selection_matches_import());
+    play_->setEnabled(!busy && selection_matches_import() && sweep_.has_value());
     browse_->setEnabled(!busy);
     directory_->setEnabled(!busy);
     fixed_name_->setEnabled(!busy);
@@ -457,10 +845,10 @@ private:
       imported_moving_name_.clear();
       pose_.reset();
       sweep_.reset();
-      frame_label_->setText("No sweep selected");
+      frame_label_->setText("Sin barrido calculado");
       summary_->clear();
       status_->setText(error_text(loaded.error) +
-                       ". Last valid scene shown; import a valid pair to evaluate.");
+                       ". Se conserva la última escena; importa un par válido para evaluar.");
       set_busy(false);
       return;
     }
@@ -470,36 +858,45 @@ private:
     imported_moving_name_ = moving_name_->text();
     pose_.reset();
     sweep_.reset();
-    frame_label_->setText("No sweep selected");
+    frame_label_->setText("Sin barrido calculado");
     summary_->clear();
     frame_slider_->setEnabled(false);
     renderer_->RemoveAllViewProps();
     contact_actors_.clear();
     add_axes();
-    fixed_actor_ = mesh_actor(session_->fixed_mesh, {0.25, 0.65, 0.95});
-    moving_actor_ = mesh_actor(session_->moving_mesh, {0.95, 0.58, 0.25});
+    fixed_actor_ = mesh_actor(session_->fixed_mesh, {0.96, 0.90, 0.77});
+    moving_actor_ = mesh_actor(session_->moving_mesh, {0.17, 0.65, 0.61});
     renderer_->AddActor(fixed_actor_);
     renderer_->AddActor(moving_actor_);
-    renderer_->ResetCamera();
-    render_scene();
-    status_->setText("Pair imported. Evaluate a pose or sweep.");
+    reset_camera();
+    case_label_->setText(directory_->text() == demo_directory_.path()
+                             ? "Arcadas esquemáticas · 14 + 14 piezas"
+                             : "Par de mallas importadas");
+    status_->setText("Mallas listas. Explora una posición o calcula un barrido.");
     set_busy(false);
   }
 
-  void import_pair() {
+  void import_pair(bool evaluate_after_import = false) {
     const auto directory = std::filesystem::path{directory_->text().toStdString()};
     const auto fixed = fixed_name_->text().toStdString();
     const auto moving = moving_name_->text().toStdString();
     const auto generation = ++generation_;
+    clear_evaluation();
     set_busy(true);
-    status_->setText("Importing OBJ pair…");
+    status_->setText("Cargando material…");
     auto* watcher = new QFutureWatcher<std::shared_ptr<LoadedPair>>(this);
-    connect(watcher, &QFutureWatcherBase::finished, this, [this, watcher, generation] {
-      auto loaded = watcher->result();
-      watcher->deleteLater();
-      if (generation == generation_)
-        accept_loaded_pair(std::move(*loaded));
-    });
+    connect(watcher, &QFutureWatcherBase::finished, this,
+            [this, watcher, generation, evaluate_after_import] {
+              auto loaded = watcher->result();
+              watcher->deleteLater();
+              if (generation == generation_) {
+                accept_loaded_pair(std::move(*loaded));
+                if (session_ && evaluate_after_import) {
+                  reset_after_evaluation_ = true;
+                  evaluate_pose();
+                }
+              }
+            });
     watcher->setFuture(QtConcurrent::run([directory, fixed, moving] {
       auto loaded = std::make_shared<LoadedPair>();
       loaded->session =
@@ -513,7 +910,7 @@ private:
       return;
     clear_evaluation();
     set_busy(true);
-    status_->setText("Evaluating pose…");
+    status_->setText("Evaluando contactos…");
     const core::MandibularPose pose{core::to_meters(core::Millimeters{opening_->value()}),
                                     core::to_meters(core::Millimeters{protrusion_->value()}),
                                     core::to_meters(core::Millimeters{lateral_->value()})};
@@ -529,11 +926,15 @@ private:
       if (result) {
         pose_ = result.value();
         sweep_.reset();
-        frame_label_->setText("No sweep selected");
+        frame_label_->setText("Sin barrido calculado");
         summary_->clear();
         show_result(*pose_);
+        if (reset_after_evaluation_) {
+          reset_after_evaluation_ = false;
+          reset_camera();
+        }
       } else {
-        status_->setText("Pose is outside the validated native domain.");
+        status_->setText("La posición está fuera del rango del modelo.");
       }
       set_busy(false);
     });
@@ -545,7 +946,7 @@ private:
       return;
     clear_evaluation();
     set_busy(true);
-    status_->setText("Evaluating sweep…");
+    status_->setText("Calculando posiciones del barrido…");
     const auto preset = static_cast<core::SweepPreset>(preset_->currentData().toInt());
     const auto count = static_cast<std::size_t>(frames_->value());
     const auto evaluator = session_->evaluator;
@@ -560,16 +961,16 @@ private:
       if (result) {
         sweep_ = result.value();
         pose_.reset();
-        summary_->setText(QString("Contact frames: %1/%2; maximum penetration: %3 mm")
+        summary_->setText(QString("Posiciones con contacto: %1/%2; penetración máxima: %3 mm")
                               .arg(sweep_->summary.contact_frame_count)
                               .arg(sweep_->summary.total_frame_count)
                               .arg(sweep_->summary.maximum_penetration.value() * 1000, 0, 'f', 3));
         frame_slider_->setRange(0, static_cast<int>(sweep_->frames.size()) - 1);
         frame_slider_->setValue(0);
-        frame_label_->setText(QString("Frame 1/%1").arg(sweep_->frames.size()));
+        frame_label_->setText(QString("Posición 1/%1").arg(sweep_->frames.size()));
         show_result(sweep_->frames.front().evaluation);
       } else {
-        status_->setText("Sweep request is outside the validated native domain.");
+        status_->setText("El barrido está fuera del rango permitido.");
       }
       set_busy(false);
     });
@@ -578,14 +979,18 @@ private:
   }
 
   void clear_evaluation() {
+    stop_playback();
+    clear_metrics();
     pose_.reset();
     sweep_.reset();
-    frame_label_->setText("No sweep selected");
+    frame_slider_->setRange(0, 0);
+    frame_label_->setText("Sin barrido calculado");
     summary_->clear();
   }
 
   void add_axes() {
-    const std::array<std::array<double, 3>, 3> directions{{{0.2, 0, 0}, {0, 0.2, 0}, {0, 0, 0.2}}};
+    const std::array<std::array<double, 3>, 3> directions{
+        {{0.02, 0, 0}, {0, 0.02, 0}, {0, 0, 0.02}}};
     const std::array<std::array<double, 3>, 3> colors{
         {{1, 0.25, 0.25}, {0.25, 1, 0.25}, {0.3, 0.5, 1}}};
     for (std::size_t index = 0; index < directions.size(); ++index) {
@@ -630,13 +1035,21 @@ private:
       renderer_->AddActor(actor);
       contact_actors_.push_back(actor);
     }
-    QString measurement = "Clearance unavailable";
+    relation_->setText(classification_text(result.classification));
+    clearance_->setText(result.clearance
+                            ? QString("%1 mm").arg(result.clearance->value() * 1000, 0, 'f', 2)
+                            : "No disponible");
+    contacts_->setText(QString::number(result.normalized_contact_count));
+    QString measurement = "Separación no disponible";
     if (result.clearance)
-      measurement = QString("Clearance %1 mm").arg(result.clearance->value() * 1000, 0, 'f', 3);
-    status_->setText(QString("%1 — %2; penetration %3 mm; %4 contact samples")
+      measurement = QString("Separación %1 mm").arg(result.clearance->value() * 1000, 0, 'f', 3);
+    status_->setText(QString("%1 · %2 · penetración %3 mm · %4 muestras de contacto")
                          .arg(classification_text(result.classification), measurement)
                          .arg(result.penetration_depth.value() * 1000, 0, 'f', 3)
                          .arg(result.normalized_contact_count));
+    if (sweep_)
+      renderer_->ResetCamera();
+    renderer_->ResetCameraClippingRange();
     render_scene();
   }
 
@@ -650,7 +1063,7 @@ private:
     auto* image = capture->GetOutput();
     auto* scalars = vtkUnsignedCharArray::SafeDownCast(image->GetPointData()->GetScalars());
     if (!scalars || scalars->GetNumberOfComponents() != 3) {
-      status_->setText("VTK could not capture the scene. Check the display/OpenGL setup.");
+      status_->setText("No se pudo dibujar la escena. Revisa el controlador gráfico.");
       return;
     }
     const int* dimensions = image->GetDimensions();
@@ -683,22 +1096,27 @@ private:
   void export_json() {
     if (!selection_matches_import() || (!pose_ && !sweep_))
       return;
-    const auto path =
-        QFileDialog::getSaveFileName(this, "Export native evaluation", {}, "JSON (*.json)");
+    const auto path = QFileDialog::getSaveFileName(this, "Guardar resultados", {}, "JSON (*.json)");
     if (path.isEmpty())
       return;
     if (!write_export(path)) {
-      QMessageBox::warning(this, "Export failed", "Could not write the JSON export.");
+      QMessageBox::warning(this, "No se pudo exportar",
+                           "No se pudo guardar el archivo de resultados.");
       return;
     }
-    status_->setText("Exported the engine's versioned JSON result.");
+    status_->setText("Resultados guardados en formato JSON.");
   }
 
   bool write_export(const QString& path) const {
     if (!selection_matches_import() || (!pose_ && !sweep_))
       return false;
-    const auto json = sweep_ ? evaluation::serialize_evaluation_json(*sweep_, "desktop-obj-pair-v1")
-                             : evaluation::serialize_evaluation_json(*pose_, "desktop-obj-pair-v1");
+    const auto fixture = imported_directory_ == demo_directory_.path() &&
+                                 imported_fixed_name_ == "upper-arch.obj" &&
+                                 imported_moving_name_ == "lower-arch.obj"
+                             ? "desktop-teaching-arches-v1"
+                             : "desktop-obj-pair-v1";
+    const auto json = sweep_ ? evaluation::serialize_evaluation_json(*sweep_, fixture)
+                             : evaluation::serialize_evaluation_json(*pose_, fixture);
     QSaveFile file(path);
     return file.open(QIODevice::WriteOnly) &&
            file.write(json.data(), static_cast<qint64>(json.size())) ==
@@ -706,6 +1124,16 @@ private:
            file.commit();
   }
 
+  QTemporaryDir demo_directory_;
+  QPushButton* demo_button_ = nullptr;
+  QPushButton* play_ = nullptr;
+  QTimer* playback_ = nullptr;
+  QLabel* case_label_ = nullptr;
+  QLabel* relation_ = nullptr;
+  QLabel* clearance_ = nullptr;
+  QLabel* contacts_ = nullptr;
+  std::vector<QPushButton*> pose_examples_;
+  bool reset_after_evaluation_ = false;
   QLineEdit* directory_ = nullptr;
   QLineEdit* fixed_name_ = nullptr;
   QLineEdit* moving_name_ = nullptr;
@@ -744,9 +1172,14 @@ private:
 int main(int argc, char* argv[]) {
   QApplication app(argc, argv);
   if (argc == 3 && std::string_view{argv[1]} == "--smoke") {
-    MainWindow window;
+    MainWindow window({}, false);
     if (!window.smoke(argv[2])) {
       std::cerr << "occlusion-desktop smoke: FAIL\n";
+      return 1;
+    }
+    MainWindow startup;
+    if (!startup.smoke_startup()) {
+      std::cerr << "occlusion-desktop startup smoke: FAIL\n";
       return 1;
     }
     std::cout << "occlusion-desktop smoke: PASS\n";

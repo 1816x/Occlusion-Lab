@@ -2,7 +2,10 @@
 
 Phase 4.14 now has a first Qt 6/VTK development viewer. It uses a VTK offscreen
 render window captured into a Qt image, with Qt controls for import, pose, sweep,
-frame selection, camera rotation, and export. The Linux display smoke covers
+frame selection, mouse rotation/zoom, playback, and export. The Spanish student workspace
+automatically loads and evaluates embedded schematic arches at 8 mm opening; external import is
+optional. These original synthetic shapes are not anatomical teaching specimens. Editing a pose
+updates its geometric preview immediately and clears old measurements/export until reevaluation. The Linux display smoke covers
 import, failed import and recovery, stale worker result rejection, pose, sweep
 selection, rendering, and exact JSON export bytes. The Apple Silicon macOS
 and Intel bundles pass CI relocation, signature, and clean-environment launch checks;
@@ -55,7 +58,8 @@ owned project values, with a request generation number so late results from an
 older selection cannot replace a newer scene. The first release disables a
 request and its inputs while it is running. Editing the selected mesh names or
 directory requires re-import before evaluation or export; editing pose or sweep
-inputs invalidates that result until it is recalculated. Cooperative cancellation
+inputs invalidates that result until it is recalculated. Pose edits also clear any sweep because
+the displayed scene now previews the edited pose. Cooperative cancellation
 needs an explicit engine API and is not simulated by discarding a running FCL query. It must never
 publish a partial sweep as a complete result.
 

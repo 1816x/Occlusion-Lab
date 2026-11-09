@@ -10,11 +10,15 @@ Record `build-commit.txt`, your Windows version, and your graphics hardware with
 
 | Check | Expected result |
 | --- | --- |
-| Launch from File Explorer | A readable window appears without a missing-DLL or Qt platform-plugin error. |
-| Import the included sample folder | Blue fixed and orange moving meshes appear; evaluation controls become available. |
+| Launch from File Explorer | The Spanish student workspace opens with both built-in schematic arches visible, 8 mm separation, and active controls, without selecting files. |
+| Drag the scene and use the mouse wheel | The camera rotates and zooms; Centrar vista restores the view. |
+| Use Abrir / Cerrar / Protruir | The lower arch moves and the contact indicators update after evaluation. |
+| Edit a pose value | The scene previews the new position; stale results and export are disabled until Evaluar contactos. |
+| Restablecer ejemplo | The built-in arches return to 8 mm opening, with a valid evaluated result. |
+| Optional: use Importar to load the included box OBJ files | Ivory fixed and turquoise moving meshes appear; evaluation controls become available. |
 | Set Opening to 250 mm and evaluate | Separated; clearance approximately 250 mm; zero penetration. |
 | Set Opening to 0 mm and evaluate | Touching; zero penetration; clearance unavailable. |
-| Run Closing with 31 frames | Starts separated and finishes touching; the slider selects each stored frame. |
+| Run Cierre with 31 positions in Barrido | Starts separated and finishes touching; the slider selects stored frames, and Reproducir / Pausar controls playback. |
 | Rotate and zoom with the camera buttons; resize the window | The scene updates and fits its panel. |
 | Export JSON v1 | A complete JSON file is saved with 31 frames for the sweep and meter-valued measurements. |
 | Change a mesh filename to a missing file and import | A file error appears; evaluation and export are disabled; the retained scene is labeled. |
@@ -24,5 +28,5 @@ Record `build-commit.txt`, your Windows version, and your graphics hardware with
 
 Report the failed row, exact input, and visible error text. The artifact includes
 `windows-smoke.png`, captured during CI's packaged launch. CI verifies the extracted
-ZIP with the Windows Qt plugin and no developer toolchain on PATH; the table above
+ZIP with the Windows Qt plugin and no developer toolchain on PATH; it also checks automatic resource loading, mouse controls, live pose preview, playback and reset; the table above
 still requires a hands-on check on your PC.
