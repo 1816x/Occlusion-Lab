@@ -132,6 +132,8 @@ jobs:
           Get-FileHash (Join-Path $preview 'occlusion-desktop.exe') -Algorithm SHA256 |
             ForEach-Object { "$($_.Hash.ToLower())  occlusion-desktop.exe" } |
             Set-Content (Join-Path $preview 'occlusion-desktop.exe.sha256')
+          # Match a double-click on the user's machine, without the smoke-only driver override.
+          Remove-Item Env:GALLIUM_DRIVER -ErrorAction SilentlyContinue
           $normal = Start-Process -FilePath "$bundle/occlusion-desktop.exe" -WorkingDirectory $env:RUNNER_TEMP -PassThru
           try {
             $deadline = (Get-Date).AddSeconds(30)
