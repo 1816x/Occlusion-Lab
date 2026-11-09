@@ -251,7 +251,9 @@ then extract `occlusion-lab-windows-x64.zip` and open `Occlusion Lab/occlusion-d
 Keep the complete folder together; Qt, VTK, collision dependencies, and software OpenGL are bundled.
 The included box files remain available as an optional import exercise. The preview targets
 Windows 10/11 x64 and is unsigned. Follow the [Windows beta checklist](docs/windows-beta-checklist.md)
-and report any launch, display, import, sweep, or export issue. The artifact includes a screenshot
+and report any launch, display, import, sweep, or export issue. If Windows shows
+**“cannot access the specified device, path, or file,”** follow the
+[Windows launch check](docs/windows-launch.md). The artifact includes a screenshot
 from CI's packaged launch and a SHA-256 checksum for the inner ZIP.
 
 Download the macOS artifact for your Mac's processor (shown in **About This Mac**):

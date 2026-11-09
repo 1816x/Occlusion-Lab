@@ -5,6 +5,8 @@ Download `occlusion-lab-windows-x64-preview` from the passing workflow linked in
 then extract `occlusion-lab-windows-x64.zip`. Keep the complete `Occlusion Lab`
 folder together and launch `occlusion-desktop.exe`. No Qt or MSYS2 installation is required.
 This preview targets Windows 10/11 on x64 processors and is unsigned.
+If Windows reports that it cannot access the executable, use the
+[launch check](windows-launch.md).
 
 Record `build-commit.txt`, your Windows version, and your graphics hardware with the results.
 
